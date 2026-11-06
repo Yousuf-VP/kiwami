@@ -10,6 +10,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
@@ -22,7 +23,6 @@
   <div class="ambient ambient-three"></div>
   <div class="noise-overlay"></div>
 
-  <!-- Floating glass navigation -->
   <header class="site-header" id="siteHeader">
     <nav class="navbar" aria-label="Main navigation">
       <a class="brand" href="#home" aria-label="KIWAMI home">
@@ -48,7 +48,6 @@
   </header>
 
   <main>
-    <!-- Hero -->
     <section class="hero section-shell" id="home">
       <div class="hero-copy reveal">
         <div class="eyebrow">
@@ -115,13 +114,13 @@
       </div>
     </section>
 
-    <!-- Games -->
     <section class="games-section section-shell section-space" id="games">
       <div class="section-heading reveal">
         <div>
           <div class="eyebrow"><span class="eyebrow-dot"></span> THE PLAYGROUND</div>
           <h2>BUILT TO BE <span class="gradient-text">PLAYED.</span></h2>
         </div>
+
         <p class="section-intro">
           Small beginnings. Big ideas. Explore the worlds currently taking shape.
         </p>
@@ -129,6 +128,7 @@
 
       <div class="games-toolbar reveal">
         <span class="toolbar-label">SELECT A PROJECT</span>
+
         <div class="carousel-controls">
           <button class="circle-control" id="gamesPrev" aria-label="Previous games">←</button>
           <button class="circle-control" id="gamesNext" aria-label="Next games">→</button>
@@ -144,20 +144,24 @@
               <div class="target-ring target-ring-one"></div>
               <div class="target-ring target-ring-two"></div>
               <div class="target-core"></div>
+
               <span class="art-code">KWM / 001</span>
               <span class="art-index">01</span>
               <span class="art-word">SHOOT<br>STREAK</span>
             </div>
+
             <div class="game-card-content">
               <div class="game-card-topline">
                 <span class="game-category">ARCADE · REFLEX</span>
                 <span class="game-status status-live"><i></i> PLAYABLE</span>
               </div>
+
               <h3>SHOOT-STREAK</h3>
               <p>Test your precision. Build your streak. Beat your best score.</p>
-              <button class="game-link play-game-button" data-game="shoot">
+
+              <a class="game-link" href="./shoot-streak/index.html">
                 Play now <span>↗</span>
-              </button>
+              </a>
             </div>
           </article>
 
@@ -167,18 +171,24 @@
               <div class="dodge-shape dodge-shape-one"></div>
               <div class="dodge-shape dodge-shape-two"></div>
               <div class="dodge-shape dodge-shape-three"></div>
+
               <span class="art-code">KWM / 002</span>
               <span class="art-index">02</span>
               <span class="art-word">DODGE<br>THE VOID</span>
             </div>
+
             <div class="game-card-content">
               <div class="game-card-topline">
                 <span class="game-category">ARCADE · SURVIVAL</span>
                 <span class="game-status status-progress"><i></i> IN DEVELOPMENT</span>
               </div>
+
               <h3>DODGE-EM-ALL</h3>
               <p>Movement, timing, and split-second decisions. In development.</p>
-              <span class="game-link game-disabled">Coming into focus <span>↗</span></span>
+
+              <span class="game-link game-disabled">
+                Coming into focus <span>↗</span>
+              </span>
             </div>
           </article>
 
@@ -189,18 +199,24 @@
               <div class="void-particle particle-one"></div>
               <div class="void-particle particle-two"></div>
               <div class="void-particle particle-three"></div>
+
               <span class="art-code">KWM / 003</span>
               <span class="art-index">03</span>
               <span class="art-word">BEYOND<br>THE END</span>
             </div>
+
             <div class="game-card-content">
               <div class="game-card-topline">
                 <span class="game-category">ACTION · ENDLESS</span>
                 <span class="game-status status-planned"><i></i> PLANNED</span>
               </div>
+
               <h3>VOID RUNNER</h3>
               <p>A journey through a shifting digital frontier. Concept stage.</p>
-              <span class="game-link game-disabled">On the horizon <span>↗</span></span>
+
+              <span class="game-link game-disabled">
+                On the horizon <span>↗</span>
+              </span>
             </div>
           </article>
 
@@ -214,17 +230,19 @@
       </div>
     </section>
 
-    <!-- Studio -->
     <section class="studio-section section-shell section-space" id="studio">
       <div class="studio-panel reveal">
         <div class="studio-content">
           <div class="eyebrow"><span class="eyebrow-dot"></span> THE KIWAMI PHILOSOPHY</div>
+
           <h2>EXTREME IDEAS.<br><span class="gradient-text">INTENTIONAL DESIGN.</span></h2>
+
           <p>
             KIWAMI is an independent creative space focused on building
             interactive experiences. Every project starts with a simple
             question: what would make this unforgettable?
           </p>
+
           <a class="button button-outline" href="#developer">
             Meet the developer <span>↗</span>
           </a>
@@ -246,13 +264,13 @@
       </div>
     </section>
 
-    <!-- Developer spotlight -->
     <section class="developer-section section-shell section-space" id="developer">
       <div class="section-heading reveal">
         <div>
           <div class="eyebrow"><span class="eyebrow-dot"></span> THE PERSON BEHIND THE PIXELS</div>
           <h2>MEET THE <span class="gradient-text">BUILDER.</span></h2>
         </div>
+
         <p class="section-intro">
           Ideas become experiences when someone decides to build them.
         </p>
@@ -284,6 +302,7 @@
           </p>
 
           <div class="skill-heading">CURRENT TOOLKIT</div>
+
           <div class="skill-list">
             <span>JavaScript</span>
             <span>Web Development</span>
@@ -300,27 +319,34 @@
       </article>
     </section>
 
-    <!-- Closing CTA -->
     <section class="closing-section section-shell">
       <div class="cta-panel reveal">
         <div class="cta-orb"></div>
+
         <div class="eyebrow"><span class="eyebrow-dot"></span> YOUR NEXT EXPERIENCE STARTS HERE</div>
+
         <h2>READY TO<br><span class="gradient-text">ENTER THE NEXT LEVEL?</span></h2>
+
         <p>Explore what we're building. There's more to come.</p>
-        <a class="button button-primary" href="#games">Explore KIWAMI <span>↗</span></a>
+
+        <a class="button button-primary" href="#games">
+          Explore KIWAMI <span>↗</span>
+        </a>
+
         <span class="cta-watermark">KWM.</span>
       </div>
     </section>
   </main>
 
-  <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-main section-shell">
+
       <div class="footer-brand-column">
         <a class="brand footer-brand" href="#home">
           <span class="brand-mark">K</span>
           <span class="brand-name">KIWAMI<span class="brand-period">.</span></span>
         </a>
+
         <p>Forge your experience.</p>
         <span class="footer-small">INDEPENDENT GAME STUDIO · EST. 2026</span>
       </div>
@@ -335,7 +361,7 @@
 
       <div class="footer-column">
         <h4>PROJECTS</h4>
-        <a href="#games">SHOOT-STREAK</a>
+        <a href="./shoot-streak/index.html">SHOOT-STREAK</a>
         <a href="#games">DODGE-EM-ALL</a>
         <a href="#games">VOID RUNNER</a>
       </div>
@@ -353,50 +379,5 @@
       <span class="footer-version">KWM / 001</span>
     </div>
   </footer>
-
-  <!-- Shoot-Streak modal -->
-  <div class="game-modal" id="shootModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal></div>
-
-    <div class="modal-window" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <div>
-          <span class="modal-kicker">KIWAMI ARCADE / 001</span>
-          <h2 id="modalTitle">SHOOT-STREAK</h2>
-        </div>
-        <button class="modal-close" id="closeShootGame" aria-label="Close game">×</button>
-      </div>
-
-      <div class="game-stats">
-        <div class="stat-box">
-          <span>SCORE</span>
-          <strong id="gameScore">0</strong>
-        </div>
-        <div class="stat-box">
-          <span>TIME</span>
-          <strong id="gameTime">30</strong>
-        </div>
-        <div class="stat-box">
-          <span>BEST</span>
-          <strong id="gameBest">0</strong>
-        </div>
-      </div>
-
-      <div class="game-arena" id="gameArena">
-        <div class="arena-message" id="arenaMessage">
-          <span class="arena-symbol">◎</span>
-          <strong>READY?</strong>
-          <p>Tap the targets before time runs out.</p>
-          <button class="button button-primary" id="startGame">Start game <span>↗</span></button>
-        </div>
-        <button class="shoot-target" id="shootTarget" aria-label="Hit target"></button>
-      </div>
-
-      <div class="modal-footer">
-        <span>30 SECOND CHALLENGE</span>
-        <span>PRECISION IS EVERYTHING.</span>
-      </div>
-    </div>
-  </div>
 </body>
 </html>

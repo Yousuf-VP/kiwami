@@ -600,6 +600,9 @@ let targetPitch = 0;
 let screenShake = 0;
 let landingImpact = 0;
 
+// LEFT / RIGHT CAMERA TILT
+let movementTilt = 0;
+
 let recoil = 0;
 let weaponBob = 0;
 
@@ -1019,6 +1022,21 @@ function updatePlayer(delta) {
     playerX = THREE.MathUtils.clamp(playerX, -4.65, 4.65);
     playerZ = THREE.MathUtils.clamp(playerZ, 4.5, 8.2);
 
+    // CAMERA TILT: ONLY A/D INPUT AFFECTS THE ROLL.
+    // W/S movement does not contribute to camera tilt.
+    const horizontalInput =
+        (keys.KeyD ? 1 : 0) -
+        (keys.KeyA ? 1 : 0);
+
+    const targetMovementTilt = horizontalInput * 0.055;
+
+    movementTilt = THREE.MathUtils.damp(
+        movementTilt,
+        targetMovementTilt,
+        7,
+        delta
+    );
+
     const moving = movement.lengthSq() > 0;
     const bobTime = performance.now() * 0.012;
     const walkBob = moving ? Math.sin(bobTime) * 0.035 : 0;
@@ -1040,7 +1058,7 @@ function updatePlayer(delta) {
     camera.rotation.set(
         pitch + shakeX,
         yaw + shakeY,
-        shakeRoll,
+        movementTilt + shakeRoll,
         "YXZ"
     );
 
@@ -1288,6 +1306,7 @@ function updateBall(delta) {
             ballVelocity.z > 0 ? "#ff536a" : "#00eaff";
     }
 }
+
 /* ---------- SHOOTING ---------- */
 
 function shoot() {
@@ -1545,6 +1564,9 @@ function startGame() {
     targetPitch = 0;
     screenShake = 0;
     landingImpact = 0;
+
+    // Reset camera tilt for every new round.
+    movementTilt = 0;
 
     camera.position.set(
         playerX,

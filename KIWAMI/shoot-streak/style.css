@@ -960,3 +960,45 @@ button {
 @media(max-width:650px){#topbar{width:calc(100% - 18px);top:max(7px,env(safe-area-inset-top));min-height:48px;padding:6px 8px 6px 12px;gap:6px}.topbar-right{gap:5px}.back-button,.topbar-button{padding:8px 9px;font-size:7px}#hud{top:67px;left:8px;gap:5px}.hud-card{width:104px;min-height:46px;padding:7px 9px}.hud-card strong{font-size:14px}#event-banner{top:70px;left:auto;right:8px;transform:translateY(-8px);font-size:7px;padding:8px 11px;letter-spacing:1px}#event-banner.show{transform:translateY(0)}}
 @media(pointer:coarse) and (max-height:420px){#mobile-jump{width:60px;height:60px;right:16px;bottom:15px}#event-banner{top:58px}}
 @media(max-width:390px){.live-indicator{display:none}.back-button,.topbar-button{padding:8px 7px;letter-spacing:.5px}}
+
+/* ==========================================
+   CINEMATIC NEON CASINO PRESENTATION
+   ========================================== */
+#game-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 48%, transparent 42%, rgba(0,0,0,.18) 76%, rgba(0,0,0,.48) 100%),
+    linear-gradient(180deg, rgba(3,5,14,.16), transparent 22%, transparent 78%, rgba(3,5,14,.2));
+  mix-blend-mode: multiply;
+}
+
+#game-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: .2;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255,255,255,.018) 0px,
+    rgba(255,255,255,.018) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+#event-banner {
+  text-shadow: 0 0 18px rgba(0,234,255,.55), 0 0 34px rgba(255,57,200,.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #game-shell::before,
+  #game-shell::after {
+    opacity: .12;
+  }
+}

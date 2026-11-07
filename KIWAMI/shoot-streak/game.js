@@ -271,6 +271,75 @@ for (const side of [-1, 1]) {
     }
 }
 
+// Luxury neon-club architecture: layered wall coffers, metallic trim and ceiling light rails.
+const casinoGold = new THREE.MeshStandardMaterial({
+    color: 0x9b6d32, metalness: 0.82, roughness: 0.28,
+    emissive: 0x3a1d08, emissiveIntensity: 0.22
+});
+const casinoMagenta = new THREE.MeshStandardMaterial({
+    color: 0xff3acb, metalness: 0.22, roughness: 0.28,
+    emissive: 0xb00073, emissiveIntensity: 2.1
+});
+const casinoViolet = new THREE.MeshStandardMaterial({
+    color: 0x8b5cff, metalness: 0.24, roughness: 0.3,
+    emissive: 0x4a18b9, emissiveIntensity: 1.9
+});
+const casinoWarm = new THREE.MeshStandardMaterial({
+    color: 0xffd28a, metalness: 0.72, roughness: 0.25,
+    emissive: 0x8a4b12, emissiveIntensity: 0.7
+});
+const casinoPulseMaterials = [casinoMagenta, casinoViolet];
+
+for (const side of [-1, 1]) {
+    for (const z of [-6.7, -1.7, 3.3, 7.6]) {
+        // Dark inset panel with a warm metallic perimeter.
+        addBox(arena, 0.075, 2.75, 2.25, materials.dark, side * 5.34, 2.25, z);
+        addBox(arena, 0.055, 0.055, 2.32, casinoGold, side * 5.275, 3.62, z);
+        addBox(arena, 0.055, 0.055, 2.32, casinoGold, side * 5.275, 0.88, z);
+        addBox(arena, 0.055, 2.72, 0.055, casinoGold, side * 5.275, 2.25, z - 1.13);
+        addBox(arena, 0.055, 2.72, 0.055, casinoGold, side * 5.275, 2.25, z + 1.13);
+
+        // Three luminous fins create depth without cluttering the play space.
+        for (let fin = -1; fin <= 1; fin++) {
+            addBox(arena, 0.045, 1.95, 0.035,
+                fin === 0 ? casinoMagenta : casinoViolet,
+                side * 5.265, 2.25, z + fin * 0.48);
+        }
+
+        const panelLight = new THREE.PointLight(
+            side < 0 ? 0x9b5cff : 0xff39c8, 2.0, 4.8
+        );
+        panelLight.position.set(side * 4.95, 2.7, z);
+        arena.add(panelLight);
+        arenaAccentLights.push(panelLight);
+    }
+}
+
+// Ceiling canopy: parallel light rails and recessed cross-beams.
+for (const x of [-4.7, -2.35, 0, 2.35, 4.7]) {
+    addBox(arena, 0.075, 0.06, 18.5, casinoGold, x, 4.18, -0.5);
+    addBox(arena, 0.035, 0.035, 17.8,
+        x % 2 === 0 ? casinoMagenta : casinoViolet,
+        x, 4.13, -0.5);
+}
+for (const z of [-8.8, -4.4, 0, 4.4, 8.6]) {
+    addBox(arena, 10.4, 0.055, 0.08, materials.dark, 0, 4.08, z);
+    addBox(arena, 10.1, 0.025, 0.035, casinoWarm, 0, 4.045, z);
+}
+
+// Alternating overhead color pools add a cinematic rhythm to the room.
+const casinoCeilingLights = [];
+for (let i = 0; i < 5; i++) {
+    const light = new THREE.PointLight(
+        i % 2 === 0 ? 0x9b5cff : 0xff39c8, 5.5, 8
+    );
+    light.position.set(i % 2 === 0 ? -2.8 : 2.8, 3.95, -7.2 + i * 3.3);
+    arena.add(light);
+    casinoCeilingLights.push(light);
+}
+
+// A subtle centerline reflection guide anchors the polished black floor.
+addBox(arena, 0.025, 0.012, 15.5, casinoViolet, 0, -0.035, -0.5);
 /* ---------- CORNER BOUNCERS ---------- */
 
 const bouncers = [];

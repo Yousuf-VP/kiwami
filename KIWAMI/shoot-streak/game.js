@@ -1961,6 +1961,15 @@ function animate() {
     wallInnerRing.rotation.z -= delta * 0.28;
 
     updateBouncers();
+
+    // Slow, restrained neon breathing keeps the room alive without distracting play.
+    const cinemaPulse = 0.82 + Math.sin(performance.now() * 0.00072) * 0.18;
+    casinoCeilingLights.forEach((light, index) => {
+        light.intensity = (index % 2 === 0 ? 4.8 : 4.2) * cinemaPulse;
+    });
+    casinoMagenta.emissiveIntensity = 1.75 + cinemaPulse * 0.42;
+    casinoViolet.emissiveIntensity = 1.55 + (1 - cinemaPulse) * 0.5;
+
     updateEffects(delta);
 
     renderer.render(scene, camera);

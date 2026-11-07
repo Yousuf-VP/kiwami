@@ -43,6 +43,12 @@ const ammoFill = document.getElementById("ammo-fill");
 const reloadLabel = document.getElementById("reload-label");
 const finalScore = document.getElementById("final-score");
 const toast = document.getElementById("toast");
+const bestScoreValue = document.getElementById("best-score-value");
+const eventBanner = document.getElementById("event-banner");
+const mobileJoystick = document.getElementById("mobile-joystick");
+const mobileJoystickThumb = document.getElementById("mobile-joystick-thumb");
+const mobileLookZone = document.getElementById("mobile-look-zone");
+const mobileJumpButton = document.getElementById("mobile-jump");
 
 if (
     !shell || !startScreen || !pauseScreen || !gameOverScreen ||
@@ -54,11 +60,11 @@ if (
 /* ---------- THREE.JS SETUP ---------- */
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x07101e);
-scene.fog = new THREE.Fog(0x07101e, 17, 36);
+scene.background = new THREE.Color(0x040914);
+scene.fog = new THREE.Fog(0x040914, 15, 34);
 
 const camera = new THREE.PerspectiveCamera(
-    75, window.innerWidth / window.innerHeight, 0.1, 100
+    75, (shell.clientWidth || window.innerWidth) / (shell.clientHeight || window.innerHeight), 0.1, 100
 );
 camera.rotation.order = "YXZ";
 camera.position.set(CONFIG.player.startX, CONFIG.player.eyeHeight, CONFIG.player.startZ);
@@ -68,12 +74,12 @@ const renderer = new THREE.WebGLRenderer({
     powerPreference: "high-performance"
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(shell.clientWidth || window.innerWidth, shell.clientHeight || window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.25;
+renderer.toneMappingExposure = 0.96;
 
 renderer.domElement.id = "game-canvas";
 shell.prepend(renderer.domElement);
@@ -87,9 +93,10 @@ pmremGenerator.dispose();
 
 /* ---------- LIGHTING ---------- */
 
-scene.add(new THREE.HemisphereLight(0x9edfff, 0x10152a, 1.5));
+const hemisphereLight = new THREE.HemisphereLight(0x83b9dc, 0x080e1b, 0.52);
+scene.add(hemisphereLight);
 
-const mainLight = new THREE.DirectionalLight(0xb9e8ff, 2.2);
+const mainLight = new THREE.DirectionalLight(0x9ac9ed, 0.62);
 mainLight.position.set(-4, 9, 5);
 mainLight.castShadow = true;
 mainLight.shadow.mapSize.set(1024, 1024);
@@ -99,35 +106,35 @@ mainLight.shadow.camera.top = 12;
 mainLight.shadow.camera.bottom = -12;
 scene.add(mainLight);
 
-const backLight = new THREE.PointLight(0x087dff, 30, 18);
+const backLight = new THREE.PointLight(0x087dff, 12, 18);
 backLight.position.set(0, 3, -8);
 scene.add(backLight);
 
-const redAmbient = new THREE.PointLight(0xff123d, 20, 8);
+const redAmbient = new THREE.PointLight(0xff123d, 4, 8);
 scene.add(redAmbient);
 
 /* ---------- MATERIALS ---------- */
 
 const materials = {
     floor: new THREE.MeshPhysicalMaterial({
-        color: 0x172b45,
-        metalness: 0.88,
-        roughness: 0.19,
+        color: 0x101b2b,
+        metalness: 0.76,
+        roughness: 0.31,
         clearcoat: 1,
         clearcoatRoughness: 0.12,
-        envMapIntensity: 1.8
+        envMapIntensity: 1.15
     }),
     wall: new THREE.MeshStandardMaterial({
-        color: 0x14243b, roughness: 0.48, metalness: 0.48
+        color: 0x0d1727, roughness: 0.58, metalness: 0.42
     }),
     dark: new THREE.MeshStandardMaterial({
-        color: 0x070d19, roughness: 0.65, metalness: 0.25
+        color: 0x050a13, roughness: 0.7, metalness: 0.2
     }),
     cyan: new THREE.MeshStandardMaterial({
-        color: 0x00dfff, emissive: 0x007caa, emissiveIntensity: 2
+        color: 0x00dfff, emissive: 0x007caa, emissiveIntensity: 1.55
     }),
     blue: new THREE.MeshStandardMaterial({
-        color: 0x286bff, emissive: 0x123baf, emissiveIntensity: 1.4
+        color: 0x286bff, emissive: 0x123baf, emissiveIntensity: 1.05
     }),
     red: new THREE.MeshStandardMaterial({
         color: 0xff193e, emissive: 0xff002b,
@@ -239,18 +246,29 @@ for (let i = 0; i < 5; i++) {
         materials.blue, -4 + i * 2, 2.1, -9.68);
 }
 
-const grid = new THREE.GridHelper(10.5, 22, 0x087eaa, 0x18304d);
-grid.position.set(0, -0.035, -0.5);
-arena.add(grid);
+// Architectural floor inlays: broad panels and deliberate LED guides.
+const floorInlay = new THREE.MeshStandardMaterial({ color: 0x081321, roughness: 0.46, metalness: 0.38 });
+for (const z of [-7.2, -2.8, 1.8, 6.2]) {
+    addBox(arena, 8.7, 0.018, 0.035, materials.blue, 0, -0.037, z);
+    addBox(arena, 8.1, 0.012, 1.15, floorInlay, 0, -0.041, z - 0.68);
+}
+addBox(arena, 0.045, 0.014, 14.8, materials.cyan, -4.92, -0.037, -0.5);
+addBox(arena, 0.045, 0.014, 14.8, materials.cyan, 4.92, -0.037, -0.5);
 
-for (let z = -8; z <= 7; z += 3) {
-    addBox(arena, 0.08, 0.08, 0.7, materials.cyan, -5.35, 1.5, z);
-    addBox(arena, 0.08, 0.08, 0.7, materials.cyan, 5.35, 1.5, z);
+// Recessed wall panels and restrained buttresses.
+for (const side of [-1, 1]) {
+    for (const z of [-6.6, -1.9, 3.1, 7.0]) {
+        addBox(arena, 0.12, 2.65, 1.75, materials.dark, side * 5.36, 2.1, z);
+        addBox(arena, 0.035, 2.1, 0.045, materials.blue, side * 5.285, 2.1, z);
+    }
 }
 
-// Extra floor reflection strips.
-for (let x = -4; x <= 4; x += 2) {
-    addBox(arena, 0.025, 0.012, 17, materials.cyan, x, -0.038, -0.5);
+const arenaAccentLights = [];
+for (const side of [-1, 1]) {
+    for (const z of [-6.8, -1.2, 4.5]) {
+        const accent = new THREE.PointLight(side < 0 ? 0x087dff : 0x00c9e8, 2.2, 7);
+        accent.position.set(side * 4.95, 2.7, z); arena.add(accent); arenaAccentLights.push(accent);
+    }
 }
 
 /* ---------- CORNER BOUNCERS ---------- */
@@ -552,6 +570,18 @@ let pointerLocked = false;
 let hasHadPointerLock = false;
 
 let score = 0;
+let bestScore = 0, recentScores = [];
+const SCORE_STORAGE_KEY = "shootStreakRecords";
+try {
+ const saved = JSON.parse(localStorage.getItem(SCORE_STORAGE_KEY) || "null");
+ if (saved && typeof saved === "object") { bestScore = Math.max(0, Number(saved.bestScore) || 0); recentScores = Array.isArray(saved.recentScores) ? saved.recentScores.slice(0,10) : []; }
+} catch (error) { console.warn("Could not load score records.", error); }
+function saveScoreRecord(value) {
+ const safe = Math.max(0, Math.floor(Number(value) || 0)); bestScore = Math.max(bestScore, safe);
+ recentScores.unshift({ score:safe, date:new Date().toISOString() }); recentScores = recentScores.slice(0,10);
+ try { localStorage.setItem(SCORE_STORAGE_KEY, JSON.stringify({ bestScore, recentScores })); } catch (error) { console.warn("Could not save score records.", error); }
+ if (bestScoreValue) bestScoreValue.textContent = String(bestScore).padStart(4,"0");
+}
 let lastSpeedTier = 0;
 let ammo = CONFIG.weapon.maxAmmo;
 let isReloading = false;
@@ -578,6 +608,18 @@ let recoil = 0;
 let weaponBob = 0;
 
 const keys = {};
+const isTouchDevice = window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : ("ontouchstart" in window);
+if (isTouchDevice) shell.classList.add("ss-touch-device");
+let joystickPointerId=null, joystickCenter=null, lookPointerId=null, lastLookPoint=null;
+function setJoystickFromPoint(x,y){if(!mobileJoystickThumb||!joystickCenter)return;const max=34,dx=x-joystickCenter.x,dy=y-joystickCenter.y,dist=Math.hypot(dx,dy),scale=dist>max?max/dist:1,lx=dx*scale,ly=dy*scale;mobileJoystickThumb.style.transform="translate("+lx+"px,"+ly+"px)";const t=.22;keys.KeyW=ly/max< -t;keys.KeyS=ly/max>t;keys.KeyA=lx/max< -t;keys.KeyD=lx/max>t;}
+function resetMobileJoystick(){joystickPointerId=null;joystickCenter=null;keys.KeyW=keys.KeyA=keys.KeyS=keys.KeyD=false;if(mobileJoystickThumb)mobileJoystickThumb.style.transform="translate(0,0)";}
+if(isTouchDevice&&mobileJoystick){mobileJoystick.addEventListener("pointerdown",e=>{if(!gameStarted||gamePaused||gameOver)return;e.preventDefault();joystickPointerId=e.pointerId;const r=mobileJoystick.getBoundingClientRect();joystickCenter={x:r.left+r.width/2,y:r.top+r.height/2};mobileJoystick.setPointerCapture(e.pointerId);setJoystickFromPoint(e.clientX,e.clientY);});
+mobileJoystick.addEventListener("pointermove",e=>{if(e.pointerId===joystickPointerId){e.preventDefault();setJoystickFromPoint(e.clientX,e.clientY);}});
+const releaseJoy=e=>{if(e.pointerId===joystickPointerId)resetMobileJoystick();};mobileJoystick.addEventListener("pointerup",releaseJoy);mobileJoystick.addEventListener("pointercancel",releaseJoy);mobileJoystick.addEventListener("lostpointercapture",resetMobileJoystick);}
+if(isTouchDevice&&mobileLookZone){mobileLookZone.addEventListener("pointerdown",e=>{if(!gameStarted||gamePaused||gameOver)return;e.preventDefault();lookPointerId=e.pointerId;lastLookPoint={x:e.clientX,y:e.clientY};mobileLookZone.setPointerCapture(e.pointerId);});
+mobileLookZone.addEventListener("pointermove",e=>{if(e.pointerId!==lookPointerId||!lastLookPoint||gamePaused||gameOver)return;e.preventDefault();const dx=e.clientX-lastLookPoint.x,dy=e.clientY-lastLookPoint.y;targetYaw=THREE.MathUtils.clamp(targetYaw-dx*playerSettings.sensitivity*1.45,-1.15,1.15);targetPitch=THREE.MathUtils.clamp(targetPitch-dy*playerSettings.sensitivity*1.45,-.55,.55);lastLookPoint={x:e.clientX,y:e.clientY};});
+const releaseLook=e=>{if(e.pointerId===lookPointerId){lookPointerId=null;lastLookPoint=null;}};mobileLookZone.addEventListener("pointerup",releaseLook);mobileLookZone.addEventListener("pointercancel",releaseLook);mobileLookZone.addEventListener("lostpointercapture",()=>{lookPointerId=null;lastLookPoint=null;});}
+if(mobileJumpButton)mobileJumpButton.addEventListener("pointerdown",e=>{e.preventDefault();tryJump();});
 const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
 
@@ -1101,6 +1143,7 @@ function updateEffects(delta) {
 
 function updateHUD() {
     if (scoreValue) scoreValue.textContent = String(score).padStart(4, "0");
+    if (bestScoreValue) bestScoreValue.textContent = String(bestScore).padStart(4, "0");
     if (ammoValue) ammoValue.textContent = ammo;
 
     if (ammoFill) {
@@ -1569,9 +1612,21 @@ function updateBouncers() {
     }
 }
 
+/* ---------- RANDOM ARENA EVENTS (VISUAL ONLY) ---------- */
+const baseArenaLighting={hemisphere:hemisphereLight.intensity,main:mainLight.intensity,back:backLight.intensity,cyan:materials.cyan.emissiveIntensity,blue:materials.blue.emissiveIntensity,exposure:renderer.toneMappingExposure,background:scene.background.clone(),fog:scene.fog.color.clone(),backColor:backLight.color.clone()};
+let arenaEventTimer=13,arenaEventDuration=0,activeArenaEvent=null;
+function restoreArenaLighting(){hemisphereLight.intensity=baseArenaLighting.hemisphere;mainLight.intensity=baseArenaLighting.main;backLight.intensity=baseArenaLighting.back;materials.cyan.emissiveIntensity=baseArenaLighting.cyan;materials.blue.emissiveIntensity=baseArenaLighting.blue;renderer.toneMappingExposure=baseArenaLighting.exposure;scene.background.copy(baseArenaLighting.background);scene.fog.color.copy(baseArenaLighting.fog);backLight.color.copy(baseArenaLighting.backColor);arenaAccentLights.forEach(l=>{l.intensity=2.2;});activeArenaEvent=null;arenaEventDuration=0;if(eventBanner)eventBanner.classList.remove("show");}
+function startArenaEvent(){const list=["NEON SURGE","BLACKOUT","BLUE SHIFT","PULSE WAVE"];activeArenaEvent=list[Math.floor(Math.random()*list.length)];arenaEventDuration=7.5;if(eventBanner){eventBanner.textContent="// "+activeArenaEvent+" — ARENA LIGHTING SHIFT";eventBanner.classList.add("show");}
+if(activeArenaEvent==="NEON SURGE"){hemisphereLight.intensity=.42;mainLight.intensity=.38;backLight.intensity=19;materials.cyan.emissiveIntensity=3;materials.blue.emissiveIntensity=2.1;arenaAccentLights.forEach(l=>{l.intensity=4.2;});}
+else if(activeArenaEvent==="BLACKOUT"){hemisphereLight.intensity=.22;mainLight.intensity=.16;backLight.intensity=10;materials.cyan.emissiveIntensity=3.1;materials.blue.emissiveIntensity=2.3;renderer.toneMappingExposure=.9;arenaAccentLights.forEach(l=>{l.intensity=3.4;});}
+else if(activeArenaEvent==="BLUE SHIFT"){scene.background.setHex(0x06142a);scene.fog.color.setHex(0x06142a);backLight.color.setHex(0x246fff);backLight.intensity=17;materials.cyan.emissiveIntensity=2.4;materials.blue.emissiveIntensity=2.8;arenaAccentLights.forEach(l=>{l.intensity=3.3;});}
+else{materials.cyan.emissiveIntensity=3.2;materials.blue.emissiveIntensity=2.5;arenaAccentLights.forEach((l,i)=>{l.intensity=i%2===0?4.4:1.1;});}}
+function updateArenaEvents(delta){if(arenaEventDuration>0){arenaEventDuration-=delta;if(arenaEventDuration<=0){restoreArenaLighting();arenaEventTimer=THREE.MathUtils.randFloat(15,23);}return;}arenaEventTimer-=delta;if(arenaEventTimer<=0)startArenaEvent();}
+
 /* ---------- POINTER LOCK ---------- */
 
 function requestGamePointerLock() {
+    if (isTouchDevice) return;
     if (!shell || !shell.requestPointerLock) {
         showToast("MOUSE LOOK UNAVAILABLE");
         return;
@@ -1600,6 +1655,9 @@ function startGame() {
     clearTimeout(reloadTimer);
 
     score = 0;
+    resetMobileJoystick();
+    arenaEventTimer = 13;
+    restoreArenaLighting();
     ammo = CONFIG.weapon.maxAmmo;
     isReloading = false;
     gameOver = false;
@@ -1640,12 +1698,13 @@ function startGame() {
     updateHUD();
 
     shell.classList.remove("ss-paused");
+    shell.classList.toggle("ss-mobile-playing", isTouchDevice);
     startScreen.classList.add("hidden");
     pauseScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
 
     playBackgroundMusic();
-    requestGamePointerLock();
+    if (!isTouchDevice) requestGamePointerLock();
 }
 
 function pauseGame() {
@@ -1656,7 +1715,8 @@ function pauseGame() {
     shell.classList.add("ss-paused");
     pauseScreen.classList.remove("hidden");
 
-    if (document.pointerLockElement) {
+    resetMobileJoystick();
+    if (!isTouchDevice && document.pointerLockElement) {
         document.exitPointerLock();
     }
 }
@@ -1669,7 +1729,7 @@ function resumeGame() {
     pauseScreen.classList.add("hidden");
 
     playBackgroundMusic();
-    requestGamePointerLock();
+    if (!isTouchDevice) requestGamePointerLock();
 }
 
 function endGame() {
@@ -1678,6 +1738,10 @@ function endGame() {
     gameOver = true;
     gameStarted = false;
     gamePaused = false;
+    saveScoreRecord(score);
+    resetMobileJoystick();
+    shell.classList.remove("ss-mobile-playing");
+    restoreArenaLighting();
 
     pauseBackgroundMusic();
     shell.classList.remove("ss-paused");
@@ -1741,6 +1805,7 @@ document.addEventListener("mousemove", event => {
 });
 
 document.addEventListener("mousedown", event => {
+    if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) return;
     if (event.button === 0) shoot();
 });
 
@@ -1776,7 +1841,7 @@ document.addEventListener("pointerlockchange", () => {
 });
 
 shell.addEventListener("click", event => {
-    if (event.target.closest("button")) return;
+    if (event.target.closest("button") || isTouchDevice) return;
 
     if (
         gameStarted &&
@@ -1798,10 +1863,12 @@ resumeButton.addEventListener("click", resumeGame);
 /* ---------- RESIZE ---------- */
 
 window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const renderWidth = shell.clientWidth || window.innerWidth;
+    const renderHeight = shell.clientHeight || window.innerHeight;
+    camera.aspect = renderWidth / renderHeight;
     camera.updateProjectionMatrix();
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(renderWidth, renderHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
 });
 
@@ -1816,6 +1883,7 @@ function animate() {
         updatePlayer(delta);
         updateBall(delta);
         updateViewModel(delta);
+        updateArenaEvents(delta);
     }
 
     wallCore.rotation.z += delta * 0.18;
@@ -1832,6 +1900,7 @@ function animate() {
 /* ---------- INITIALIZATION ---------- */
 
 updateHUD();
+if (bestScoreValue) bestScoreValue.textContent = String(bestScore).padStart(4, "0");
 updatePlayerHitbox();
 animate();
 

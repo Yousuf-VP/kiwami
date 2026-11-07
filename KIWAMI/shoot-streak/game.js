@@ -49,6 +49,8 @@ const mobileJoystick = document.getElementById("mobile-joystick");
 const mobileJoystickThumb = document.getElementById("mobile-joystick-thumb");
 const mobileLookZone = document.getElementById("mobile-look-zone");
 const mobileJumpButton = document.getElementById("mobile-jump");
+const mobilePauseButton = document.getElementById("mobile-pause");
+const cyberMapPlayer = document.getElementById("cyber-map-player");
 
 if (
     !shell || !startScreen || !pauseScreen || !gameOverScreen ||
@@ -1927,6 +1929,7 @@ shell.addEventListener("click", event => {
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
 pauseButton.addEventListener("click", pauseGame);
+if (mobilePauseButton) mobilePauseButton.addEventListener("click", pauseGame);
 resumeButton.addEventListener("click", resumeGame);
 
 /* ---------- RESIZE ---------- */
@@ -1950,6 +1953,12 @@ function animate() {
 
     if (gameStarted && !gamePaused && !gameOver) {
         updatePlayer(delta);
+        if (cyberMapPlayer) {
+            const mapX = THREE.MathUtils.clamp((playerX + 5.1) / 10.2, 0, 1);
+            const mapZ = THREE.MathUtils.clamp((playerZ + 9.5) / 18.5, 0, 1);
+            cyberMapPlayer.setAttribute("cx", String(24 + mapX * 132));
+            cyberMapPlayer.setAttribute("cy", String(16 + mapZ * 80));
+        }
         updateBall(delta);
         updateViewModel(delta);
         updateArenaEvents(delta);

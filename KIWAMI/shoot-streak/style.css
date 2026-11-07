@@ -1010,7 +1010,7 @@ button {
 .cyber-map-heading b{color:#55ffd0;font-size:6px;}
 #cyber-map svg{display:block;width:100%;height:auto;margin:5px 0 3px;filter:drop-shadow(0 0 5px rgba(0,234,255,.18));}
 .cyber-map-footer{font-size:6px;color:#6f9cb7;}
-.cyber-map-footer i{position:absolute;left:calc(10px + var(--map-x, 50%));top:calc(30px + var(--map-y, 50%));display:block;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 8px #00eaff;transform:translate(-50%,-50%);}
+.cyber-map-footer b{color:#55ffd0;font-size:6px;}
 .mobile-pause-button{position:absolute;top:74px;right:14px;z-index:8;width:38px;height:38px;border:1px solid rgba(0,234,255,.65);border-radius:11px;background:rgba(4,14,29,.92);color:#bdfaff;font:800 16px var(--font-display);box-shadow:0 0 16px rgba(0,234,255,.2);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 #cyber-map{top:122px;}
 #mobile-pause:active{transform:scale(.94);background:rgba(0,190,230,.3);}

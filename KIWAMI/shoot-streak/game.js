@@ -608,7 +608,7 @@ let recoil = 0;
 let weaponBob = 0;
 
 const keys = {};
-const isTouchDevice = window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : ("ontouchstart" in window);
+const isTouchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 if (isTouchDevice) shell.classList.add("ss-touch-device");
 let joystickPointerId=null, joystickCenter=null, lookPointerId=null, lastLookPoint=null;
 function setJoystickFromPoint(x,y){if(!mobileJoystickThumb||!joystickCenter)return;const max=34,dx=x-joystickCenter.x,dy=y-joystickCenter.y,dist=Math.hypot(dx,dy),scale=dist>max?max/dist:1,lx=dx*scale,ly=dy*scale;mobileJoystickThumb.style.transform="translate("+lx+"px,"+ly+"px)";const t=.22;keys.KeyW=ly/max< -t;keys.KeyS=ly/max>t;keys.KeyA=lx/max< -t;keys.KeyD=lx/max>t;}

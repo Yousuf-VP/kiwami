@@ -1956,8 +1956,8 @@ function animate() {
         if (cyberMapPlayer) {
             const mapX = THREE.MathUtils.clamp((playerX + 5.1) / 10.2, 0, 1);
             const mapZ = THREE.MathUtils.clamp((playerZ + 9.5) / 18.5, 0, 1);
-            cyberMapPlayer.style.setProperty("--map-x", `${mapX * 100}%`);
-            cyberMapPlayer.style.setProperty("--map-y", `${mapZ * 100}%`);
+            cyberMapPlayer.setAttribute("cx", String(24 + mapX * 132));
+            cyberMapPlayer.setAttribute("cy", String(16 + mapZ * 80));
         }
         updateBall(delta);
         updateViewModel(delta);

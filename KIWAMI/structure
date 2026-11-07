@@ -1,0 +1,28 @@
+KIWAMI/
+│
+├── index.html
+├── css/
+│   ├── style.css
+│   ├── animations.css
+│   └── responsive.css
+│
+├── js/
+│   ├── app.js
+│   ├── navigation.js
+│   ├── games.js
+│   └── effects.js
+│
+├── games/
+│   └── cookie-emperor/
+│       ├── index.html
+│       ├── cookie-emperor.css
+│       ├── cookie-emperor.js
+│       ├── economy.js
+│       ├── buildings.js
+│       ├── recipes.js
+│       └── assets/
+│
+└── backend/
+    └── supabase/
+        ├── schema.sql
+        └── functions/

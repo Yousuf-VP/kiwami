@@ -117,12 +117,12 @@ scene.add(redAmbient);
 
 const materials = {
     floor: new THREE.MeshPhysicalMaterial({
-        color: 0x101b2b,
-        metalness: 0.76,
-        roughness: 0.31,
-        clearcoat: 1,
-        clearcoatRoughness: 0.12,
-        envMapIntensity: 1.15
+        color: 0x05080f,
+        metalness: 0.58,
+        roughness: 0.38,
+        clearcoat: 0.82,
+        clearcoatRoughness: 0.2,
+        envMapIntensity: 0.9
     }),
     wall: new THREE.MeshStandardMaterial({
         color: 0x0d1727, roughness: 0.58, metalness: 0.42
@@ -608,7 +608,7 @@ let recoil = 0;
 let weaponBob = 0;
 
 const keys = {};
-const isTouchDevice = window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : ("ontouchstart" in window);
+const isTouchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 if (isTouchDevice) shell.classList.add("ss-touch-device");
 let joystickPointerId=null, joystickCenter=null, lookPointerId=null, lastLookPoint=null;
 function setJoystickFromPoint(x,y){if(!mobileJoystickThumb||!joystickCenter)return;const max=34,dx=x-joystickCenter.x,dy=y-joystickCenter.y,dist=Math.hypot(dx,dy),scale=dist>max?max/dist:1,lx=dx*scale,ly=dy*scale;mobileJoystickThumb.style.transform="translate("+lx+"px,"+ly+"px)";const t=.22;keys.KeyW=ly/max< -t;keys.KeyS=ly/max>t;keys.KeyA=lx/max< -t;keys.KeyD=lx/max>t;}

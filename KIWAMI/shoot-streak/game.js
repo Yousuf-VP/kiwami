@@ -136,7 +136,7 @@ const backLight = new THREE.PointLight(0x087dff, 12, 18);
 backLight.position.set(0, 3, -8);
 scene.add(backLight);
 
-const redAmbient = new THREE.PointLight(0xff123d, 4, 8);
+const redAmbient = new THREE.PointLight(0x075bff, 2.2, 10);
 scene.add(redAmbient);
 
 /* ---------- MATERIALS ---------- */
@@ -222,6 +222,41 @@ addBox(arena, CONFIG.arena.width, CONFIG.arena.height, 0.5,
 const frontReboundWallZ = 9.5;
 addBox(arena, CONFIG.arena.width, CONFIG.arena.height, 0.5,
     materials.wall, 0, 2.15, frontReboundWallZ);
+
+// Lightweight full-arena blue grid: one shared texture across six surfaces.
+const gridCanvas = document.createElement("canvas");
+gridCanvas.width = 512; gridCanvas.height = 512;
+const gridContext = gridCanvas.getContext("2d");
+gridContext.clearRect(0, 0, 512, 512);
+gridContext.strokeStyle = "rgba(35, 145, 255, 0.48)";
+gridContext.lineWidth = 1.35;
+for (let p = 0; p <= 512; p += 32) {
+    gridContext.beginPath(); gridContext.moveTo(p, 0); gridContext.lineTo(p, 512); gridContext.stroke();
+    gridContext.beginPath(); gridContext.moveTo(0, p); gridContext.lineTo(512, p); gridContext.stroke();
+}
+gridContext.strokeStyle = "rgba(0, 220, 255, 0.58)";
+gridContext.lineWidth = 2; gridContext.strokeRect(1, 1, 510, 510);
+const gridTexture = new THREE.CanvasTexture(gridCanvas);
+gridTexture.colorSpace = THREE.SRGBColorSpace;
+gridTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
+const gridOverlayMaterial = new THREE.MeshBasicMaterial({
+    map: gridTexture, transparent: true, opacity: 0.5,
+    depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+});
+function addGridSurface(width, height, x, y, z, rotationX = 0, rotationY = 0) {
+    const surface = new THREE.Mesh(new THREE.PlaneGeometry(width, height), gridOverlayMaterial);
+    surface.position.set(x, y, z);
+    surface.rotation.set(rotationX, rotationY, 0);
+    surface.renderOrder = 2;
+    arena.add(surface);
+}
+addGridSurface(11, 19, 0, -0.043, -0.5, -Math.PI / 2);
+addGridSurface(19, 5, -5.405, 2.15, -0.5, 0, Math.PI / 2);
+addGridSurface(19, 5, 5.405, 2.15, -0.5, 0, -Math.PI / 2);
+addGridSurface(11, 5, 0, 2.15, -9.735);
+addGridSurface(11, 5, 0, 2.15, 9.235);
+addGridSurface(11, 19, 0, 4.68, -0.5, Math.PI / 2);
+
 
 addBox(arena, 10.35, 3.9, 0.12, materials.dark, 0, 2.15, 9.20);
 addBox(arena, 10.45, 0.10, 0.10, materials.cyan, 0, 4.12, 9.10);
@@ -1131,6 +1166,7 @@ function closeSettings() {
         gamePaused = true;
         pauseBackgroundMusic();
         shell.classList.add("ss-paused");
+        shell.classList.remove("ss-playing");
         pauseScreen.classList.remove("hidden");
     }
 }
@@ -1834,6 +1870,7 @@ function startGame() {
     updateHUD();
 
     shell.classList.remove("ss-paused");
+    shell.classList.add("ss-playing");
     shell.classList.toggle("ss-mobile-playing", isTouchDevice && mobileControlsEnabled);
     startScreen.classList.add("hidden");
     pauseScreen.classList.add("hidden");
@@ -1849,6 +1886,7 @@ function pauseGame() {
     gamePaused = true;
     pauseBackgroundMusic();
     shell.classList.add("ss-paused");
+    shell.classList.remove("ss-playing");
     pauseScreen.classList.remove("hidden");
 
     resetMobileJoystick();
@@ -1862,6 +1900,7 @@ function resumeGame() {
 
     gamePaused = false;
     shell.classList.remove("ss-paused");
+    shell.classList.add("ss-playing");
     pauseScreen.classList.add("hidden");
 
     playBackgroundMusic();
@@ -1877,6 +1916,7 @@ function endGame() {
     saveScoreRecord(score);
     resetMobileJoystick();
     shell.classList.remove("ss-mobile-playing");
+    shell.classList.remove("ss-playing");
     restoreArenaLighting();
 
     pauseBackgroundMusic();
@@ -1961,6 +2001,7 @@ document.addEventListener("pointerlockchange", () => {
         if (gameStarted && !gameOver) {
             gamePaused = false;
             shell.classList.remove("ss-paused");
+            shell.classList.add("ss-playing");
             pauseScreen.classList.add("hidden");
             playBackgroundMusic();
         }

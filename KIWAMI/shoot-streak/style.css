@@ -1110,3 +1110,28 @@ button {
 #game-shell.ss-playing, #game-shell.ss-playing #game-canvas { cursor: none !important; }
 #game-shell.ss-paused, #game-shell.ss-paused #game-canvas { cursor: default !important; }
 #game-shell.ss-playing #game-canvas { touch-action: none; }
+
+
+/* OBSIDIAN REACTOR — map identity and responsive polish */
+:root {
+  --bg: #020713;
+  --panel: rgba(4, 13, 29, .82);
+  --cyan: #00dfff;
+  --blue: #168cff;
+  --white: #eaf7ff;
+  --muted: #88a9c8;
+}
+#game-shell {
+  background: radial-gradient(ellipse at 50% 44%, #0a2340 0%, #040d1c 52%, #01040b 100%);
+}
+#cyber-map {
+  background: linear-gradient(145deg, rgba(3,12,28,.98), rgba(2,7,18,.98)) !important;
+  border: 1px solid rgba(31,139,220,.52) !important;
+  box-shadow: 0 0 22px rgba(0,104,255,.14), inset 0 0 20px rgba(0,190,255,.05) !important;
+}
+.cyber-map-heading, .cyber-map-footer { color: #91c7e9 !important; }
+.cyber-map-heading b, .cyber-map-footer b { color: #40e5ff !important; }
+#cyber-map svg { filter: drop-shadow(0 0 6px rgba(0,145,255,.22)); }
+#game-shell.ss-playing, #game-shell.ss-playing #game-canvas { cursor: none !important; }
+#game-shell.ss-paused, #game-shell.ss-paused #game-canvas { cursor: default !important; }
+#game-shell.ss-playing #game-canvas { touch-action: none; }

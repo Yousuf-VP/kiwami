@@ -1091,3 +1091,22 @@ button {
     transform-origin: top right;
   }
 }
+
+
+/* REALISTIC BLACK / ELECTRIC-BLUE GRID PASS */
+#game-shell { background: #020713; }
+#cyber-map {
+  background: linear-gradient(145deg, rgba(3,12,28,.97), rgba(2,7,18,.97)) !important;
+  border-color: rgba(35,145,255,.48) !important;
+  box-shadow: 0 0 20px rgba(0,104,255,.13), inset 0 0 18px rgba(0,190,255,.045) !important;
+}
+.cyber-map-heading, .cyber-map-footer { color: #8fc9ed !important; }
+.cyber-map-heading b, .cyber-map-footer b { color: #42dfff !important; }
+#cyber-map svg { filter: drop-shadow(0 0 5px rgba(0,145,255,.2)); }
+#cyber-map svg rect:first-child { fill: #030a18; stroke: #2375b8; }
+#cyber-map svg rect:nth-child(2) { fill: #06152b; stroke: #164d83; }
+#cyber-map svg path { stroke: #1765a7; }
+#cyber-map svg circle { stroke: #38cfff; }
+#game-shell.ss-playing, #game-shell.ss-playing #game-canvas { cursor: none !important; }
+#game-shell.ss-paused, #game-shell.ss-paused #game-canvas { cursor: default !important; }
+#game-shell.ss-playing #game-canvas { touch-action: none; }

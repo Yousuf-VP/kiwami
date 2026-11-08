@@ -61,17 +61,22 @@
       <div id="mobile-look-zone" aria-label="Drag to look around"></div>
       <section id="cyber-map" class="glass-panel" aria-label="Arena minimap">
         <div class="cyber-map-heading"><span>ARENA GRID</span><b>LIVE</b></div>
-        <svg viewBox="0 0 180 112" role="img" aria-label="Top-down arena layout">
-          <defs><pattern id="map-grid" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#1b7894" stroke-width=".55" opacity=".55"/></pattern></defs>
-          <rect x="5" y="5" width="170" height="102" rx="5" fill="#061321" stroke="#00dfff" stroke-width="1.2"/>
-          <rect x="10" y="10" width="160" height="92" fill="url(#map-grid)"/>
-          <path d="M24 16H156V96H24Z" fill="none" stroke="#9b5cff" stroke-width="1.2" stroke-dasharray="4 3"/>
-          <path d="M90 17V95M25 56H155" stroke="#00dfff" stroke-width=".8" opacity=".55"/>
-          <circle cx="90" cy="55" r="10" fill="#ff2d73" opacity=".16" stroke="#ff4b92"/>
-          <circle cx="90" cy="55" r="3" fill="#ff4b92"/>
-          <circle cx="31" cy="88" r="3" fill="#9b5cff"/><circle cx="149" cy="88" r="3" fill="#9b5cff"/>
-          <path d="M31 88L90 55L149 88" fill="none" stroke="#00eaff" stroke-width="1" stroke-dasharray="3 4" opacity=".65"/>
-          <circle id="cyber-map-player" cx="90" cy="88" r="3.4" fill="#ffffff" stroke="#00eaff" stroke-width="1.5"/>
+        <svg viewBox="0 0 180 112" role="img" aria-label="Abstract dark arena map">
+          <defs>
+            <pattern id="map-matrix" width="18" height="18" patternUnits="userSpaceOnUse">
+              <path d="M3 2v5m4-3v8m5-9v4m3 3v5M1 14h4m7-2h5" fill="none" stroke="#245b59" stroke-width="1" opacity=".55"/>
+              <rect x="10" y="2" width="2" height="2" fill="#3b8c82" opacity=".35"/>
+            </pattern>
+          </defs>
+          <rect x="5" y="5" width="170" height="102" rx="4" fill="#03090d" stroke="#315b59" stroke-width="1"/>
+          <rect x="10" y="10" width="160" height="92" fill="url(#map-matrix)"/>
+          <path d="M24 16H156V96H24Z" fill="none" stroke="#426c66" stroke-width=".9" stroke-dasharray="2 5" opacity=".8"/>
+          <path d="M90 17V95M25 56H155" stroke="#426c66" stroke-width=".65" opacity=".38"/>
+          <circle cx="90" cy="55" r="8" fill="#142b28" stroke="#5d8b7f" stroke-width=".8" opacity=".85"/>
+          <circle cx="90" cy="55" r="2" fill="#82b5a4"/>
+          <circle cx="31" cy="88" r="2.4" fill="#668d80"/><circle cx="149" cy="88" r="2.4" fill="#668d80"/>
+          <path d="M31 88L90 55L149 88" fill="none" stroke="#507e75" stroke-width=".8" stroke-dasharray="2 5" opacity=".55"/>
+          <circle id="cyber-map-player" cx="90" cy="88" r="3" fill="#d7eee4" stroke="#6d9f91" stroke-width="1"/>
         </svg>
         <span class="cyber-map-footer">PLAYER POSITION <b>● LIVE</b></span>
       </section>

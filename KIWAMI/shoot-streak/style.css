@@ -1037,3 +1037,5 @@ button {
 @media (pointer:coarse){#hud .best-score-card,#hud .hud-card:nth-child(3){display:none!important;}#bottom-hint{display:none!important;}#topbar .live-indicator{display:none!important;}#cyber-map{opacity:.94;}}
 #game-shell.ss-low-effects #event-banner{display:none!important;}
 #game-shell.ss-low-effects .toast{transition:none!important;}
+
+#game-shell.ss-mobile-controls-disabled #mobile-controls{display:none!important;}

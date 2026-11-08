@@ -72,13 +72,13 @@ camera.rotation.order = "YXZ";
 camera.position.set(CONFIG.player.startX, CONFIG.player.eyeHeight, CONFIG.player.startZ);
 
 const renderer = new THREE.WebGLRenderer({
-    antialias: true,
+    antialias: !isTouchDevice,
     powerPreference: "high-performance"
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouchDevice ? 1.15 : 1.5));
 renderer.setSize(shell.clientWidth || window.innerWidth, shell.clientHeight || window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = !isTouchDevice;
+renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.96;
@@ -1000,6 +1000,9 @@ settingsPanel.innerHTML = `
     <p class="ss-settings-subtitle">Tune your controls and visibility.</p></div>
     <button id="settings-close-button" type="button" aria-label="Close settings">×</button>
   </div>
+  <label class="ss-setting-toggle" for="ss-mobile-controls"><span>Show mobile controls</span><input id="ss-mobile-controls" type="checkbox"></label>
+  <label class="ss-setting-toggle" for="ss-low-effects"><span>Low effects mode</span><input id="ss-low-effects" type="checkbox"></label>
+  <p class="ss-performance-note">Low effects reduces decorative lighting updates and rendering cost.</p>
   <div class="ss-setting-row">
     <label class="ss-setting-label" for="ss-sensitivity"><span>Mouse sensitivity</span><output class="ss-setting-value" id="ss-sensitivity-value">1.00×</output></label>
     <input class="ss-setting-range" id="ss-sensitivity" type="range" min="0.0005" max="0.025" step="0.0001">
@@ -1031,6 +1034,28 @@ const fovValue = settingsPanel.querySelector("#ss-fov-value");
 const crosshairValue = settingsPanel.querySelector("#ss-crosshair-value");
 const settingsCloseButton = settingsPanel.querySelector("#settings-close-button");
 const settingsResetButton = settingsPanel.querySelector("#settings-reset-button");
+const mobileControlsToggle = settingsPanel.querySelector("#ss-mobile-controls");
+const lowEffectsToggle = settingsPanel.querySelector("#ss-low-effects");
+let mobileControlsEnabled = localStorage.getItem("ssMobileControls") !== "false";
+let lowEffectsEnabled = localStorage.getItem("ssLowEffects") === "true";
+function applyExtraSettings(){
+  mobileControlsToggle.checked=mobileControlsEnabled;
+  lowEffectsToggle.checked=lowEffectsEnabled;
+  shell.classList.toggle("ss-low-effects",lowEffectsEnabled);
+  shell.classList.toggle("ss-mobile-controls-disabled",!mobileControlsEnabled);
+}
+mobileControlsToggle.addEventListener("change",()=>{
+  mobileControlsEnabled=mobileControlsToggle.checked;
+  localStorage.setItem("ssMobileControls",String(mobileControlsEnabled));
+  applyExtraSettings();
+});
+lowEffectsToggle.addEventListener("change",()=>{
+  lowEffectsEnabled=lowEffectsToggle.checked;
+  localStorage.setItem("ssLowEffects",String(lowEffectsEnabled));
+  applyExtraSettings();
+});
+applyExtraSettings();
+
 
 function savePlayerSettings() {
     try {
@@ -1769,7 +1794,7 @@ function startGame() {
     updateHUD();
 
     shell.classList.remove("ss-paused");
-    shell.classList.toggle("ss-mobile-playing", isTouchDevice);
+    shell.classList.toggle("ss-mobile-playing", isTouchDevice && mobileControlsEnabled);
     startScreen.classList.add("hidden");
     pauseScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
@@ -1941,7 +1966,7 @@ window.addEventListener("resize", () => {
     camera.updateProjectionMatrix();
 
     renderer.setSize(renderWidth, renderHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouchDevice ? 1.15 : 1.5));
 });
 
 /* ---------- MAIN LOOP ---------- */
@@ -1964,24 +1989,24 @@ function animate() {
         updateArenaEvents(delta);
     }
 
-    wallCore.rotation.z += delta * 0.18;
-    wallOuterRing.rotation.z =
-        Math.sin(performance.now() * 0.0007) * 0.08;
-    wallInnerRing.rotation.z -= delta * 0.28;
-
-    updateBouncers();
+    if (!lowEffectsEnabled) {
+      wallCore.rotation.z += delta * 0.18;
+      wallOuterRing.rotation.z = Math.sin(performance.now() * 0.0007) * 0.08;
+      wallInnerRing.rotation.z -= delta * 0.28;
+      updateBouncers();
+    }
 
     // Slow, restrained neon breathing keeps the room alive without distracting play.
-    const cinemaPulse = 0.82 + Math.sin(performance.now() * 0.00072) * 0.18;
-    casinoCeilingLights.forEach((light, index) => {
-        light.intensity = (index % 2 === 0 ? 4.8 : 4.2) * cinemaPulse;
-    });
-    casinoMagenta.emissiveIntensity = 1.75 + cinemaPulse * 0.42;
-    casinoViolet.emissiveIntensity = 1.55 + (1 - cinemaPulse) * 0.5;
+    if (!lowEffectsEnabled) {
+      const cinemaPulse = 0.82 + Math.sin(performance.now() * 0.00072) * 0.18;
+      casinoCeilingLights.forEach((light, index) => { light.intensity = (index % 2 === 0 ? 2.4 : 2.1) * cinemaPulse; });
+      casinoMagenta.emissiveIntensity = 0.7 + cinemaPulse * 0.16;
+      casinoViolet.emissiveIntensity = 0.65 + (1 - cinemaPulse) * 0.18;
+    }
 
     updateEffects(delta);
 
-    renderer.render(scene, camera);
+    if (!document.hidden) renderer.render(scene, camera);
 }
 
 /* ---------- INITIALIZATION ---------- */

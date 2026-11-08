@@ -1017,3 +1017,25 @@ button {
 @media (pointer:coarse){#cyber-map{top:62px;right:10px;width:146px;}#mobile-pause{top:216px;right:14px;width:40px;height:40px;}}
 @media (pointer:coarse) and (max-height:420px){#cyber-map{top:58px;right:10px;width:128px;}#mobile-pause{top:193px;right:12px;width:36px;height:36px;}}
 @media (pointer:fine){#cyber-map,#mobile-pause{display:none!important;}}
+
+/* HACKER BASEMENT: DARK, MATTE, LOW-CLUTTER */
+#cyber-map{background:#05090e!important;border:1px solid #183344!important;box-shadow:0 5px 14px rgba(0,0,0,.42)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+#cyber-map svg{filter:none!important;}
+.cyber-map-heading,.cyber-map-footer{color:#7895a8!important;}
+.cyber-map-heading b,.cyber-map-footer b{color:#6f9fb8!important;}
+#cyber-map rect:first-of-type{fill:#050b11!important;stroke:#24475a!important;}
+#cyber-map path{stroke:#31566b!important;}
+#cyber-map circle{filter:none!important;}
+#topbar,.hud-card,.glass-panel{backdrop-filter:none;-webkit-backdrop-filter:none;}
+#topbar{background:rgba(5,10,17,.94)!important;border-color:rgba(91,132,157,.18)!important;box-shadow:0 5px 18px rgba(0,0,0,.35)!important;}
+.hud-card{background:rgba(5,10,17,.86)!important;border-color:rgba(91,132,157,.16)!important;box-shadow:0 4px 12px rgba(0,0,0,.25)!important;}
+#settings-panel{position:absolute;inset:0;z-index:20;display:grid;place-items:center;padding:18px;background:rgba(1,5,10,.88);}
+#settings-panel[hidden]{display:none!important;}
+.ss-setting-toggle{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-top:1px solid rgba(110,150,170,.16);color:#c4d5df;font:600 12px var(--font-body);}
+.ss-setting-toggle input{width:20px;height:20px;accent-color:#4d9abb;}
+.ss-performance-note{color:#72899a;font:11px/1.5 var(--font-body);margin-top:6px;}
+@media (pointer:coarse){#hud .best-score-card,#hud .hud-card:nth-child(3){display:none!important;}#bottom-hint{display:none!important;}#topbar .live-indicator{display:none!important;}#cyber-map{opacity:.94;}}
+#game-shell.ss-low-effects #event-banner{display:none!important;}
+#game-shell.ss-low-effects .toast{transition:none!important;}
+
+#game-shell.ss-mobile-controls-disabled #mobile-controls{display:none!important;}

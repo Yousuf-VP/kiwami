@@ -997,11 +997,19 @@ if (!pauseSettingsButton) {
     pauseScreen.appendChild(pauseSettingsButton);
 }
 
+const topbar = document.getElementById("topbar") || shell;
+const mouseLockButton = document.createElement("button");
+mouseLockButton.id = "mouse-lock-button";
+mouseLockButton.type = "button";
+mouseLockButton.textContent = "⌖ LOCK MOUSE";
+mouseLockButton.setAttribute("aria-label", "Lock mouse for desktop look controls");
+topbar.appendChild(mouseLockButton);
+
 const settingsButton = document.createElement("button");
 settingsButton.id = "settings-open-button";
 settingsButton.type = "button";
 settingsButton.textContent = "⚙ SETTINGS";
-(document.getElementById("topbar") || shell).appendChild(settingsButton);
+topbar.appendChild(settingsButton);
 
 const settingsPanel = document.createElement("div");
 settingsPanel.id = "settings-panel";
@@ -1974,6 +1982,7 @@ shell.addEventListener("click", event => {
 
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
+mouseLockButton.addEventListener("click", requestGamePointerLock);
 pauseButton.addEventListener("click", pauseGame);
 if (mobilePauseButton) mobilePauseButton.addEventListener("click", pauseGame);
 resumeButton.addEventListener("click", resumeGame);

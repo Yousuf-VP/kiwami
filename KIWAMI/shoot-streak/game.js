@@ -223,25 +223,38 @@ const frontReboundWallZ = 9.5;
 addBox(arena, CONFIG.arena.width, CONFIG.arena.height, 0.5,
     materials.wall, 0, 2.15, frontReboundWallZ);
 
-// Lightweight full-arena blue grid: one shared texture across six surfaces.
+// OBSIDIAN REACTOR — redesigned arena environment.
+// The original collision walls and arena dimensions remain unchanged.
 const gridCanvas = document.createElement("canvas");
-gridCanvas.width = 512; gridCanvas.height = 512;
+gridCanvas.width = 512;
+gridCanvas.height = 512;
 const gridContext = gridCanvas.getContext("2d");
 gridContext.clearRect(0, 0, 512, 512);
-gridContext.strokeStyle = "rgba(35, 145, 255, 0.48)";
-gridContext.lineWidth = 1.35;
+gridContext.strokeStyle = "rgba(25, 112, 205, 0.42)";
+gridContext.lineWidth = 1.2;
 for (let p = 0; p <= 512; p += 32) {
-    gridContext.beginPath(); gridContext.moveTo(p, 0); gridContext.lineTo(p, 512); gridContext.stroke();
-    gridContext.beginPath(); gridContext.moveTo(0, p); gridContext.lineTo(512, p); gridContext.stroke();
+    gridContext.beginPath();
+    gridContext.moveTo(p, 0);
+    gridContext.lineTo(p, 512);
+    gridContext.stroke();
+    gridContext.beginPath();
+    gridContext.moveTo(0, p);
+    gridContext.lineTo(512, p);
+    gridContext.stroke();
 }
-gridContext.strokeStyle = "rgba(0, 220, 255, 0.58)";
-gridContext.lineWidth = 2; gridContext.strokeRect(1, 1, 510, 510);
+gridContext.strokeStyle = "rgba(0, 220, 255, 0.7)";
+gridContext.lineWidth = 2;
+gridContext.strokeRect(1, 1, 510, 510);
 const gridTexture = new THREE.CanvasTexture(gridCanvas);
 gridTexture.colorSpace = THREE.SRGBColorSpace;
 gridTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
 const gridOverlayMaterial = new THREE.MeshBasicMaterial({
-    map: gridTexture, transparent: true, opacity: 0.5,
-    depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+    map: gridTexture,
+    transparent: true,
+    opacity: 0.48,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending
 });
 function addGridSurface(width, height, x, y, z, rotationX = 0, rotationY = 0) {
     const surface = new THREE.Mesh(new THREE.PlaneGeometry(width, height), gridOverlayMaterial);
@@ -257,150 +270,112 @@ addGridSurface(11, 5, 0, 2.15, -9.735);
 addGridSurface(11, 5, 0, 2.15, 9.235);
 addGridSurface(11, 19, 0, 4.68, -0.5, Math.PI / 2);
 
+// Shared cool-toned trim materials retained for the existing arena pulse animation.
+const floorInlay = new THREE.MeshStandardMaterial({
+    color: 0x071426, roughness: 0.42, metalness: 0.62
+});
+const casinoGold = new THREE.MeshStandardMaterial({
+    color: 0x174a72, metalness: 0.86, roughness: 0.3,
+    emissive: 0x06203b, emissiveIntensity: 0.42
+});
+const casinoMagenta = new THREE.MeshStandardMaterial({
+    color: 0x087dff, metalness: 0.34, roughness: 0.28,
+    emissive: 0x034cae, emissiveIntensity: 1.65
+});
+const casinoViolet = new THREE.MeshStandardMaterial({
+    color: 0x00d8ef, metalness: 0.3, roughness: 0.3,
+    emissive: 0x006e9b, emissiveIntensity: 1.45
+});
+const casinoWarm = new THREE.MeshStandardMaterial({
+    color: 0x7aa9d8, metalness: 0.72, roughness: 0.3,
+    emissive: 0x12335b, emissiveIntensity: 0.48
+});
+const casinoPulseMaterials = [casinoMagenta, casinoViolet];
 
-addBox(arena, 10.35, 3.9, 0.12, materials.dark, 0, 2.15, 9.20);
-addBox(arena, 10.45, 0.10, 0.10, materials.cyan, 0, 4.12, 9.10);
-addBox(arena, 10.45, 0.10, 0.10, materials.blue, 0, 0.18, 9.10);
-addBox(arena, 0.10, 3.95, 0.10, materials.cyan, -5.12, 2.15, 9.10);
-addBox(arena, 0.10, 3.95, 0.10, materials.cyan, 5.12, 2.15, 9.10);
-
-for (let i = 0; i < 9; i++) {
-    addBox(arena, 0.045, 3.25, 0.07,
-        i % 2 === 0 ? materials.cyan : materials.blue,
-        -4 + i, 2.15, 9.08);
+// Layered reactor floor: dark metal plates, luminous seams and a central runway.
+for (const z of [-8.0, -5.2, -2.4, 0.4, 3.2, 6.0, 8.4]) {
+    addBox(arena, 9.55, 0.025, 1.95, floorInlay, 0, -0.045, z);
+    addBox(arena, 8.9, 0.018, 0.026, casinoMagenta, 0, -0.026, z - 0.96);
+    addBox(arena, 8.9, 0.018, 0.026, casinoViolet, 0, -0.026, z + 0.96);
+}
+addBox(arena, 0.055, 0.018, 16.8, casinoViolet, -4.86, -0.026, -0.5);
+addBox(arena, 0.055, 0.018, 16.8, casinoViolet, 4.86, -0.026, -0.5);
+addBox(arena, 1.9, 0.018, 16.5, floorInlay, 0, -0.027, -0.5);
+for (const x of [-0.72, 0.72]) {
+    addBox(arena, 0.035, 0.02, 16.2, casinoMagenta, x, -0.012, -0.5);
 }
 
+// Modular side-wall buttresses and recessed reactor vents.
+const arenaAccentLights = [];
+for (const side of [-1, 1]) {
+    for (const z of [-7.0, -3.1, 0.8, 4.7, 8.0]) {
+        addBox(arena, 0.14, 3.5, 0.42, materials.dark, side * 5.34, 2.0, z);
+        addBox(arena, 0.055, 2.65, 0.08, casinoGold, side * 5.245, 2.0, z);
+        addBox(arena, 0.045, 0.055, 2.35, casinoMagenta, side * 5.27, 3.52, z);
+        addBox(arena, 0.045, 0.055, 2.35, casinoViolet, side * 5.27, 0.48, z);
+        for (let fin = -1; fin <= 1; fin++) {
+            addBox(arena, 0.035, 1.7, 0.035, fin === 0 ? casinoViolet : casinoMagenta,
+                side * 5.24, 2.0, z + fin * 0.42);
+        }
+        const ventLight = new THREE.PointLight(side < 0 ? 0x087dff : 0x00c9ef, 1.35, 4.5);
+        ventLight.position.set(side * 4.88, 2.3, z);
+        arena.add(ventLight);
+        arenaAccentLights.push(ventLight);
+    }
+}
+
+// Rear bulkhead: a clean reactor portal with nested cyan rings.
+addBox(arena, 10.35, 3.9, 0.12, materials.dark, 0, 2.15, 9.20);
+addBox(arena, 10.45, 0.09, 0.12, casinoGold, 0, 4.12, 9.10);
+addBox(arena, 10.45, 0.09, 0.12, casinoMagenta, 0, 0.18, 9.10);
+addBox(arena, 0.09, 3.95, 0.12, casinoViolet, -5.12, 2.15, 9.10);
+addBox(arena, 0.09, 3.95, 0.12, casinoViolet, 5.12, 2.15, 9.10);
+for (let i = 0; i < 9; i++) {
+    addBox(arena, 0.035, 3.25, 0.06, i % 2 ? casinoMagenta : casinoViolet,
+        -4 + i, 2.15, 9.08);
+}
 const wallCore = new THREE.Group();
 wallCore.position.set(0, 2.15, 9.02);
 arena.add(wallCore);
-
 const wallRingMaterial = new THREE.MeshStandardMaterial({
-    color: 0x00eaff, emissive: 0x00aaff,
-    emissiveIntensity: 2.8, metalness: 0.45, roughness: 0.25
+    color: 0x00eaff, emissive: 0x00aaff, emissiveIntensity: 2.45,
+    metalness: 0.55, roughness: 0.24
 });
-
 const wallOuterRing = new THREE.Mesh(
     new THREE.TorusGeometry(1.18, 0.055, 10, 64), wallRingMaterial
 );
 wallCore.add(wallOuterRing);
-
 const wallInnerRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.78, 0.035, 8, 48), materials.blue
+    new THREE.TorusGeometry(0.78, 0.035, 8, 48), casinoMagenta
 );
 wallCore.add(wallInnerRing);
-
-const wallCoreLight = new THREE.PointLight(0x00dfff, 18, 8);
+const wallCoreLight = new THREE.PointLight(0x00dfff, 13, 7);
 wallCoreLight.position.set(0, 0, -0.25);
 wallCore.add(wallCoreLight);
-
 for (let i = -2; i <= 2; i++) {
-    addBox(arena, 2.5, 0.035, 0.045,
-        materials.cyan, 0, 2.15 + i * 0.42, 9.00);
+    addBox(arena, 2.5, 0.03, 0.045, casinoViolet, 0, 2.15 + i * 0.42, 9.0);
 }
 
-addBox(arena, 0.055, 0.055, 19, materials.cyan, -5.35, 0.02, -0.5);
-addBox(arena, 0.055, 0.055, 19, materials.cyan, 5.35, 0.02, -0.5);
-addBox(arena, 11, 0.055, 0.055, materials.cyan, 0, 0.02, -9.65);
-
-for (let i = 0; i < 5; i++) {
-    addBox(arena, 0.06, 3.4, 0.06,
-        materials.blue, -4 + i * 2, 2.1, -9.68);
-}
-
-// Architectural floor inlays: broad panels and deliberate LED guides.
-const floorInlay = new THREE.MeshStandardMaterial({ color: 0x081321, roughness: 0.46, metalness: 0.38 });
-for (const z of [-7.2, -2.8, 1.8, 6.2]) {
-    addBox(arena, 8.7, 0.018, 0.035, materials.blue, 0, -0.037, z);
-    addBox(arena, 8.1, 0.012, 1.15, floorInlay, 0, -0.041, z - 0.68);
-}
-addBox(arena, 0.045, 0.014, 14.8, materials.cyan, -4.92, -0.037, -0.5);
-addBox(arena, 0.045, 0.014, 14.8, materials.cyan, 4.92, -0.037, -0.5);
-
-// Recessed wall panels and restrained buttresses.
-for (const side of [-1, 1]) {
-    for (const z of [-6.6, -1.9, 3.1, 7.0]) {
-        addBox(arena, 0.12, 2.65, 1.75, materials.dark, side * 5.36, 2.1, z);
-        addBox(arena, 0.035, 2.1, 0.045, materials.blue, side * 5.285, 2.1, z);
-    }
-}
-
-const arenaAccentLights = [];
-for (const side of [-1, 1]) {
-    for (const z of [-6.8, -1.2, 4.5]) {
-        const accent = new THREE.PointLight(side < 0 ? 0x087dff : 0x00c9e8, 2.2, 7);
-        accent.position.set(side * 4.95, 2.7, z); arena.add(accent); arenaAccentLights.push(accent);
-    }
-}
-
-// Luxury neon-club architecture: layered wall coffers, metallic trim and ceiling light rails.
-const casinoGold = new THREE.MeshStandardMaterial({
-    color: 0x9b6d32, metalness: 0.82, roughness: 0.28,
-    emissive: 0x3a1d08, emissiveIntensity: 0.22
-});
-const casinoMagenta = new THREE.MeshStandardMaterial({
-    color: 0xff3acb, metalness: 0.22, roughness: 0.28,
-    emissive: 0xb00073, emissiveIntensity: 2.1
-});
-const casinoViolet = new THREE.MeshStandardMaterial({
-    color: 0x8b5cff, metalness: 0.24, roughness: 0.3,
-    emissive: 0x4a18b9, emissiveIntensity: 1.9
-});
-const casinoWarm = new THREE.MeshStandardMaterial({
-    color: 0xffd28a, metalness: 0.72, roughness: 0.25,
-    emissive: 0x8a4b12, emissiveIntensity: 0.7
-});
-const casinoPulseMaterials = [casinoMagenta, casinoViolet];
-
-for (const side of [-1, 1]) {
-    for (const z of [-6.7, -1.7, 3.3, 7.6]) {
-        // Dark inset panel with a warm metallic perimeter.
-        addBox(arena, 0.075, 2.75, 2.25, materials.dark, side * 5.34, 2.25, z);
-        addBox(arena, 0.055, 0.055, 2.32, casinoGold, side * 5.275, 3.62, z);
-        addBox(arena, 0.055, 0.055, 2.32, casinoGold, side * 5.275, 0.88, z);
-        addBox(arena, 0.055, 2.72, 0.055, casinoGold, side * 5.275, 2.25, z - 1.13);
-        addBox(arena, 0.055, 2.72, 0.055, casinoGold, side * 5.275, 2.25, z + 1.13);
-
-        // Three luminous fins create depth without cluttering the play space.
-        for (let fin = -1; fin <= 1; fin++) {
-            addBox(arena, 0.045, 1.95, 0.035,
-                fin === 0 ? casinoMagenta : casinoViolet,
-                side * 5.265, 2.25, z + fin * 0.48);
-        }
-
-        const panelLight = new THREE.PointLight(
-            side < 0 ? 0x9b5cff : 0xff39c8, 2.0, 4.8
-        );
-        panelLight.position.set(side * 4.95, 2.7, z);
-        arena.add(panelLight);
-        arenaAccentLights.push(panelLight);
-    }
-}
-
-// Ceiling canopy: parallel light rails and recessed cross-beams.
+// Ceiling trusses and recessed light channels give the arena a new industrial silhouette.
 for (const x of [-4.7, -2.35, 0, 2.35, 4.7]) {
-    addBox(arena, 0.075, 0.06, 18.5, casinoGold, x, 4.18, -0.5);
-    addBox(arena, 0.035, 0.035, 17.8,
-        x % 2 === 0 ? casinoMagenta : casinoViolet,
-        x, 4.13, -0.5);
+    addBox(arena, 0.12, 0.09, 18.5, casinoGold, x, 4.18, -0.5);
+    addBox(arena, 0.045, 0.035, 17.8, x === 0 ? casinoViolet : casinoMagenta,
+        x, 4.12, -0.5);
 }
 for (const z of [-8.8, -4.4, 0, 4.4, 8.6]) {
-    addBox(arena, 10.4, 0.055, 0.08, materials.dark, 0, 4.08, z);
-    addBox(arena, 10.1, 0.025, 0.035, casinoWarm, 0, 4.045, z);
+    addBox(arena, 10.2, 0.06, 0.12, materials.dark, 0, 4.08, z);
+    addBox(arena, 9.8, 0.025, 0.04, casinoWarm, 0, 4.03, z);
 }
-
-// Alternating overhead color pools add a cinematic rhythm to the room.
 const casinoCeilingLights = [];
 for (let i = 0; i < 5; i++) {
-    const light = new THREE.PointLight(
-        i % 2 === 0 ? 0x9b5cff : 0xff39c8, 5.5, 8
-    );
-    light.position.set(i % 2 === 0 ? -2.8 : 2.8, 3.95, -7.2 + i * 3.3);
+    const light = new THREE.PointLight(i % 2 === 0 ? 0x087dff : 0x00c9ef, 2.8, 7.5);
+    light.position.set(i % 2 === 0 ? -2.8 : 2.8, 3.92, -7.2 + i * 3.3);
     arena.add(light);
     casinoCeilingLights.push(light);
 }
+addBox(arena, 0.035, 0.02, 15.5, casinoViolet, 0, -0.022, -0.5);
 
-// A subtle centerline reflection guide anchors the polished black floor.
-addBox(arena, 0.025, 0.012, 15.5, casinoViolet, 0, -0.035, -0.5);
+// Ceiling grid overlay and structural cross-members complete the enclosed reactor chamber.
 /* ---------- CORNER BOUNCERS ---------- */
 
 const bouncers = [];

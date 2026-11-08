@@ -1029,3 +1029,8 @@ button {
 #game-shell.ss-low-effects #cyber-map{box-shadow:none!important}
 #game-shell.ss-low-effects #game-canvas{filter:none!important}
 @media(max-width:650px){#settings-open-button{margin-left:4px;padding:8px 9px;font-size:8px}.ss-settings-card{max-height:84vh}}
+
+#mouse-lock-button{position:relative;z-index:35;flex-shrink:0;margin-left:8px;padding:10px 13px;border:1px solid rgba(105,150,139,.35);border-radius:999px;color:#d8e9e2;background:rgba(5,13,15,.9);font:700 9px var(--font-display);letter-spacing:1px;cursor:pointer}
+#mouse-lock-button:hover{border-color:#80a99a;background:rgba(15,32,29,.96)}
+@media(pointer:coarse){#mouse-lock-button{display:none!important}}
+@media(max-width:650px){#mouse-lock-button{padding:8px 9px;font-size:8px;margin-left:3px}}

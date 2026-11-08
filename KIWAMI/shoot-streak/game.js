@@ -86,9 +86,22 @@ const renderer = new THREE.WebGLRenderer({
     antialias: !isTouchDevice,
     powerPreference: "high-performance"
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouchDevice ? 1.2 : 1.6));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouchDevice ? 1.15 : 1.5));
 renderer.setSize(shell.clientWidth || window.innerWidth, shell.clientHeight || window.innerHeight);
 renderer.shadowMap.enabled = !isTouchDevice && !lowEffectsEnabled;
+renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.domElement.tabIndex = 0;
+renderer.domElement.setAttribute("aria-label", "SHOOT-STREAK game view");
+
+function applyRenderQuality() {
+    const pixelRatioCap = lowEffectsEnabled
+        ? (isTouchDevice ? 0.85 : 1.0)
+        : (isTouchDevice ? 1.15 : 1.5);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
+    renderer.shadowMap.enabled = !isTouchDevice && !lowEffectsEnabled;
+    renderer.shadowMap.needsUpdate = true;
+}
+applyRenderQuality();
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1137,7 +1150,7 @@ lowEffectsInput.addEventListener("change", () => {
   lowEffectsEnabled = lowEffectsInput.checked;
   try { localStorage.setItem("ssLowEffects", String(lowEffectsEnabled)); } catch (error) {}
   shell.classList.toggle("ss-low-effects", lowEffectsEnabled);
-  renderer.shadowMap.enabled = !isTouchDevice && !lowEffectsEnabled;
+  applyRenderQuality();
 });
 
 settingsPanel.addEventListener("click", event => {
@@ -1747,23 +1760,25 @@ function updateArenaEvents(delta){if(arenaEventDuration>0){arenaEventDuration-=d
 
 function requestGamePointerLock() {
     if (isTouchDevice) return;
-    if (!shell || !shell.requestPointerLock) {
+    const target = renderer && renderer.domElement;
+    if (!target || !target.requestPointerLock) {
         showToast("MOUSE LOOK UNAVAILABLE");
         return;
     }
 
     try {
-        shell.focus({ preventScroll: true });
-        const result = shell.requestPointerLock();
-
+        target.focus({ preventScroll: true });
+        // Request pointer lock directly from the user's click gesture.
+        const result = target.requestPointerLock();
         if (result && typeof result.catch === "function") {
-            result.catch(() => {
-                showToast("CLICK THE GAME TO ENABLE MOUSE LOOK");
+            result.catch(error => {
+                console.warn("Pointer lock request was rejected:", error);
+                showToast("CLICK LOCK MOUSE TO ENABLE LOOK");
             });
         }
     } catch (error) {
         console.warn("Pointer lock request failed:", error);
-        showToast("CLICK THE GAME TO ENABLE MOUSE LOOK");
+        showToast("CLICK LOCK MOUSE TO ENABLE LOOK");
     }
 }
 
@@ -1937,7 +1952,7 @@ document.addEventListener("pointerlockerror", () => {
 });
 
 document.addEventListener("pointerlockchange", () => {
-    const currentlyLocked = document.pointerLockElement === shell;
+    const currentlyLocked = document.pointerLockElement === renderer.domElement;
     pointerLocked = currentlyLocked;
 
     if (currentlyLocked) {
@@ -1996,7 +2011,7 @@ window.addEventListener("resize", () => {
     camera.updateProjectionMatrix();
 
     renderer.setSize(renderWidth, renderHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    applyRenderQuality();
 });
 
 /* ---------- MAIN LOOP ---------- */

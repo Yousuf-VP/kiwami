@@ -59,6 +59,17 @@ if (
     throw new Error("SHOOT-STREAK: Required HTML elements are missing. Check index.html IDs.");
 }
 
+/* ---------- DEVICE DETECTION ---------- */
+
+const isTouchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+
+let mobileControlsEnabled = true;
+let lowEffectsEnabled = false;
+try {
+  mobileControlsEnabled = localStorage.getItem("ssMobileControls") !== "false";
+  lowEffectsEnabled = localStorage.getItem("ssLowEffects") === "true";
+} catch (error) { console.warn("SHOOT-STREAK: Settings storage unavailable.", error); }
+
 /* ---------- THREE.JS SETUP ---------- */
 
 const scene = new THREE.Scene();
@@ -72,13 +83,13 @@ camera.rotation.order = "YXZ";
 camera.position.set(CONFIG.player.startX, CONFIG.player.eyeHeight, CONFIG.player.startZ);
 
 const renderer = new THREE.WebGLRenderer({
-    antialias: true,
+    antialias: !isTouchDevice,
     powerPreference: "high-performance"
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouchDevice ? 1.2 : 1.6));
 renderer.setSize(shell.clientWidth || window.innerWidth, shell.clientHeight || window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = !isTouchDevice && !lowEffectsEnabled;
+renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.96;
@@ -679,8 +690,9 @@ let recoil = 0;
 let weaponBob = 0;
 
 const keys = {};
-const isTouchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 if (isTouchDevice) shell.classList.add("ss-touch-device");
+shell.classList.toggle("ss-mobile-controls-disabled", !mobileControlsEnabled);
+shell.classList.toggle("ss-low-effects", lowEffectsEnabled);
 let joystickPointerId=null, joystickCenter=null, lookPointerId=null, lastLookPoint=null;
 function setJoystickFromPoint(x,y){if(!mobileJoystickThumb||!joystickCenter)return;const max=34,dx=x-joystickCenter.x,dy=y-joystickCenter.y,dist=Math.hypot(dx,dy),scale=dist>max?max/dist:1,lx=dx*scale,ly=dy*scale;mobileJoystickThumb.style.transform="translate("+lx+"px,"+ly+"px)";const t=.22;keys.KeyW=ly/max< -t;keys.KeyS=ly/max>t;keys.KeyA=lx/max< -t;keys.KeyD=lx/max>t;}
 function resetMobileJoystick(){joystickPointerId=null;joystickCenter=null;keys.KeyW=keys.KeyA=keys.KeyS=keys.KeyD=false;if(mobileJoystickThumb)mobileJoystickThumb.style.transform="translate(0,0)";}
@@ -931,6 +943,7 @@ settingsStyle.textContent = `
 .ss-crosshair-preview.dot:after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:#00eaff;left:7.5px;top:7.5px}
 .ss-crosshair-preview.circle{border:2px solid #00eaff;border-radius:50%}
 .ss-crosshair-preview.off:after{content:'×';position:absolute;inset:-2px 0 0;text-align:center;color:#00eaff;font-size:20px}
+.ss-toggle-row .ss-setting-label{margin:0}.ss-toggle-row input{width:20px;height:20px;accent-color:#54d8d0;cursor:pointer}
 #settings-reset-button{margin-top:18px;width:100%;padding:12px;border:1px solid rgba(0,234,255,.28);border-radius:12px;color:#dffaff;background:rgba(0,234,255,.08);cursor:pointer;font:700 10px 'Orbitron',sans-serif;letter-spacing:1px}
 #crosshair[data-crosshair="off"]{display:none!important}
 #crosshair[data-crosshair="dot"]{width:5px!important;height:5px!important;border:0!important;border-radius:50%!important;background:#00efff!important;box-shadow:0 0 8px #00efff!important}
@@ -984,11 +997,19 @@ if (!pauseSettingsButton) {
     pauseScreen.appendChild(pauseSettingsButton);
 }
 
+const topbar = document.getElementById("topbar") || shell;
+const mouseLockButton = document.createElement("button");
+mouseLockButton.id = "mouse-lock-button";
+mouseLockButton.type = "button";
+mouseLockButton.textContent = "⌖ LOCK MOUSE";
+mouseLockButton.setAttribute("aria-label", "Lock mouse for desktop look controls");
+topbar.appendChild(mouseLockButton);
+
 const settingsButton = document.createElement("button");
 settingsButton.id = "settings-open-button";
 settingsButton.type = "button";
 settingsButton.textContent = "⚙ SETTINGS";
-(document.getElementById("topbar") || shell).appendChild(settingsButton);
+topbar.appendChild(settingsButton);
 
 const settingsPanel = document.createElement("div");
 settingsPanel.id = "settings-panel";
@@ -1009,6 +1030,14 @@ settingsPanel.innerHTML = `
     <label class="ss-setting-label" for="ss-fov"><span>Field of view (FOV)</span><output class="ss-setting-value" id="ss-fov-value">75°</output></label>
     <input class="ss-setting-range" id="ss-fov" type="range" min="60" max="110" step="1">
     <p class="ss-setting-help">Higher FOV shows more of the arena.</p>
+  </div>
+  <div class="ss-setting-row ss-toggle-row">
+    <label class="ss-setting-label" for="ss-mobile-controls"><span>Mobile controls</span><input id="ss-mobile-controls" type="checkbox"></label>
+    <p class="ss-setting-help">Show or hide the touch movement and look controls.</p>
+  </div>
+  <div class="ss-setting-row ss-toggle-row">
+    <label class="ss-setting-label" for="ss-low-effects"><span>Low effects / performance</span><input id="ss-low-effects" type="checkbox"></label>
+    <p class="ss-setting-help">Reduce shadows and visual effects to help weaker devices.</p>
   </div>
   <div class="ss-setting-row">
     <div class="ss-setting-label"><span>Crosshair type</span><span class="ss-setting-value" id="ss-crosshair-value">CROSS</span></div>
@@ -1031,6 +1060,8 @@ const fovValue = settingsPanel.querySelector("#ss-fov-value");
 const crosshairValue = settingsPanel.querySelector("#ss-crosshair-value");
 const settingsCloseButton = settingsPanel.querySelector("#settings-close-button");
 const settingsResetButton = settingsPanel.querySelector("#settings-reset-button");
+const mobileControlsInput = settingsPanel.querySelector("#ss-mobile-controls");
+const lowEffectsInput = settingsPanel.querySelector("#ss-low-effects");
 
 function savePlayerSettings() {
     try {
@@ -1042,6 +1073,10 @@ function savePlayerSettings() {
 
 function applyPlayerSettings() {
     camera.fov = playerSettings.fov;
+    mobileControlsInput.checked = mobileControlsEnabled;
+    lowEffectsInput.checked = lowEffectsEnabled;
+    shell.classList.toggle("ss-mobile-controls-disabled", !mobileControlsEnabled);
+    shell.classList.toggle("ss-low-effects", lowEffectsEnabled);
     camera.updateProjectionMatrix();
 
     sensitivityInput.value = String(playerSettings.sensitivity);
@@ -1090,6 +1125,20 @@ function closeSettings() {
 settingsButton.addEventListener("click", openSettings);
 pauseSettingsButton.addEventListener("click", openSettings);
 settingsCloseButton.addEventListener("click", closeSettings);
+
+mobileControlsInput.addEventListener("change", () => {
+  mobileControlsEnabled = mobileControlsInput.checked;
+  try { localStorage.setItem("ssMobileControls", String(mobileControlsEnabled)); } catch (error) {}
+  shell.classList.toggle("ss-mobile-controls-disabled", !mobileControlsEnabled);
+  shell.classList.toggle("ss-mobile-playing", isTouchDevice && mobileControlsEnabled && gameStarted && !gameOver);
+});
+
+lowEffectsInput.addEventListener("change", () => {
+  lowEffectsEnabled = lowEffectsInput.checked;
+  try { localStorage.setItem("ssLowEffects", String(lowEffectsEnabled)); } catch (error) {}
+  shell.classList.toggle("ss-low-effects", lowEffectsEnabled);
+  renderer.shadowMap.enabled = !isTouchDevice && !lowEffectsEnabled;
+});
 
 settingsPanel.addEventListener("click", event => {
     if (event.target === settingsPanel) closeSettings();
@@ -1704,6 +1753,7 @@ function requestGamePointerLock() {
     }
 
     try {
+        shell.focus({ preventScroll: true });
         const result = shell.requestPointerLock();
 
         if (result && typeof result.catch === "function") {
@@ -1769,7 +1819,7 @@ function startGame() {
     updateHUD();
 
     shell.classList.remove("ss-paused");
-    shell.classList.toggle("ss-mobile-playing", isTouchDevice);
+    shell.classList.toggle("ss-mobile-playing", isTouchDevice && mobileControlsEnabled);
     startScreen.classList.add("hidden");
     pauseScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
@@ -1882,6 +1932,10 @@ document.addEventListener("mousedown", event => {
 
 /* ---------- POINTER LOCK EVENTS ---------- */
 
+document.addEventListener("pointerlockerror", () => {
+    if (gameStarted && !gamePaused && !gameOver) showToast("CLICK THE GAME AREA TO LOCK MOUSE");
+});
+
 document.addEventListener("pointerlockchange", () => {
     const currentlyLocked = document.pointerLockElement === shell;
     pointerLocked = currentlyLocked;
@@ -1928,6 +1982,7 @@ shell.addEventListener("click", event => {
 
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
+mouseLockButton.addEventListener("click", requestGamePointerLock);
 pauseButton.addEventListener("click", pauseGame);
 if (mobilePauseButton) mobilePauseButton.addEventListener("click", pauseGame);
 resumeButton.addEventListener("click", resumeGame);

@@ -1017,3 +1017,15 @@ button {
 @media (pointer:coarse){#cyber-map{top:62px;right:10px;width:146px;}#mobile-pause{top:216px;right:14px;width:40px;height:40px;}}
 @media (pointer:coarse) and (max-height:420px){#cyber-map{top:58px;right:10px;width:128px;}#mobile-pause{top:193px;right:12px;width:36px;height:36px;}}
 @media (pointer:fine){#cyber-map,#mobile-pause{display:none!important;}}
+
+
+/* DARK MATRIX MAP + MOBILE SETTINGS FIX */
+#cyber-map{background:#050b0d!important;border:1px solid rgba(93,139,127,.28)!important;box-shadow:0 7px 20px rgba(0,0,0,.42)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;color:#a9c8bb}
+#cyber-map svg{filter:none!important;opacity:.92}
+.cyber-map-heading,.cyber-map-footer{color:#91b1a5!important;text-shadow:none!important}
+.cyber-map-heading b,.cyber-map-footer b{color:#80a99a!important}
+#cyber-map *{text-shadow:none!important}
+#game-shell.ss-mobile-controls-disabled #mobile-controls{display:none!important}
+#game-shell.ss-low-effects #cyber-map{box-shadow:none!important}
+#game-shell.ss-low-effects #game-canvas{filter:none!important}
+@media(max-width:650px){#settings-open-button{margin-left:4px;padding:8px 9px;font-size:8px}.ss-settings-card{max-height:84vh}}

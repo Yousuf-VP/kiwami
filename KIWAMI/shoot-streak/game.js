@@ -58,9 +58,12 @@ if (
 
 const isTouchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 
-let lowEffectsEnabled = false;
+// Start in the lighter render mode by default to reduce GPU load.
+// Players can switch Low Effects off in Settings if their device has headroom.
+let lowEffectsEnabled = true;
 try {
-  lowEffectsEnabled = localStorage.getItem("ssLowEffects") === "true";
+  const savedLowEffects = localStorage.getItem("ssLowEffects");
+  if (savedLowEffects !== null) lowEffectsEnabled = savedLowEffects === "true";
 } catch (error) { console.warn("SHOOT-STREAK: Settings storage unavailable.", error); }
 
 /* ---------- THREE.JS SETUP ---------- */

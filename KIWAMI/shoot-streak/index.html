@@ -18,7 +18,7 @@
       <div class="top-actions">
         <span class="mode-label"><i></i> DODGE MODE</span>
         <a class="top-button" href="../index.html">KIWAMI ↗</a>
-        <button id="pause-button" class="top-button" type="button">PAUSE</button>
+        <button id="menu-button" class="top-button" type="button">MENU</button><button id="pause-button" class="top-button" type="button">PAUSE</button>
       </div>
     </header>
 
@@ -31,13 +31,21 @@
     <div id="bottom-hint">MOUSE <b>•</b> LOOK <b>•</b> WASD / ARROWS <b>•</b> MOVE</div>
 
     <div id="start-screen" class="overlay">
-      <div class="menu-card">
-        <div class="eyebrow"><i></i> KIWAMI ARCADE</div>
+      <div class="menu-card main-menu-card">
+        <div class="menu-brand-row"><div class="eyebrow"><i></i> KIWAMI ARCADE / SURVIVAL SERIES</div><span class="version-tag">3D • ENDLESS</span></div>
         <h1>SHOOT<span>-</span><br>STREAK</h1>
-        <p class="description">One room. One red ball. Keep moving and survive for as long as you can.</p>
-        <div class="feature-row"><span>3D ARCADE</span><span>ENDLESS SURVIVAL</span><span>PHYSICS</span></div>
+        <p class="description">One room. One red ball. How long can you stay ahead?</p>
+        <div class="menu-divider"></div>
+        <div class="difficulty-heading"><span>SELECT DIFFICULTY</span><small>CHOOSE YOUR CHALLENGE</small></div>
+        <div class="difficulty-grid" role="group" aria-label="Select difficulty">
+          <button class="difficulty-option" type="button" data-difficulty="easy" aria-pressed="false"><strong>EASY</strong><small>Warm up</small></button>
+          <button class="difficulty-option selected" type="button" data-difficulty="medium" aria-pressed="true"><strong>MEDIUM</strong><small>Balanced</small></button>
+          <button class="difficulty-option" type="button" data-difficulty="hard" aria-pressed="false"><strong>HARD</strong><small>Quick reflexes</small></button>
+          <button class="difficulty-option" type="button" data-difficulty="extreme" aria-pressed="false"><strong>EXTREME</strong><small>No room to relax</small></button>
+          <button class="difficulty-option master-option" type="button" data-difficulty="master" aria-pressed="false"><strong>MASTER</strong><small>For the fearless</small></button>
+        </div>
         <button id="start-button" class="primary-button" type="button">START RUN <b>↗</b></button>
-        <p class="control-note">WASD to move. Move your mouse or drag to look around. Press Space or JUMP to jump. Click the game to capture your mouse.</p>
+        <p class="control-note">WASD to move · Mouse to look · Space to jump · Click the game to capture your mouse</p>
       </div>
     </div>
 
@@ -46,7 +54,7 @@
         <div class="eyebrow">RUN PAUSED</div>
         <h2>TAKE A BREATHER.</h2>
         <p class="description">Your run is waiting.</p>
-        <button id="resume-button" class="primary-button" type="button">RESUME</button>
+        <button id="resume-button" class="primary-button" type="button">RESUME RUN</button><button id="pause-menu-button" class="secondary-button" type="button">MAIN MENU</button>
       </div>
     </div>
 
@@ -56,7 +64,7 @@
         <h2>CAUGHT.</h2>
         <p class="description">The red ball caught up with you. Try another run.</p>
         <div class="final-score"><span>FINAL SCORE</span><strong id="final-score">0000</strong></div>
-        <button id="restart-button" class="primary-button" type="button">PLAY AGAIN <b>↗</b></button>
+        <button id="restart-button" class="primary-button" type="button">PLAY AGAIN <b>↗</b></button><button id="over-menu-button" class="secondary-button" type="button">MAIN MENU</button>
       </div>
     </div>
 

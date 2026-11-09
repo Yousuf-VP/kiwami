@@ -52,7 +52,44 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = false;
 renderer.domElement.id = "game-canvas";
+renderer.domElement.tabIndex = 0;
 shell.prepend(renderer.domElement);
+
+const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+renderer.domElement.addEventListener("click", () => {
+  if (state === "playing" && !coarsePointer && document.pointerLockElement !== renderer.domElement) {
+    try { renderer.domElement.requestPointerLock(); } catch {}
+  }
+});
+
+window.addEventListener("mousemove", (event) => {
+  if (state !== "playing" || document.pointerLockElement !== renderer.domElement) return;
+  cameraYaw -= event.movementX * LOOK_SENSITIVITY;
+  cameraPitch = THREE.MathUtils.clamp(cameraPitch - event.movementY * LOOK_SENSITIVITY, -1.25, 1.25);
+});
+
+renderer.domElement.addEventListener("pointerdown", (event) => {
+  if (state !== "playing" || event.pointerType !== "touch") return;
+  activeLookPointer = event.pointerId;
+  lastLookX = event.clientX;
+  lastLookY = event.clientY;
+  renderer.domElement.setPointerCapture(event.pointerId);
+});
+renderer.domElement.addEventListener("pointermove", (event) => {
+  if (state !== "playing" || event.pointerId !== activeLookPointer) return;
+  const dx = event.clientX - lastLookX;
+  const dy = event.clientY - lastLookY;
+  lastLookX = event.clientX;
+  lastLookY = event.clientY;
+  cameraYaw -= dx * LOOK_SENSITIVITY * 1.35;
+  cameraPitch = THREE.MathUtils.clamp(cameraPitch - dy * LOOK_SENSITIVITY * 1.35, -1.25, 1.25);
+});
+function releaseLookPointer(event) {
+  if (event.pointerId === activeLookPointer) activeLookPointer = null;
+}
+renderer.domElement.addEventListener("pointerup", releaseLookPointer);
+renderer.domElement.addEventListener("pointercancel", releaseLookPointer);
+renderer.domElement.addEventListener("lostpointercapture", releaseLookPointer);
 
 const ambient = new THREE.HemisphereLight(0xd8dce6, 0x17151a, 1.45);
 scene.add(ambient);
@@ -127,6 +164,12 @@ let playerVelocity = new THREE.Vector3();
 let jumpHeight = 0;
 let jumpVelocity = 0;
 let grounded = true;
+let cameraYaw = 0;
+let cameraPitch = 0;
+let activeLookPointer = null;
+let lastLookX = 0;
+let lastLookY = 0;
+const LOOK_SENSITIVITY = 0.0022;
 const roomBounds = { x: 6.65, z: 9.05 };
 const playerBounds = { x: 6.7, z: 8.95 };
 
@@ -155,6 +198,8 @@ function resetRun() {
   jumpHeight = 0;
   jumpVelocity = 0;
   grounded = true;
+  cameraYaw = 0;
+  cameraPitch = 0;
   ball.position.set(1.5, 2.1, -5.5);
   ballVelocity.set(-4.8, 1.6, 6.2);
   ballVerticalVelocity = 1.6;
@@ -241,17 +286,25 @@ function jumpPlayer() {
 }
 
 function updatePlayer(delta) {
-  let x = 0;
-  let z = 0;
-  if (isDown("a", "arrowleft", "left")) x -= 1;
-  if (isDown("d", "arrowright", "right")) x += 1;
-  if (isDown("w", "arrowup", "up")) z -= 1;
-  if (isDown("s", "arrowdown", "down")) z += 1;
-  const length = Math.hypot(x, z) || 1;
-  playerVelocity.set((x / length) * CONFIG.player.speed, 0, (z / length) * CONFIG.player.speed);
+  let side = 0;
+  let forward = 0;
+  if (isDown("a", "arrowleft", "left")) side -= 1;
+  if (isDown("d", "arrowright", "right")) side += 1;
+  if (isDown("w", "arrowup", "up")) forward += 1;
+  if (isDown("s", "arrowdown", "down")) forward -= 1;
+
+  // Movement stays level with the floor but follows the camera heading, like an FPS.
+  const forwardX = -Math.sin(cameraYaw);
+  const forwardZ = -Math.cos(cameraYaw);
+  const rightX = Math.cos(cameraYaw);
+  const rightZ = -Math.sin(cameraYaw);
+  let moveX = rightX * side + forwardX * forward;
+  let moveZ = rightZ * side + forwardZ * forward;
+  const length = Math.hypot(moveX, moveZ) || 1;
+  playerVelocity.set((moveX / length) * CONFIG.player.speed, 0, (moveZ / length) * CONFIG.player.speed);
   player.position.x = THREE.MathUtils.clamp(player.position.x + playerVelocity.x * delta, -playerBounds.x, playerBounds.x);
   player.position.z = THREE.MathUtils.clamp(player.position.z + playerVelocity.z * delta, -playerBounds.z, playerBounds.z);
-  if (x || z) player.rotation.y = Math.atan2(x, z);
+  if (side || forward) player.rotation.y = Math.atan2(playerVelocity.x, playerVelocity.z);
 
   if (!grounded) {
     jumpVelocity -= CONFIG.player.jumpGravity * delta;
@@ -298,10 +351,11 @@ function updateBall(delta) {
 }
 
 function updateCamera() {
-  // First-person view: camera is at the player's eye height, looking into the room.
+  // First-person mouse-look / touch-look with a level, camera-relative movement plane.
   const eyeHeight = 1.65 + jumpHeight;
   camera.position.set(player.position.x, eyeHeight, player.position.z);
-  camera.lookAt(player.position.x, eyeHeight, player.position.z - 12);
+  camera.rotation.order = "YXZ";
+  camera.rotation.set(cameraPitch, cameraYaw, 0);
   playerFillLight.position.set(player.position.x, 1.9 + jumpHeight, player.position.z);
 }
 

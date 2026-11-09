@@ -62,3 +62,5 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 #touch-controls button#jump-button { width:58px; border-color:rgba(255,24,61,.55); color:#ffb8c2; background:rgba(42,10,18,.86); font:700 8px var(--display); letter-spacing:.5px; }
 #touch-controls button#jump-button:active { background:rgba(255,24,61,.42); }
+
+#game-canvas { touch-action:none; }

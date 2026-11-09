@@ -45,11 +45,6 @@ const finalScore = document.getElementById("final-score");
 const toast = document.getElementById("toast");
 const bestScoreValue = document.getElementById("best-score-value");
 const eventBanner = document.getElementById("event-banner");
-const mobileJoystick = document.getElementById("mobile-joystick");
-const mobileJoystickThumb = document.getElementById("mobile-joystick-thumb");
-const mobileLookZone = document.getElementById("mobile-look-zone");
-const mobileJumpButton = document.getElementById("mobile-jump");
-const mobilePauseButton = document.getElementById("mobile-pause");
 const cyberMapPlayer = document.getElementById("cyber-map-player");
 
 if (
@@ -63,10 +58,8 @@ if (
 
 const isTouchDevice = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 
-let mobileControlsEnabled = true;
 let lowEffectsEnabled = false;
 try {
-  mobileControlsEnabled = localStorage.getItem("ssMobileControls") !== "false";
   lowEffectsEnabled = localStorage.getItem("ssLowEffects") === "true";
 } catch (error) { console.warn("SHOOT-STREAK: Settings storage unavailable.", error); }
 
@@ -714,18 +707,7 @@ let weaponBob = 0;
 
 const keys = {};
 if (isTouchDevice) shell.classList.add("ss-touch-device");
-shell.classList.toggle("ss-mobile-controls-disabled", !mobileControlsEnabled);
 shell.classList.toggle("ss-low-effects", lowEffectsEnabled);
-let joystickPointerId=null, joystickCenter=null, lookPointerId=null, lastLookPoint=null;
-function setJoystickFromPoint(x,y){if(!mobileJoystickThumb||!joystickCenter)return;const max=34,dx=x-joystickCenter.x,dy=y-joystickCenter.y,dist=Math.hypot(dx,dy),scale=dist>max?max/dist:1,lx=dx*scale,ly=dy*scale;mobileJoystickThumb.style.transform="translate("+lx+"px,"+ly+"px)";const t=.22;keys.KeyW=ly/max< -t;keys.KeyS=ly/max>t;keys.KeyA=lx/max< -t;keys.KeyD=lx/max>t;}
-function resetMobileJoystick(){joystickPointerId=null;joystickCenter=null;keys.KeyW=keys.KeyA=keys.KeyS=keys.KeyD=false;if(mobileJoystickThumb)mobileJoystickThumb.style.transform="translate(0,0)";}
-if(isTouchDevice&&mobileJoystick){mobileJoystick.addEventListener("pointerdown",e=>{if(!gameStarted||gamePaused||gameOver)return;e.preventDefault();joystickPointerId=e.pointerId;const r=mobileJoystick.getBoundingClientRect();joystickCenter={x:r.left+r.width/2,y:r.top+r.height/2};mobileJoystick.setPointerCapture(e.pointerId);setJoystickFromPoint(e.clientX,e.clientY);});
-mobileJoystick.addEventListener("pointermove",e=>{if(e.pointerId===joystickPointerId){e.preventDefault();setJoystickFromPoint(e.clientX,e.clientY);}});
-const releaseJoy=e=>{if(e.pointerId===joystickPointerId)resetMobileJoystick();};mobileJoystick.addEventListener("pointerup",releaseJoy);mobileJoystick.addEventListener("pointercancel",releaseJoy);mobileJoystick.addEventListener("lostpointercapture",resetMobileJoystick);}
-if(isTouchDevice&&mobileLookZone){mobileLookZone.addEventListener("pointerdown",e=>{if(!gameStarted||gamePaused||gameOver)return;e.preventDefault();lookPointerId=e.pointerId;lastLookPoint={x:e.clientX,y:e.clientY};mobileLookZone.setPointerCapture(e.pointerId);});
-mobileLookZone.addEventListener("pointermove",e=>{if(e.pointerId!==lookPointerId||!lastLookPoint||gamePaused||gameOver)return;e.preventDefault();const dx=e.clientX-lastLookPoint.x,dy=e.clientY-lastLookPoint.y;targetYaw=THREE.MathUtils.clamp(targetYaw-dx*playerSettings.sensitivity*1.45,-1.15,1.15);targetPitch=THREE.MathUtils.clamp(targetPitch-dy*playerSettings.sensitivity*1.45,-.55,.55);lastLookPoint={x:e.clientX,y:e.clientY};});
-const releaseLook=e=>{if(e.pointerId===lookPointerId){lookPointerId=null;lastLookPoint=null;}};mobileLookZone.addEventListener("pointerup",releaseLook);mobileLookZone.addEventListener("pointercancel",releaseLook);mobileLookZone.addEventListener("lostpointercapture",()=>{lookPointerId=null;lastLookPoint=null;});}
-if(mobileJumpButton)mobileJumpButton.addEventListener("pointerdown",e=>{e.preventDefault();tryJump();});
 const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
 
@@ -1055,10 +1037,6 @@ settingsPanel.innerHTML = `
     <p class="ss-setting-help">Higher FOV shows more of the arena.</p>
   </div>
   <div class="ss-setting-row ss-toggle-row">
-    <label class="ss-setting-label" for="ss-mobile-controls"><span>Mobile controls</span><input id="ss-mobile-controls" type="checkbox"></label>
-    <p class="ss-setting-help">Show or hide the touch movement and look controls.</p>
-  </div>
-  <div class="ss-setting-row ss-toggle-row">
     <label class="ss-setting-label" for="ss-low-effects"><span>Low effects / performance</span><input id="ss-low-effects" type="checkbox"></label>
     <p class="ss-setting-help">Reduce shadows and visual effects to help weaker devices.</p>
   </div>
@@ -1083,7 +1061,6 @@ const fovValue = settingsPanel.querySelector("#ss-fov-value");
 const crosshairValue = settingsPanel.querySelector("#ss-crosshair-value");
 const settingsCloseButton = settingsPanel.querySelector("#settings-close-button");
 const settingsResetButton = settingsPanel.querySelector("#settings-reset-button");
-const mobileControlsInput = settingsPanel.querySelector("#ss-mobile-controls");
 const lowEffectsInput = settingsPanel.querySelector("#ss-low-effects");
 
 function savePlayerSettings() {
@@ -1096,9 +1073,7 @@ function savePlayerSettings() {
 
 function applyPlayerSettings() {
     camera.fov = playerSettings.fov;
-    mobileControlsInput.checked = mobileControlsEnabled;
     lowEffectsInput.checked = lowEffectsEnabled;
-    shell.classList.toggle("ss-mobile-controls-disabled", !mobileControlsEnabled);
     shell.classList.toggle("ss-low-effects", lowEffectsEnabled);
     camera.updateProjectionMatrix();
 
@@ -1150,12 +1125,6 @@ settingsButton.addEventListener("click", openSettings);
 pauseSettingsButton.addEventListener("click", openSettings);
 settingsCloseButton.addEventListener("click", closeSettings);
 
-mobileControlsInput.addEventListener("change", () => {
-  mobileControlsEnabled = mobileControlsInput.checked;
-  try { localStorage.setItem("ssMobileControls", String(mobileControlsEnabled)); } catch (error) {}
-  shell.classList.toggle("ss-mobile-controls-disabled", !mobileControlsEnabled);
-  shell.classList.toggle("ss-mobile-playing", isTouchDevice && mobileControlsEnabled && gameStarted && !gameOver);
-});
 
 lowEffectsInput.addEventListener("change", () => {
   lowEffectsEnabled = lowEffectsInput.checked;
@@ -1802,7 +1771,6 @@ function startGame() {
     clearTimeout(reloadTimer);
 
     score = 0;
-    resetMobileJoystick();
     arenaEventTimer = 13;
     restoreArenaLighting();
     ammo = CONFIG.weapon.maxAmmo;
@@ -1846,7 +1814,6 @@ function startGame() {
 
     shell.classList.remove("ss-paused");
     shell.classList.add("ss-playing");
-    shell.classList.toggle("ss-mobile-playing", isTouchDevice && mobileControlsEnabled);
     startScreen.classList.add("hidden");
     pauseScreen.classList.add("hidden");
     gameOverScreen.classList.add("hidden");
@@ -1864,7 +1831,6 @@ function pauseGame() {
     shell.classList.remove("ss-playing");
     pauseScreen.classList.remove("hidden");
 
-    resetMobileJoystick();
     if (!isTouchDevice && document.pointerLockElement) {
         document.exitPointerLock();
     }
@@ -1889,8 +1855,6 @@ function endGame() {
     gameStarted = false;
     gamePaused = false;
     saveScoreRecord(score);
-    resetMobileJoystick();
-    shell.classList.remove("ss-mobile-playing");
     shell.classList.remove("ss-playing");
     restoreArenaLighting();
 
@@ -2015,7 +1979,6 @@ startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
 mouseLockButton.addEventListener("click", requestGamePointerLock);
 pauseButton.addEventListener("click", pauseGame);
-if (mobilePauseButton) mobilePauseButton.addEventListener("click", pauseGame);
 resumeButton.addEventListener("click", resumeGame);
 
 /* ---------- RESIZE ---------- */

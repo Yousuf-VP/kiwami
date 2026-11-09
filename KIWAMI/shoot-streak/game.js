@@ -40,9 +40,9 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08090d);
 scene.fog = new THREE.Fog(0x08090d, 18, 34);
 
-const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 80);
-camera.position.set(0, 10.5, 14.5);
-camera.lookAt(0, 0.8, 0);
+const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 90);
+camera.position.set(0, 1.65, CONFIG.player.startZ);
+camera.lookAt(0, 1.65, CONFIG.player.startZ - 12);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -93,15 +93,14 @@ box(0.045, 0.055, 5.5, mats.trim, 7.34, 4.65, -3.8);
 
 const player = new THREE.Group();
 scene.add(player);
-const playerBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.78, 4, 8), mats.player);
+// The player collision body is invisible in first-person view.
+const playerBody = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.35, 12), mats.player);
 playerBody.position.y = 0.78;
 player.add(playerBody);
-const playerCore = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), mats.playerAccent);
-playerCore.position.set(0, 1.02, -0.31);
-player.add(playerCore);
-const playerBase = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.12, 16), mats.playerAccent);
-playerBase.position.y = 0.12;
-player.add(playerBase);
+const playerHead = new THREE.Mesh(new THREE.SphereGeometry(0.29, 16, 12), mats.player);
+playerHead.position.y = 1.62;
+player.add(playerHead);
+player.visible = false;
 player.position.set(CONFIG.player.startX, 0, CONFIG.player.startZ);
 
 const ball = new THREE.Mesh(new THREE.SphereGeometry(CONFIG.ball.radius, 32, 24), mats.ball);
@@ -265,10 +264,10 @@ function updateBall(delta) {
   if (distance < CONFIG.ball.radius + CONFIG.player.radius + 0.22) endRun();
 }
 
-function updateCamera(delta) {
-  const desired = new THREE.Vector3(player.position.x * 0.28, 10.5, player.position.z + 9.2);
-  camera.position.lerp(desired, 1 - Math.pow(0.001, delta));
-  camera.lookAt(player.position.x * 0.18, 0.5, player.position.z - 1.2);
+function updateCamera() {
+  // First-person view: camera is at the player's eye height, looking into the room.
+  camera.position.set(player.position.x, 1.65, player.position.z);
+  camera.lookAt(player.position.x, 1.65, player.position.z - 12);
 }
 
 function animate() {

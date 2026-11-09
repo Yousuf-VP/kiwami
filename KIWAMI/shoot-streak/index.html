@@ -56,43 +56,6 @@
 
     <div id="event-banner" aria-live="polite"></div>
     <div id="bottom-hint">WASD MOVE <b>•</b> MOUSE LOOK <b>•</b> CLICK FIRE <b>•</b> R RELOAD</div>
-    <div id="mobile-controls" aria-label="Touch movement controls">
-      <div id="mobile-joystick" aria-label="Movement joystick"><div class="mobile-joystick-ring"><div id="mobile-joystick-thumb"></div></div><span class="mobile-control-caption">MOVE</span></div>
-      <div id="mobile-look-zone" aria-label="Drag to look around"></div>
-      <section id="cyber-map" class="glass-panel" aria-label="Arena minimap">
-        <div class="cyber-map-heading"><span>ARENA GRID</span><b>LIVE</b></div>
-        <svg viewBox="0 0 180 112" role="img" aria-label="Top-down blueprint of the Obsidian Reactor arena">
-          <defs>
-            <linearGradient id="reactor-map-bg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#071a32"/><stop offset="1" stop-color="#020713"/>
-            </linearGradient>
-          </defs>
-          <rect x="4" y="4" width="172" height="104" rx="6" fill="url(#reactor-map-bg)" stroke="#1769a7" stroke-width="1.2"/>
-          <rect x="13" y="11" width="154" height="90" rx="3" fill="#030b19" stroke="#164b7d"/>
-          <path d="M21 17H159V95H21Z" fill="none" stroke="#2588c8" stroke-width="1.5"/>
-          <path d="M30 18V94M150 18V94" stroke="#0c3155" stroke-width="5"/>
-          <path d="M34 20V92M146 20V92" stroke="#1684c8" stroke-width="1.3"/>
-          <path d="M48 20V92M132 20V92" stroke="#0c4c7c" stroke-width="1" stroke-dasharray="2 3"/>
-          <path d="M65 18V94M115 18V94" stroke="#0a2845" stroke-width="1"/>
-          <path d="M90 19V93" stroke="#00c9ef" stroke-width="1.2" stroke-dasharray="3 4" opacity=".8"/>
-          <path d="M42 28H138M42 84H138" stroke="#0e3a60" stroke-width="2"/>
-          <rect x="72" y="12" width="36" height="7" rx="2" fill="#0c4a73" stroke="#00d8ef"/>
-          <circle cx="90" cy="16" r="3.2" fill="#00dfff"/>
-          <rect x="36" y="31" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-          <rect x="134" y="31" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-          <rect x="36" y="69" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-          <rect x="134" y="69" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-          <path d="M53 56H127" stroke="#15517e" stroke-width="1" stroke-dasharray="2 4"/>
-          <circle cx="90" cy="56" r="8" fill="#071d34" stroke="#00dfff" stroke-width="1.4"/>
-          <circle cx="90" cy="56" r="3" fill="#168cff"/>
-          <circle id="cyber-map-player" cx="90" cy="88" r="3.5" fill="#e8fbff" stroke="#00dfff" stroke-width="1.2"/>
-        </svg>
-        <span class="cyber-map-footer">PLAYER POSITION <b>● LIVE</b></span>
-      </section>
-      <button id="mobile-pause" class="mobile-pause-button" type="button" aria-label="Pause game">Ⅱ</button>
-      <button id="mobile-jump" class="mobile-action-button" type="button">JUMP</button>
-    </div>
-
     <div id="start-screen" class="screen-overlay">
       <div class="menu-card glass-panel">
         <div class="eyebrow"><i></i> KIWAMI ARCADE PRESENTS</div>

@@ -626,6 +626,7 @@ button {
    MOBILE / TOUCH GAMEPLAY
    ========================================== */
 
+#mobile-controls {
   position: absolute;
   inset: 0;
   z-index: 7;
@@ -636,9 +637,11 @@ button {
   touch-action: none;
 }
 
+#game-shell.ss-mobile-playing #mobile-controls {
   display: block;
 }
 
+#mobile-look-zone {
   position: absolute;
   top: 76px;
   right: 0;
@@ -649,6 +652,7 @@ button {
   background: transparent;
 }
 
+#mobile-joystick {
   position: absolute;
   left: max(18px, env(safe-area-inset-left));
   bottom: max(17px, env(safe-area-inset-bottom));
@@ -660,6 +664,7 @@ button {
   touch-action: none;
 }
 
+.mobile-joystick-ring {
   position: relative;
   width: 112px;
   height: 112px;
@@ -674,6 +679,7 @@ button {
   -webkit-backdrop-filter: blur(8px);
 }
 
+#mobile-joystick-thumb {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -687,6 +693,7 @@ button {
   will-change: transform;
 }
 
+.mobile-control-caption {
   position: absolute;
   bottom: -1px;
   color: rgba(194, 228, 244, 0.72);
@@ -695,6 +702,7 @@ button {
   text-shadow: 0 2px 8px #000;
 }
 
+.mobile-action-button {
   position: absolute;
   right: max(22px, env(safe-area-inset-right));
   width: 76px;
@@ -715,10 +723,12 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.mobile-action-button:active {
   transform: scale(.94);
   background: rgba(0, 190, 230, .38);
 }
 
+#mobile-shoot {
   bottom: max(25px, env(safe-area-inset-bottom));
   width: 88px;
   height: 88px;
@@ -727,6 +737,7 @@ button {
   box-shadow: 0 0 28px rgba(0, 234, 255, .22), inset 0 0 18px rgba(0, 234, 255, .08);
 }
 
+#mobile-jump {
   right: max(122px, calc(env(safe-area-inset-right) + 122px));
   bottom: max(31px, env(safe-area-inset-bottom));
   width: 65px;
@@ -886,24 +897,28 @@ button {
     padding: 22px;
   }
 
+  #mobile-look-zone {
     top: 58px;
     bottom: 8px;
   }
 }
 
 @media (pointer: coarse) and (max-height: 420px) {
+  #mobile-joystick {
     transform: scale(.82);
     transform-origin: bottom left;
     bottom: 7px;
     left: 8px;
   }
 
+  #mobile-shoot {
     width: 72px;
     height: 72px;
     bottom: 10px;
     right: 12px;
   }
 
+  #mobile-jump {
     width: 56px;
     height: 56px;
     bottom: 17px;
@@ -936,7 +951,14 @@ button {
 .best-score-card strong{color:#83cfff}
 #event-banner{position:absolute;z-index:4;top:104px;left:50%;transform:translate(-50%,-8px);padding:9px 16px;border:1px solid rgba(0,234,255,.32);border-radius:999px;color:#c9faff;background:rgba(3,12,24,.88);box-shadow:0 0 24px rgba(0,205,255,.12);font:800 9px var(--font-display);letter-spacing:1.8px;opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;white-space:nowrap}
 #event-banner.show{opacity:1;transform:translate(-50%,0)}
+#mobile-controls{display:none}
+#mobile-jump{bottom:max(31px,env(safe-area-inset-bottom));right:max(26px,env(safe-area-inset-right));width:72px;height:72px;border-color:rgba(0,234,255,.62);color:#d9faff;background:linear-gradient(145deg,rgba(10,44,69,.94),rgba(3,12,25,.94));box-shadow:0 0 25px rgba(0,200,255,.15),inset 0 1px rgba(255,255,255,.15)}
+#mobile-shoot{display:none!important}
+#mobile-look-zone,#mobile-joystick{touch-action:none;-webkit-tap-highlight-color:transparent}
+#game-shell.ss-mobile-playing #mobile-controls{display:block}
+#game-shell.ss-mobile-playing #bottom-hint{display:none}
 @media(max-width:650px){#topbar{width:calc(100% - 18px);top:max(7px,env(safe-area-inset-top));min-height:48px;padding:6px 8px 6px 12px;gap:6px}.topbar-right{gap:5px}.back-button,.topbar-button{padding:8px 9px;font-size:7px}#hud{top:67px;left:8px;gap:5px}.hud-card{width:104px;min-height:46px;padding:7px 9px}.hud-card strong{font-size:14px}#event-banner{top:70px;left:auto;right:8px;transform:translateY(-8px);font-size:7px;padding:8px 11px;letter-spacing:1px}#event-banner.show{transform:translateY(0)}}
+@media(pointer:coarse) and (max-height:420px){#mobile-jump{width:60px;height:60px;right:16px;bottom:15px}#event-banner{top:58px}}
 @media(max-width:390px){.live-indicator{display:none}.back-button,.topbar-button{padding:8px 7px;letter-spacing:.5px}}
 
 /* ==========================================
@@ -989,7 +1011,12 @@ button {
 #cyber-map svg{display:block;width:100%;height:auto;margin:5px 0 3px;filter:drop-shadow(0 0 5px rgba(0,234,255,.18));}
 .cyber-map-footer{font-size:6px;color:#6f9cb7;}
 .cyber-map-footer b{color:#55ffd0;font-size:6px;}
+.mobile-pause-button{position:absolute;top:74px;right:14px;z-index:8;width:38px;height:38px;border:1px solid rgba(0,234,255,.65);border-radius:11px;background:rgba(4,14,29,.92);color:#bdfaff;font:800 16px var(--font-display);box-shadow:0 0 16px rgba(0,234,255,.2);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 #cyber-map{top:122px;}
+#mobile-pause:active{transform:scale(.94);background:rgba(0,190,230,.3);}
+@media (pointer:coarse){#cyber-map{top:62px;right:10px;width:146px;}#mobile-pause{top:216px;right:14px;width:40px;height:40px;}}
+@media (pointer:coarse) and (max-height:420px){#cyber-map{top:58px;right:10px;width:128px;}#mobile-pause{top:193px;right:12px;width:36px;height:36px;}}
+@media (pointer:fine){#cyber-map,#mobile-pause{display:none!important;}}
 
 
 /* DARK MATRIX MAP + MOBILE SETTINGS FIX */
@@ -998,6 +1025,7 @@ button {
 .cyber-map-heading,.cyber-map-footer{color:#91b1a5!important;text-shadow:none!important}
 .cyber-map-heading b,.cyber-map-footer b{color:#80a99a!important}
 #cyber-map *{text-shadow:none!important}
+#game-shell.ss-mobile-controls-disabled #mobile-controls{display:none!important}
 #game-shell.ss-low-effects #cyber-map{box-shadow:none!important}
 #game-shell.ss-low-effects #game-canvas{filter:none!important}
 @media(max-width:650px){#settings-open-button{margin-left:4px;padding:8px 9px;font-size:8px}.ss-settings-card{max-height:84vh}}
@@ -1030,11 +1058,13 @@ button {
 }
 
 #game-shell.ss-low-effects .glass-panel,
+#game-shell.ss-low-effects .mobile-joystick-ring {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 @media (pointer: coarse) {
+  #mobile-jump {
     width: 72px;
     height: 72px;
     right: max(112px, calc(env(safe-area-inset-right) + 112px));
@@ -1045,6 +1075,7 @@ button {
     box-shadow: 0 0 24px rgba(80, 145, 255, .3), inset 0 1px rgba(255,255,255,.22);
   }
 
+  #mobile-look-zone {
     bottom: 120px;
     width: 54%;
   }

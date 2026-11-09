@@ -17,6 +17,7 @@ const bestValue = document.getElementById("best-value");
 const timeValue = document.getElementById("time-value");
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
+const jumpButton = document.getElementById("jump-button");
 
 const CONFIG = {
   room: { halfWidth: 7.5, halfDepth: 10, height: 5.5 },
@@ -208,6 +209,10 @@ window.addEventListener("keydown", (event) => {
   if (key === " " && state === "playing" && !event.repeat) jumpPlayer();
   if (key === "escape" && state === "playing") pauseRun();
   else if (key === "escape" && state === "paused") resumeRun();
+});
+jumpButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  jumpPlayer();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
 window.addEventListener("blur", () => { keys.clear(); touchDirections.clear(); });

@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#020713">\n  <meta property="og:title" content="SHOOT-STREAK | KIWAMI">\n  <meta property="og:description" content="Enter the Obsidian Reactor. Test your reflexes in a cinematic 3D arcade arena.">\n  <meta name="color-scheme" content="dark">
-  <meta name="description" content="SHOOT-STREAK — a first-person 3D arcade survival game.">
+  <meta name="theme-color" content="#08090d">
+  <meta name="description" content="SHOOT-STREAK — dodge the red energy ball and survive as long as you can.">
   <title>SHOOT-STREAK | KIWAMI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,130 +12,67 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="game-shell">
-    <div id="topbar" class="glass-panel">
-      <a class="brand" href="../index.html" aria-label="Return to KIWAMI home">
-        <span class="brand-icon">✦</span>
-        <span>SHOOT<span>-</span>STREAK</span>
-      </a>
-
-      <div class="topbar-right">
-        <span class="live-indicator"><i></i> ARCADE MODE</span>
-        <a class="topbar-button back-button" href="../index.html" aria-label="Back to KIWAMI">KIWAMI ↗</a>
-        <button id="pause-button" class="topbar-button" type="button">PAUSE</button>
+  <main id="game-shell">
+    <header id="topbar">
+      <a class="brand" href="../index.html"><span class="brand-mark">K</span><span>SHOOT-STREAK</span></a>
+      <div class="top-actions">
+        <span class="mode-label"><i></i> DODGE MODE</span>
+        <a class="top-button" href="../index.html">KIWAMI ↗</a>
+        <button id="pause-button" class="top-button" type="button">PAUSE</button>
       </div>
-    </div>
+    </header>
 
-    <div id="hud">
-      <div class="hud-card glass-panel">
-        <span class="hud-label">SCORE</span>
-        <strong id="score-value">0000</strong>
-      </div>
-
-      <div class="hud-card glass-panel best-score-card">
-        <span class="hud-label">PERSONAL BEST</span>
-        <strong id="best-score-value">0000</strong>
-      </div>
-      <div class="hud-card glass-panel">
-        <span class="hud-label">BALL STATUS</span>
-        <strong id="ball-status">IN PLAY</strong>
-      </div>
-
-      <div class="hud-card glass-panel ammo-card">
-        <span class="hud-label">BLASTER AMMO</span>
-        <strong><span id="ammo-value">2</span><small> / 2</small></strong>
-        <div class="ammo-track"><i id="ammo-fill"></i></div>
-        <span id="reload-label">READY</span>
-      </div>
-    </div>
-
-    <div id="crosshair" aria-hidden="true">
-      <span></span><span></span>
-    </div>
-
-    <div id="event-banner" aria-live="polite"></div>
-    <div id="bottom-hint">WASD MOVE <b>•</b> MOUSE LOOK <b>•</b> CLICK FIRE <b>•</b> R RELOAD</div>
-    <section id="cyber-map" class="glass-panel" aria-label="Arena minimap">
-      <div class="cyber-map-heading"><span>ARENA GRID</span><b>LIVE</b></div>
-      <svg viewBox="0 0 180 112" role="img" aria-label="Top-down blueprint of the Obsidian Reactor arena">
-        <defs>
-          <linearGradient id="reactor-map-bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#071a32"/><stop offset="1" stop-color="#020713"/>
-          </linearGradient>
-        </defs>
-        <rect x="4" y="4" width="172" height="104" rx="6" fill="url(#reactor-map-bg)" stroke="#1769a7" stroke-width="1.2"/>
-        <rect x="13" y="11" width="154" height="90" rx="3" fill="#030b19" stroke="#164b7d"/>
-        <path d="M21 17H159V95H21Z" fill="none" stroke="#2588c8" stroke-width="1.5"/>
-        <path d="M30 18V94M150 18V94" stroke="#0c3155" stroke-width="5"/>
-        <path d="M34 20V92M146 20V92" stroke="#1684c8" stroke-width="1.3"/>
-        <path d="M48 20V92M132 20V92" stroke="#0c4c7c" stroke-width="1" stroke-dasharray="2 3"/>
-        <path d="M65 18V94M115 18V94" stroke="#0a2845" stroke-width="1"/>
-        <path d="M90 19V93" stroke="#00c9ef" stroke-width="1.2" stroke-dasharray="3 4" opacity=".8"/>
-        <path d="M42 28H138M42 84H138" stroke="#0e3a60" stroke-width="2"/>
-        <rect x="72" y="12" width="36" height="7" rx="2" fill="#0c4a73" stroke="#00d8ef"/>
-        <circle cx="90" cy="16" r="3.2" fill="#00dfff"/>
-        <rect x="36" y="31" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-        <rect x="134" y="31" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-        <rect x="36" y="69" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-        <rect x="134" y="69" width="10" height="12" rx="1" fill="#0b2c4c" stroke="#168cff"/>
-        <path d="M53 56H127" stroke="#15517e" stroke-width="1" stroke-dasharray="2 4"/>
-        <circle cx="90" cy="56" r="8" fill="#071d34" stroke="#00dfff" stroke-width="1.4"/>
-        <circle cx="90" cy="56" r="3" fill="#168cff"/>
-        <circle id="cyber-map-player" cx="90" cy="88" r="3.5" fill="#e8fbff" stroke="#00dfff" stroke-width="1.2"/>
-      </svg>
-      <span class="cyber-map-footer">PLAYER POSITION <b>● LIVE</b></span>
+    <section id="hud" aria-label="Game statistics">
+      <div class="stat"><span>SCORE</span><strong id="score-value">0000</strong></div>
+      <div class="stat"><span>BEST</span><strong id="best-value">0000</strong></div>
+      <div class="stat"><span>SURVIVAL</span><strong id="time-value">0.0s</strong></div>
     </section>
 
-    <div id="start-screen" class="screen-overlay">
-      <div class="menu-card glass-panel">
-        <div class="eyebrow"><i></i> KIWAMI ARCADE PRESENTS</div>
+    <div id="bottom-hint">W A S D / ARROWS <b>•</b> MOVE <b>•</b> DODGE THE RED BALL</div>
+
+    <div id="start-screen" class="overlay">
+      <div class="menu-card">
+        <div class="eyebrow"><i></i> KIWAMI ARCADE</div>
         <h1>SHOOT<span>-</span><br>STREAK</h1>
-        <p class="menu-description">The ball is coming. Keep your aim steady, use your shots wisely, and survive the streak.</p>
-        <div class="menu-features">
-          <span>3D ARCADE</span>
-          <span>FIRST PERSON</span>
-          <span>PHYSICS</span>
-        </div>
-        <button id="start-button" class="primary-button" type="button">
-          ENTER THE ARENA <span>↗</span>
-        </button>
-        <p class="control-note">Click to lock your mouse and begin</p>
+        <p class="description">One room. One red ball. Keep moving and survive for as long as you can.</p>
+        <div class="feature-row"><span>3D ARCADE</span><span>ENDLESS SURVIVAL</span><span>PHYSICS</span></div>
+        <button id="start-button" class="primary-button" type="button">START RUN <b>↗</b></button>
+        <p class="control-note">Move with WASD or the arrow keys. Avoid the glowing ball.</p>
       </div>
     </div>
 
-    <div id="pause-screen" class="screen-overlay hidden">
-      <div class="menu-card glass-panel compact-card">
-        <div class="eyebrow">GAME PAUSED</div>
+    <div id="pause-screen" class="overlay hidden">
+      <div class="menu-card compact">
+        <div class="eyebrow">RUN PAUSED</div>
         <h2>TAKE A BREATHER.</h2>
-        <p class="menu-description">The arena is waiting.</p>
-        <button id="resume-button" class="primary-button" type="button">RESUME GAME</button>
-        <p class="control-note">Press ESC to release or recapture your mouse</p>
+        <p class="description">Your run is waiting.</p>
+        <button id="resume-button" class="primary-button" type="button">RESUME</button>
       </div>
     </div>
 
-    <div id="game-over-screen" class="screen-overlay hidden">
-      <div class="menu-card glass-panel compact-card">
-        <div class="eyebrow danger-eyebrow">STREAK TERMINATED</div>
-        <h2>GAME OVER.</h2>
-        <p class="menu-description">The energy ball caught you. Try another run.</p>
-        <div class="final-score">
-          <span>FINAL SCORE</span>
-          <strong id="final-score">0000</strong>
-        </div>
-        <button id="restart-button" class="primary-button" type="button">PLAY AGAIN <span>↗</span></button>
+    <div id="game-over-screen" class="overlay hidden">
+      <div class="menu-card compact">
+        <div class="eyebrow danger">RUN ENDED</div>
+        <h2>CAUGHT.</h2>
+        <p class="description">The red ball caught up with you. Try another run.</p>
+        <div class="final-score"><span>FINAL SCORE</span><strong id="final-score">0000</strong></div>
+        <button id="restart-button" class="primary-button" type="button">PLAY AGAIN <b>↗</b></button>
       </div>
     </div>
 
-    <div id="toast" class="toast glass-panel"></div>
-  </div>
+    <div id="touch-controls" aria-label="Touch movement controls">
+      <button data-dir="up" aria-label="Move forward">▲</button>
+      <div class="touch-middle">
+        <button data-dir="left" aria-label="Move left">◀</button>
+        <button data-dir="down" aria-label="Move backward">▼</button>
+        <button data-dir="right" aria-label="Move right">▶</button>
+      </div>
+    </div>
+  </main>
+
   <script type="importmap">
-{
-    "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
-    }
-}
-</script>
-
-<script type="module" src="./game.js"></script>
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="./game.js"></script>
 </body>
 </html>

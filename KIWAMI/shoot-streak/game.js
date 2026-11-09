@@ -17,10 +17,11 @@ const bestValue = document.getElementById("best-value");
 const timeValue = document.getElementById("time-value");
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
+const jumpButton = document.getElementById("jump-button");
 
 const CONFIG = {
   room: { halfWidth: 7.5, halfDepth: 10, height: 5.5 },
-  player: { speed: 7.2, radius: 0.42, startX: 0, startZ: 5.8 },
+  player: { speed: 7.2, radius: 0.42, startX: 0, startZ: 5.8, jumpSpeed: 7.1, jumpGravity: 18 },
   ball: { radius: 0.62, speed: 7.8, gravity: 12.5, bounce: 0.92 }
 };
 
@@ -62,6 +63,11 @@ scene.add(ceilingLight);
 const redRoomGlow = new THREE.PointLight(0xff153d, 18, 11);
 redRoomGlow.position.set(0, 2.3, -5.5);
 scene.add(redRoomGlow);
+
+// Very soft neutral fill follows the player, keeping nearby wall edges readable.
+const playerFillLight = new THREE.PointLight(0xd8dce8, 2.4, 9, 2);
+playerFillLight.position.set(0, 1.9, CONFIG.player.startZ);
+scene.add(playerFillLight);
 
 const mats = {
   floor: new THREE.MeshStandardMaterial({ color: 0x17191f, roughness: 0.82, metalness: 0.12 }),
@@ -118,6 +124,9 @@ ball.add(ballLight);
 let ballVelocity = new THREE.Vector3(-4.8, 1.6, 6.2);
 let ballVerticalVelocity = 1.6;
 let playerVelocity = new THREE.Vector3();
+let jumpHeight = 0;
+let jumpVelocity = 0;
+let grounded = true;
 const roomBounds = { x: 6.65, z: 9.05 };
 const playerBounds = { x: 6.7, z: 8.95 };
 
@@ -143,6 +152,9 @@ function resetRun() {
   elapsed = 0;
   score = 0;
   player.position.set(CONFIG.player.startX, 0, CONFIG.player.startZ);
+  jumpHeight = 0;
+  jumpVelocity = 0;
+  grounded = true;
   ball.position.set(1.5, 2.1, -5.5);
   ballVelocity.set(-4.8, 1.6, 6.2);
   ballVerticalVelocity = 1.6;
@@ -194,8 +206,13 @@ window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
   if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
   keys.add(key);
+  if (key === " " && state === "playing" && !event.repeat) jumpPlayer();
   if (key === "escape" && state === "playing") pauseRun();
   else if (key === "escape" && state === "paused") resumeRun();
+});
+jumpButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  jumpPlayer();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
 window.addEventListener("blur", () => { keys.clear(); touchDirections.clear(); });
@@ -217,6 +234,12 @@ function isDown(...names) {
   return names.some((name) => keys.has(name) || touchDirections.has(name));
 }
 
+function jumpPlayer() {
+  if (state !== "playing" || !grounded) return;
+  jumpVelocity = CONFIG.player.jumpSpeed;
+  grounded = false;
+}
+
 function updatePlayer(delta) {
   let x = 0;
   let z = 0;
@@ -229,6 +252,16 @@ function updatePlayer(delta) {
   player.position.x = THREE.MathUtils.clamp(player.position.x + playerVelocity.x * delta, -playerBounds.x, playerBounds.x);
   player.position.z = THREE.MathUtils.clamp(player.position.z + playerVelocity.z * delta, -playerBounds.z, playerBounds.z);
   if (x || z) player.rotation.y = Math.atan2(x, z);
+
+  if (!grounded) {
+    jumpVelocity -= CONFIG.player.jumpGravity * delta;
+    jumpHeight += jumpVelocity * delta;
+    if (jumpHeight <= 0) {
+      jumpHeight = 0;
+      jumpVelocity = 0;
+      grounded = true;
+    }
+  }
 }
 
 function updateBall(delta) {
@@ -260,14 +293,16 @@ function updateBall(delta) {
     ballVelocity.z = horizontal.y;
   }
 
-  const distance = ball.position.distanceTo(new THREE.Vector3(player.position.x, 0.9, player.position.z));
+  const distance = ball.position.distanceTo(new THREE.Vector3(player.position.x, 0.9 + jumpHeight, player.position.z));
   if (distance < CONFIG.ball.radius + CONFIG.player.radius + 0.22) endRun();
 }
 
 function updateCamera() {
   // First-person view: camera is at the player's eye height, looking into the room.
-  camera.position.set(player.position.x, 1.65, player.position.z);
-  camera.lookAt(player.position.x, 1.65, player.position.z - 12);
+  const eyeHeight = 1.65 + jumpHeight;
+  camera.position.set(player.position.x, eyeHeight, player.position.z);
+  camera.lookAt(player.position.x, eyeHeight, player.position.z - 12);
+  playerFillLight.position.set(player.position.x, 1.9 + jumpHeight, player.position.z);
 }
 
 function animate() {

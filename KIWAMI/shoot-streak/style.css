@@ -1135,3 +1135,7 @@ button {
 #game-shell.ss-playing, #game-shell.ss-playing #game-canvas { cursor: none !important; }
 #game-shell.ss-paused, #game-shell.ss-paused #game-canvas { cursor: default !important; }
 #game-shell.ss-playing #game-canvas { touch-action: none; }
+
+
+/* MINIMAL ROOM PASS: remove decorative scanline/pattern overlay. */
+#game-shell::after { display: none !important; }

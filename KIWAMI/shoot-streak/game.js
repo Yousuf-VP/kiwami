@@ -10,6 +10,11 @@ const pauseScreen = document.getElementById("pause-screen");
 const gameOverScreen = document.getElementById("game-over-screen");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
+const menuButton = document.getElementById("menu-button");
+const pauseMenuButton = document.getElementById("pause-menu-button");
+const overMenuButton = document.getElementById("over-menu-button");
+const difficultyButtons = [...document.querySelectorAll("[data-difficulty]")];
+const modeLabel = document.querySelector(".mode-label");
 const resumeButton = document.getElementById("resume-button");
 const restartButton = document.getElementById("restart-button");
 const scoreValue = document.getElementById("score-value");
@@ -18,6 +23,15 @@ const timeValue = document.getElementById("time-value");
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
 const jumpButton = document.getElementById("jump-button");
+
+const DIFFICULTIES = {
+  easy: { label: "EASY", speed: 0.78, ramp: 0.72 },
+  medium: { label: "MEDIUM", speed: 1, ramp: 1 },
+  hard: { label: "HARD", speed: 1.22, ramp: 1.18 },
+  extreme: { label: "EXTREME", speed: 1.48, ramp: 1.42 },
+  master: { label: "MASTER", speed: 1.78, ramp: 1.72 }
+};
+let selectedDifficulty = "medium";
 
 const CONFIG = {
   room: { halfWidth: 7.5, halfDepth: 10, height: 5.5 },
@@ -183,6 +197,21 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
+function selectDifficulty(level) {
+  if (!DIFFICULTIES[level]) return;
+  selectedDifficulty = level;
+  difficultyButtons.forEach((button) => {
+    const selected = button.dataset.difficulty === level;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  if (modeLabel) modeLabel.innerHTML = '<i></i> ' + DIFFICULTIES[level].label + ' MODE';
+}
+
+difficultyButtons.forEach((button) => {
+  button.addEventListener("click", () => selectDifficulty(button.dataset.difficulty));
+});
+
 function setScreen(active) {
   startScreen.classList.toggle("hidden", active !== "ready");
   pauseScreen.classList.toggle("hidden", active !== "paused");
@@ -201,7 +230,8 @@ function resetRun() {
   cameraYaw = 0;
   cameraPitch = 0;
   ball.position.set(1.5, 2.1, -5.5);
-  ballVelocity.set(-4.8, 1.6, 6.2);
+  const difficulty = DIFFICULTIES[selectedDifficulty];
+  ballVelocity.set(-4.8 * difficulty.speed, 1.6 * difficulty.speed, 6.2 * difficulty.speed);
   ballVerticalVelocity = 1.6;
   scoreValue.textContent = "0000";
   timeValue.textContent = "0.0s";
@@ -229,6 +259,14 @@ function resumeRun() {
   clock.getDelta();
 }
 
+function showMainMenu() {
+  state = "ready";
+  keys.clear();
+  touchDirections.clear();
+  if (document.pointerLockElement) document.exitPointerLock();
+  setScreen(state);
+}
+
 function endRun() {
   if (state !== "playing") return;
   state = "over";
@@ -246,6 +284,9 @@ startButton.addEventListener("click", startRun);
 restartButton.addEventListener("click", startRun);
 pauseButton.addEventListener("click", pauseRun);
 resumeButton.addEventListener("click", resumeRun);
+menuButton.addEventListener("click", showMainMenu);
+pauseMenuButton.addEventListener("click", showMainMenu);
+overMenuButton.addEventListener("click", showMainMenu);
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
@@ -338,7 +379,8 @@ function updateBall(delta) {
   }
 
   // Gradually increase the obstacle's pace to keep later rounds challenging.
-  const targetSpeed = CONFIG.ball.speed + Math.min(elapsed * 0.055, 3.5);
+  const difficulty = DIFFICULTIES[selectedDifficulty];
+  const targetSpeed = (CONFIG.ball.speed + Math.min(elapsed * 0.055 * difficulty.ramp, 3.5 * difficulty.ramp)) * difficulty.speed;
   const horizontal = new THREE.Vector2(ballVelocity.x, ballVelocity.z);
   if (horizontal.length() < targetSpeed) {
     horizontal.setLength(Math.min(targetSpeed, horizontal.length() + delta * 0.22));

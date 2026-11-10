@@ -141,10 +141,12 @@ const mats = {
 
 };
 
+const themeTrimMeshes = [];
 function box(w, h, d, mat, x, y, z) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   mesh.position.set(x, y, z);
   scene.add(mesh);
+  if (mat === mats.trim) themeTrimMeshes.push(mesh);
   return mesh;
 }
 
@@ -182,7 +184,118 @@ const ballAura = new THREE.Mesh(
 );
 ball.add(ballAura);
 const ballLight = new THREE.PointLight(0xff123c, 45, 10);
+
 ball.add(ballLight);
+
+// SCORE-BASED ARENA COLOUR EVOLUTION
+const arenaThemes = [
+  { name:"BLUE", hex:0x3185ff, glow:0x1768ff, dark:0x07152b, ground:0x07101f },
+  { name:"GREEN", hex:0x45e58b, glow:0x16c96b, dark:0x071b12, ground:0x07140d },
+  { name:"PINK", hex:0xff5aa9, glow:0xff278b, dark:0x210b19, ground:0x180812 },
+  { name:"LIGHT BLUE", hex:0x55dcff, glow:0x21bfff, dark:0x071a25, ground:0x07131c },
+  { name:"PURPLE", hex:0xa879ff, glow:0x813cff, dark:0x160d28, ground:0x10091c },
+  { name:"WHITE", hex:0xf2f5ff, glow:0xcbd8ff, dark:0x171a24, ground:0x10131b }
+];
+const themeCurrent = {
+  ball: mats.ball.color.clone(), ballEmissive: mats.ball.emissive.clone(),
+  aura: ballAura.material.color.clone(), ballLight: ballLight.color.clone(),
+  roomGlow: redRoomGlow.color.clone(), ambientSky: ambient.color.clone(),
+  ambientGround: ambient.groundColor.clone(), ceiling: ceilingLight.color.clone(),
+  wall: mats.wall.color.clone(), floor: mats.floor.color.clone(),
+  trim: mats.trim.color.clone(), background: scene.background.clone(),
+  fog: scene.fog.color.clone()
+};
+const themeTarget = {};
+let themeTransitionActive = false;
+let lastThemeMilestone = 0;
+let currentThemeName = "RED";
+const themeBanner = document.getElementById("theme-banner");
+const themeDefault = {
+  ball: new THREE.Color(0xff2447), ballEmissive: new THREE.Color(0xff002b),
+  aura: new THREE.Color(0xff123c), ballLight: new THREE.Color(0xff123c),
+  roomGlow: new THREE.Color(0xff153d), ambientSky: new THREE.Color(0xd8dce6),
+  ambientGround: new THREE.Color(0x17151a), ceiling: new THREE.Color(0xffffff),
+  wall: new THREE.Color(0x202229), floor: new THREE.Color(0x17191f),
+  trim: new THREE.Color(0x9d172d), background: new THREE.Color(0x08090d),
+  fog: new THREE.Color(0x08090d)
+};
+function applyThemeTargets(palette) {
+  const accent = new THREE.Color(palette.hex);
+  const glow = new THREE.Color(palette.glow);
+  const dark = new THREE.Color(palette.dark);
+  const ground = new THREE.Color(palette.ground);
+  themeTarget.ball = accent.clone();
+  themeTarget.ballEmissive = glow.clone();
+  themeTarget.aura = glow.clone();
+  themeTarget.ballLight = glow.clone();
+  themeTarget.roomGlow = glow.clone();
+  themeTarget.ambientSky = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.62);
+  themeTarget.ambientGround = ground.clone();
+  themeTarget.ceiling = accent.clone().lerp(new THREE.Color(0xffffff), 0.82);
+  themeTarget.wall = new THREE.Color(0x202229).lerp(dark, 0.36);
+  themeTarget.floor = new THREE.Color(0x17191f).lerp(dark, 0.22);
+  themeTarget.trim = accent.clone();
+  themeTarget.background = new THREE.Color(0x08090d).lerp(dark, 0.32);
+  themeTarget.fog = new THREE.Color(0x08090d).lerp(dark, 0.46);
+  currentThemeName = palette.name;
+}
+function triggerArenaTheme(milestone) {
+  const palette = arenaThemes[(milestone - 1) % arenaThemes.length];
+  applyThemeTargets(palette);
+  themeTransitionActive = true;
+  document.documentElement.style.setProperty("--theme-accent", "#" + new THREE.Color(palette.hex).getHexString());
+  document.documentElement.style.setProperty("--theme-glow", "#" + new THREE.Color(palette.glow).getHexString());
+  document.documentElement.style.setProperty("--theme-accent-rgb", [
+    (palette.hex >> 16) & 255, (palette.hex >> 8) & 255, palette.hex & 255
+  ].join(","));
+  if (themeBanner) {
+    themeBanner.textContent = "+" + (milestone * 500).toLocaleString() + "  /  " + palette.name + " PHASE";
+    themeBanner.classList.remove("theme-banner-show");
+    void themeBanner.offsetWidth;
+    themeBanner.classList.add("theme-banner-show");
+  }
+}
+function updateArenaTheme(delta) {
+  if (!themeTransitionActive) return;
+  const amount = 1 - Math.exp(-delta * 2.5);
+  const pairs = [
+    [mats.ball.color, themeTarget.ball], [mats.ball.emissive, themeTarget.ballEmissive],
+    [ballAura.material.color, themeTarget.aura], [ballLight.color, themeTarget.ballLight],
+    [redRoomGlow.color, themeTarget.roomGlow], [ambient.color, themeTarget.ambientSky],
+    [ambient.groundColor, themeTarget.ambientGround], [ceilingLight.color, themeTarget.ceiling],
+    [mats.wall.color, themeTarget.wall], [mats.floor.color, themeTarget.floor],
+    [mats.trim.color, themeTarget.trim], [scene.background, themeTarget.background],
+    [scene.fog.color, themeTarget.fog]
+  ];
+  for (const [current, target] of pairs) current.lerp(target, amount);
+  if (pairs.every(([current, target]) => current.distanceTo(target) < 0.012)) {
+    pairs.forEach(([current, target]) => current.copy(target));
+    themeTransitionActive = false;
+  }
+}
+function resetArenaTheme() {
+  lastThemeMilestone = 0;
+  currentThemeName = "RED";
+  Object.keys(themeDefault).forEach(key => themeCurrent[key].copy(themeDefault[key]));
+  mats.ball.color.copy(themeDefault.ball);
+  mats.ball.emissive.copy(themeDefault.ballEmissive);
+  ballAura.material.color.copy(themeDefault.aura);
+  ballLight.color.copy(themeDefault.ballLight);
+  redRoomGlow.color.copy(themeDefault.roomGlow);
+  ambient.color.copy(themeDefault.ambientSky);
+  ambient.groundColor.copy(themeDefault.ambientGround);
+  ceilingLight.color.copy(themeDefault.ceiling);
+  mats.wall.color.copy(themeDefault.wall);
+  mats.floor.color.copy(themeDefault.floor);
+  mats.trim.color.copy(themeDefault.trim);
+  scene.background.copy(themeDefault.background);
+  scene.fog.color.copy(themeDefault.fog);
+  themeTransitionActive = false;
+  document.documentElement.style.setProperty("--theme-accent", "#ff183d");
+  document.documentElement.style.setProperty("--theme-glow", "#ff536b");
+  document.documentElement.style.setProperty("--theme-accent-rgb", "255,24,61");
+  if (themeBanner) themeBanner.classList.remove("theme-banner-show");
+}
 
 let ballVelocity = new THREE.Vector3(-4.8, 1.6, 6.2);
 let ballVerticalVelocity = 1.6;
@@ -348,6 +461,7 @@ function resetRun() {
   courseChangeTimer = 0;
   nextCourseChange = 1.1 + Math.random() * 1.5;
   scoreValue.textContent = "0000";
+  resetArenaTheme();
   timeValue.textContent = "0.0s";
   keys.clear();
   touchDirections.clear();
@@ -628,12 +742,19 @@ function animate() {
     updateBall(delta);
     updateCamera(delta);
     score = elapsed * 10;
+    const reachedMilestone = Math.floor(score / 500);
+    if (reachedMilestone > lastThemeMilestone) {
+      lastThemeMilestone = reachedMilestone;
+      triggerArenaTheme(reachedMilestone);
+    }
+    updateArenaTheme(delta);
     scoreValue.textContent = String(Math.floor(score)).padStart(4, "0");
     timeValue.textContent = elapsed.toFixed(1) + "s";
     ball.rotation.x += delta * 0.8;
     ball.rotation.z += delta * 1.1;
     ballAura.rotation.y -= delta * 0.4;
   } else {
+    updateArenaTheme(delta);
     ball.rotation.x += delta * 0.25;
     ball.rotation.z += delta * 0.32;
   }

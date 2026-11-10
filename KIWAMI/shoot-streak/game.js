@@ -25,11 +25,11 @@ const touchControls = document.getElementById("touch-controls");
 const jumpButton = document.getElementById("jump-button");
 
 const DIFFICULTIES = {
-  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45 },
-  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 0.98, chaos: 0.7 },
-  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.02, chaos: 1.0 },
-  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.06, chaos: 1.35 },
-  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.1, chaos: 1.75 }
+  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45, aim: 0.18 },
+  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 0.98, chaos: 0.7, aim: 0.34 },
+  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.02, chaos: 1.0, aim: 0.52 },
+  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.06, chaos: 1.35, aim: 0.72 },
+  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.1, chaos: 1.75, aim: 1.0 }
 };
 let selectedDifficulty = "medium";
 
@@ -371,6 +371,20 @@ function turnBallRandomly(maxAngle) {
   ballVelocity.z = horizontal.y;
 }
 
+// Aim is applied only at a bounce; the ball never continuously homes in.
+function aimBallAtPlayer(difficulty) {
+  const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
+  const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
+  if (toPlayer.lengthSq() < 0.001 || currentSpeed < 0.001) return;
+  const direction = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
+  const target = toPlayer.normalize();
+  direction.lerp(target, difficulty.aim).normalize();
+  const spread = selectedDifficulty === "master" ? 0.025 : 0.11 * difficulty.chaos;
+  direction.rotateAround(new THREE.Vector2(), (Math.random() - 0.5) * spread);
+  ballVelocity.x = direction.x * currentSpeed;
+  ballVelocity.z = direction.y * currentSpeed;
+}
+
 function updateBall(delta) {
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const horizontal = new THREE.Vector2(ballVelocity.x, ballVelocity.z);
@@ -395,6 +409,10 @@ function updateBall(delta) {
     ball.position.x = roomBounds.x;
     ballVelocity.x = -Math.abs(ballVelocity.x) * wallBounce;
     turnBallRandomly(0.16 + difficulty.chaos * 0.13);
+    aimBallAtPlayer(difficulty);
+    aimBallAtPlayer(difficulty);
+    aimBallAtPlayer(difficulty);
+    aimBallAtPlayer(difficulty);
   } else if (ball.position.x < -roomBounds.x) {
     ball.position.x = -roomBounds.x;
     ballVelocity.x = Math.abs(ballVelocity.x) * wallBounce;
@@ -415,11 +433,13 @@ function updateBall(delta) {
     ball.position.y = CONFIG.ball.radius;
     ballVerticalVelocity = Math.abs(ballVerticalVelocity) * (0.86 + difficulty.chaos * 0.035) + 2.0 + Math.random() * (1.1 + difficulty.chaos);
     turnBallRandomly(0.08 + difficulty.chaos * 0.12);
+    aimBallAtPlayer(difficulty);
   }
   if (ball.position.y > CONFIG.room.height - CONFIG.ball.radius) {
     ball.position.y = CONFIG.room.height - CONFIG.ball.radius;
     ballVerticalVelocity = -Math.abs(ballVerticalVelocity) * (0.88 + difficulty.chaos * 0.025);
     turnBallRandomly(0.1 + difficulty.chaos * 0.12);
+    aimBallAtPlayer(difficulty);
   }
 
   // Accelerate toward a difficulty-scaled target, with a hard cap for stable physics.

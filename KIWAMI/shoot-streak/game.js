@@ -52,13 +52,67 @@ let elapsed = 0;
 let score = 0;
 let best = 0;
 let lastFrame = 0;
+const CAREER_STATS_KEY = "dodgeCoreCareerStats";
+const emptyCareerStats = () => ({
+  totalGamesPlayed: 0,
+  totalSurvivalSeconds: 0,
+  bestScore: 0,
+  difficultyCounts: { easy: 0, medium: 0, hard: 0, extreme: 0, master: 0 }
+});
+let careerStats = emptyCareerStats();
 const keys = new Set();
 const touchDirections = new Set();
 let touchMoveX = 0, touchMoveY = 0, joystickPointerId = null;
 const clock = new THREE.Clock();
 
-try { best = Number(localStorage.getItem("ssDodgeBest") || 0); } catch {}
+try {
+  const storedStats = JSON.parse(localStorage.getItem(CAREER_STATS_KEY) || "null");
+  if (storedStats && typeof storedStats === "object") {
+    careerStats.totalGamesPlayed = Math.max(0, Number(storedStats.totalGamesPlayed) || 0);
+    careerStats.totalSurvivalSeconds = Math.max(0, Number(storedStats.totalSurvivalSeconds) || 0);
+    careerStats.bestScore = Math.max(0, Number(storedStats.bestScore) || 0);
+    for (const level of Object.keys(careerStats.difficultyCounts)) {
+      careerStats.difficultyCounts[level] = Math.max(0, Number(storedStats.difficultyCounts?.[level]) || 0);
+    }
+  }
+  best = Math.max(careerStats.bestScore, Number(localStorage.getItem("ssDodgeBest") || 0));
+} catch {}
+careerStats.bestScore = Math.max(careerStats.bestScore, best);
 bestValue.textContent = String(best).padStart(4, "0");
+
+function saveCareerStats() {
+  try {
+    localStorage.setItem(CAREER_STATS_KEY, JSON.stringify(careerStats));
+    localStorage.setItem("ssDodgeBest", String(careerStats.bestScore));
+  } catch {}
+}
+function formatCareerTime(totalSeconds) {
+  const total = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours) return hours + "h " + minutes + "m";
+  if (minutes) return minutes + "m " + seconds + "s";
+  return seconds + "s";
+}
+function getFavouriteDifficulty() {
+  const entries = Object.entries(careerStats.difficultyCounts);
+  entries.sort((a, b) => b[1] - a[1]);
+  return entries[0] && entries[0][1] > 0 ? DIFFICULTIES[entries[0][0]].label : "—";
+}
+function renderCareerStats() {
+  const values = {
+    "career-games": String(careerStats.totalGamesPlayed),
+    "career-time": formatCareerTime(careerStats.totalSurvivalSeconds),
+    "career-best": String(careerStats.bestScore).padStart(4, "0"),
+    "career-favourite": getFavouriteDifficulty()
+  };
+  for (const [id, value] of Object.entries(values)) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+  }
+}
+renderCareerStats();
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08090d);
@@ -251,7 +305,7 @@ function triggerArenaTheme(milestone) {
     (palette.hex >> 16) & 255, (palette.hex >> 8) & 255, palette.hex & 255
   ].join(","));
   if (themeBanner) {
-    themeBanner.textContent = "+" + (milestone * 500).toLocaleString() + "  /  " + palette.name + " PHASE";
+    themeBanner.textContent = "+" + (milestone * 100).toLocaleString() + "  /  " + palette.name + " PHASE";
     themeBanner.classList.remove("theme-banner-show");
     void themeBanner.offsetWidth;
     themeBanner.classList.add("theme-banner-show");
@@ -473,6 +527,9 @@ function resetRun() {
 
 function startRun() {
   resetRun();
+  careerStats.totalGamesPlayed += 1;
+  saveCareerStats();
+  renderCareerStats();
   state = "playing";
   setScreen(state);
   clock.getDelta();
@@ -504,12 +561,29 @@ function endRun() {
   if (state !== "playing") return;
   state = "over";
   const final = Math.floor(score);
+  const survived = Math.max(0, elapsed);
+  const newRecord = final > best;
   finalScore.textContent = String(final).padStart(4, "0");
-  if (final > best) {
+  if (newRecord) {
     best = final;
     bestValue.textContent = String(best).padStart(4, "0");
-    try { localStorage.setItem("ssDodgeBest", String(best)); } catch {}
   }
+  careerStats.totalSurvivalSeconds += survived;
+  careerStats.bestScore = Math.max(careerStats.bestScore, final, best);
+  careerStats.difficultyCounts[selectedDifficulty] = (careerStats.difficultyCounts[selectedDifficulty] || 0) + 1;
+  saveCareerStats();
+  renderCareerStats();
+
+  const runBest = document.getElementById("run-best-value");
+  const runTime = document.getElementById("run-time-value");
+  const runDifficulty = document.getElementById("run-difficulty-value");
+  const recordBadge = document.getElementById("new-record-badge");
+  const recordStatus = document.getElementById("record-status");
+  if (runBest) runBest.textContent = String(best).padStart(4, "0");
+  if (runTime) runTime.textContent = survived.toFixed(1) + "s";
+  if (runDifficulty) runDifficulty.textContent = DIFFICULTIES[selectedDifficulty].label;
+  if (recordBadge) recordBadge.classList.toggle("hidden", !newRecord);
+  if (recordStatus) recordStatus.textContent = newRecord ? "NEW PERSONAL BEST" : "PERSONAL BEST  /  " + String(best).padStart(4, "0");
   setScreen(state);
 }
 

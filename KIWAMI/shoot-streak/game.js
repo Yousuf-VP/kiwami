@@ -15,6 +15,10 @@ const sensitivityInputs = ["menu-sensitivity","pause-sensitivity","mobile-sensit
 const fovInputs = ["menu-fov","pause-fov","mobile-fov"].map(id=>document.getElementById(id));
 const sensitivityOutputs = ["menu-sensitivity-value","pause-sensitivity-value","mobile-sensitivity-value"].map(id=>document.getElementById(id));
 const fovOutputs = ["menu-fov-value","pause-fov-value","mobile-fov-value"].map(id=>document.getElementById(id));
+const graphicsQualityInputs = [...document.querySelectorAll("[data-graphics-quality]")];
+const graphicsShadowInputs = [...document.querySelectorAll("[data-graphics-shadows]")];
+const graphicsMotionInputs = [...document.querySelectorAll("[data-graphics-motion]")];
+const graphicsStatusOutputs = [...document.querySelectorAll("[data-graphics-status]")];
 const menuButton = document.getElementById("menu-button");
 const pauseMenuButton = document.getElementById("pause-menu-button");
 const overMenuButton = document.getElementById("over-menu-button");
@@ -48,6 +52,20 @@ const CONFIG = {
 };
 
 let state = "ready";
+const GRAPHICS_PRESETS = {
+  performance: { label: "PERFORMANCE", scale: 0.78, maxPixelRatio: 1.0, shadowMapSize: 512 },
+  balanced: { label: "BALANCED", scale: 1.0, maxPixelRatio: 1.5, shadowMapSize: 512 },
+  high: { label: "HIGH", scale: 1.08, maxPixelRatio: 2.0, shadowMapSize: 1024 }
+};
+const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true };
+try {
+  const savedGraphics = JSON.parse(localStorage.getItem("dodgeCoreGraphics") || "null");
+  if (savedGraphics && typeof savedGraphics === "object") {
+    if (GRAPHICS_PRESETS[savedGraphics.quality]) graphicsSettings.quality = savedGraphics.quality;
+    if (typeof savedGraphics.shadows === "boolean") graphicsSettings.shadows = savedGraphics.shadows;
+    if (typeof savedGraphics.motionEffects === "boolean") graphicsSettings.motionEffects = savedGraphics.motionEffects;
+  }
+} catch {}
 let elapsed = 0;
 let score = 0;
 let best = 0;
@@ -128,11 +146,13 @@ camera.position.set(0, 1.65, CONFIG.player.startZ);
 camera.lookAt(0, 1.65, CONFIG.player.startZ - 12);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+const initialGraphicsPreset = GRAPHICS_PRESETS[graphicsSettings.quality];
+renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * initialGraphicsPreset.scale, initialGraphicsPreset.maxPixelRatio));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = false;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.domElement.id = "game-canvas";
 renderer.domElement.tabIndex = 0;
 shell.prepend(renderer.domElement);
@@ -188,6 +208,22 @@ const playerFillLight = new THREE.PointLight(0xd8dce8, 2.4, 9, 2);
 playerFillLight.position.set(0, 1.9, CONFIG.player.startZ);
 scene.add(playerFillLight);
 
+// Optional directional light used only when the player enables real-time shadows.
+const shadowLight = new THREE.DirectionalLight(0xffffff, 0);
+shadowLight.position.set(-4, 9, 5);
+shadowLight.castShadow = true;
+shadowLight.shadow.camera.left = -10;
+shadowLight.shadow.camera.right = 10;
+shadowLight.shadow.camera.top = 9;
+shadowLight.shadow.camera.bottom = -11;
+shadowLight.shadow.camera.near = 0.5;
+shadowLight.shadow.camera.far = 24;
+shadowLight.shadow.bias = -0.00025;
+shadowLight.shadow.normalBias = 0.025;
+shadowLight.shadow.radius = 3;
+scene.add(shadowLight);
+scene.add(shadowLight.target);
+
 const mats = {
   floor: new THREE.MeshStandardMaterial({ color: 0x17191f, roughness: 0.82, metalness: 0.12 }),
   wall: new THREE.MeshStandardMaterial({ color: 0x202229, roughness: 0.88, metalness: 0.08 }),
@@ -202,6 +238,7 @@ const mats = {
 const themeTrimMeshes = [];
 function box(w, h, d, mat, x, y, z) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  mesh.receiveShadow = true;
   mesh.position.set(x, y, z);
   scene.add(mesh);
   if (mat === mats.trim) themeTrimMeshes.push(mesh);
@@ -233,6 +270,7 @@ player.visible = false;
 player.position.set(CONFIG.player.startX, 0, CONFIG.player.startZ);
 
 const ball = new THREE.Mesh(new THREE.SphereGeometry(CONFIG.ball.radius, 32, 24), mats.ball);
+ball.castShadow = true;
 ball.position.set(1.5, 2.1, -5.5);
 scene.add(ball);
 
@@ -391,6 +429,42 @@ function resize() {
 }
 window.addEventListener("resize", resize);
 resize();
+
+function saveGraphicsSettings() {
+  try { localStorage.setItem("dodgeCoreGraphics", JSON.stringify(graphicsSettings)); } catch {}
+}
+function applyGraphicsSettings(persist = false) {
+  const preset = GRAPHICS_PRESETS[graphicsSettings.quality] || GRAPHICS_PRESETS.balanced;
+  graphicsQualityInputs.forEach(input => { input.value = graphicsSettings.quality; });
+  graphicsShadowInputs.forEach(input => { input.checked = graphicsSettings.shadows; });
+  graphicsMotionInputs.forEach(input => { input.checked = graphicsSettings.motionEffects; });
+  graphicsStatusOutputs.forEach(output => {
+    output.textContent = preset.label + "  /  " + (graphicsSettings.shadows ? "SHADOWS ON" : "SHADOWS OFF");
+  });
+
+  const pixelRatio = Math.min((window.devicePixelRatio || 1) * preset.scale, preset.maxPixelRatio);
+  renderer.setPixelRatio(pixelRatio);
+  renderer.shadowMap.enabled = graphicsSettings.shadows;
+  shadowLight.intensity = graphicsSettings.shadows ? 0.62 : 0;
+  shadowLight.shadow.mapSize.set(preset.shadowMapSize, preset.shadowMapSize);
+  shadowLight.shadow.needsUpdate = true;
+  resize();
+  if (persist) saveGraphicsSettings();
+}
+graphicsQualityInputs.forEach(input => input.addEventListener("change", () => {
+  if (!GRAPHICS_PRESETS[input.value]) return;
+  graphicsSettings.quality = input.value;
+  applyGraphicsSettings(true);
+}));
+graphicsShadowInputs.forEach(input => input.addEventListener("change", () => {
+  graphicsSettings.shadows = input.checked;
+  applyGraphicsSettings(true);
+}));
+graphicsMotionInputs.forEach(input => input.addEventListener("change", () => {
+  graphicsSettings.motionEffects = input.checked;
+  applyGraphicsSettings(true);
+}));
+applyGraphicsSettings();
 
 
 function applySettings() {
@@ -791,14 +865,15 @@ function updateCamera(delta = 0) {
   const localForward = (playerVelocity.x * forwardX + playerVelocity.z * forwardZ) / CONFIG.player.speed;
   const localStrafe = (playerVelocity.x * rightX + playerVelocity.z * rightZ) / CONFIG.player.speed;
 
+  const motionScale = graphicsSettings.motionEffects ? 1 : 0;
   cameraMotionTime += delta * (moveAmount > 0.04 ? 13 : 2.2);
   landingKick = THREE.MathUtils.damp(landingKick, 0, 10, delta);
-  const strideBob = Math.abs(Math.sin(cameraMotionTime)) * 0.075 * moveAmount;
-  const verticalBounce = Math.sin(cameraMotionTime * 2) * 0.018 * moveAmount;
-  const lateralSway = Math.sin(cameraMotionTime) * 0.045 * moveAmount;
-  const forwardDip = -Math.max(0, localForward) * 0.045;
-  const strafeLean = -localStrafe * 0.075;
-  const strideRoll = Math.sin(cameraMotionTime) * 0.012 * moveAmount;
+  const strideBob = Math.abs(Math.sin(cameraMotionTime)) * 0.075 * moveAmount * motionScale;
+  const verticalBounce = Math.sin(cameraMotionTime * 2) * 0.018 * moveAmount * motionScale;
+  const lateralSway = Math.sin(cameraMotionTime) * 0.045 * moveAmount * motionScale;
+  const forwardDip = -Math.max(0, localForward) * 0.045 * motionScale;
+  const strafeLean = -localStrafe * 0.075 * motionScale;
+  const strideRoll = Math.sin(cameraMotionTime) * 0.012 * moveAmount * motionScale;
 
   camera.position.set(
     player.position.x + rightX * lateralSway,
@@ -807,7 +882,7 @@ function updateCamera(delta = 0) {
   );
   camera.rotation.order = "YXZ";
   camera.rotation.set(
-    cameraPitch + Math.max(0, localForward) * 0.025 + landingKick * 0.22,
+    cameraPitch + Math.max(0, localForward) * 0.025 * motionScale + landingKick * 0.22 * motionScale,
     cameraYaw,
     strafeLean + strideRoll
   );

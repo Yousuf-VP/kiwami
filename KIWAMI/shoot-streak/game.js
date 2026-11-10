@@ -188,12 +188,13 @@ const ballLight = new THREE.PointLight(0xff123c, 45, 10);
 ball.add(ballLight);
 
 // SCORE-BASED ARENA COLOUR EVOLUTION
+// Ordered as a cool-to-warm colour journey, with white as the neutral finale.
 const arenaThemes = [
-  { name:"BLUE", hex:0x3185ff, glow:0x1768ff, dark:0x07152b, ground:0x07101f },
-  { name:"GREEN", hex:0x45e58b, glow:0x16c96b, dark:0x071b12, ground:0x07140d },
-  { name:"PINK", hex:0xff5aa9, glow:0xff278b, dark:0x210b19, ground:0x180812 },
+  { name:"GREEN", hex:0x39d98a, glow:0x16b96d, dark:0x071b12, ground:0x07140d },
   { name:"LIGHT BLUE", hex:0x55dcff, glow:0x21bfff, dark:0x071a25, ground:0x07131c },
+  { name:"BLUE", hex:0x397dff, glow:0x185dff, dark:0x07152b, ground:0x07101f },
   { name:"PURPLE", hex:0xa879ff, glow:0x813cff, dark:0x160d28, ground:0x10091c },
+  { name:"PINK", hex:0xff5aa9, glow:0xff278b, dark:0x210b19, ground:0x180812 },
   { name:"WHITE", hex:0xf2f5ff, glow:0xcbd8ff, dark:0x171a24, ground:0x10131b }
 ];
 const themeCurrent = {
@@ -744,7 +745,7 @@ function animate() {
     updateBall(delta);
     updateCamera(delta);
     score = elapsed * 10;
-    const reachedMilestone = Math.floor(score / 500);
+    const reachedMilestone = Math.floor(score / 100);
     if (reachedMilestone > lastThemeMilestone) {
       lastThemeMilestone = reachedMilestone;
       triggerArenaTheme(reachedMilestone);

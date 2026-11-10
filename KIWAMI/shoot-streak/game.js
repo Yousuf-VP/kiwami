@@ -137,9 +137,8 @@ const mats = {
   player: new THREE.MeshStandardMaterial({ color: 0xd8dbe2, roughness: 0.65 }),
   playerAccent: new THREE.MeshStandardMaterial({ color: 0xff294b, emissive: 0x5b0718, emissiveIntensity: 1.2 }),
   ball: new THREE.MeshStandardMaterial({ color: 0xff2447, emissive: 0xff002b, emissiveIntensity: 3.2, roughness: 0.22, metalness: 0.05 }),
-  firstPersonSleeve: new THREE.MeshStandardMaterial({ color: 0x252832, roughness: 0.86 }),
-  firstPersonCuff: new THREE.MeshStandardMaterial({ color: 0x8f1028, emissive: 0x260008, emissiveIntensity: 0.55, roughness: 0.7 }),
-  firstPersonSkin: new THREE.MeshStandardMaterial({ color: 0xc99573, roughness: 0.88 })
+  // Classic avatar-style arms: one consistent light neutral material, like the reference.
+  firstPersonBlock: new THREE.MeshStandardMaterial({ color: 0xd9dadd, roughness: 0.92, metalness: 0 })
 };
 
 // Simple blocky first-person arms, inspired by classic avatar proportions.
@@ -151,17 +150,26 @@ firstPersonHands.visible = false;
 const firstPersonArms = [];
 function createBlockyArm(side) {
   const arm = new THREE.Group();
-  arm.position.set(side * 0.34, -0.39, -0.78);
-  arm.rotation.z = side * -0.08;
-  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.43, 0.24), mats.firstPersonSleeve);
-  sleeve.position.y = -0.025;
-  const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.225, 0.085, 0.245), mats.firstPersonCuff);
-  cuff.position.y = -0.265;
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.215, 0.19, 0.235), mats.firstPersonSkin);
-  palm.position.y = -0.39;
-  const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.12, 0.13), mats.firstPersonSkin);
-  thumb.position.set(-side * 0.115, -0.365, -0.035);
-  arm.add(sleeve, cuff, palm, thumb);
+
+  // Broad, squared-off forearm reaching in from the lower screen corner.
+  // The overlapping palm block keeps the silhouette chunky and continuous.
+  arm.position.set(side * 0.49, -0.48, -0.72);
+  arm.rotation.z = side * -0.055;
+  arm.rotation.x = -0.12;
+
+  const forearm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.52, 0.46, 0.92),
+    mats.firstPersonBlock
+  );
+  forearm.position.set(0, -0.015, -0.30);
+
+  const handBlock = new THREE.Mesh(
+    new THREE.BoxGeometry(0.56, 0.47, 0.42),
+    mats.firstPersonBlock
+  );
+  handBlock.position.set(0, -0.015, -0.94);
+
+  arm.add(forearm, handBlock);
   firstPersonHands.add(arm);
   firstPersonArms.push(arm);
 }

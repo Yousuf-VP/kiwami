@@ -105,7 +105,11 @@ function renderCareerStats() {
     "career-games": String(careerStats.totalGamesPlayed),
     "career-time": formatCareerTime(careerStats.totalSurvivalSeconds),
     "career-best": String(careerStats.bestScore).padStart(4, "0"),
-    "career-favourite": getFavouriteDifficulty()
+    "career-favourite": getFavouriteDifficulty(),
+    "career-games-mobile": String(careerStats.totalGamesPlayed),
+    "career-time-mobile": formatCareerTime(careerStats.totalSurvivalSeconds),
+    "career-best-mobile": String(careerStats.bestScore).padStart(4, "0"),
+    "career-favourite-mobile": getFavouriteDifficulty()
   };
   for (const [id, value] of Object.entries(values)) {
     const node = document.getElementById(id);

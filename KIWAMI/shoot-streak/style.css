@@ -96,3 +96,31 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
   .difficulty-heading small { font-size:6px; }
   .version-tag { font-size:6px; }
 }
+
+/* KIWAMI startup ident and mobile joystick */
+#studio-intro{position:absolute;inset:0;z-index:30;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#210711,#09090d 48%,#050609);opacity:1;visibility:visible;transition:opacity .65s ease,visibility .65s ease}
+#studio-intro::before{content:"";position:absolute;width:min(70vw,620px);aspect-ratio:1;border:1px solid rgba(255,24,61,.12);border-radius:50%;box-shadow:0 0 90px rgba(255,24,61,.08)}
+#studio-intro.intro-exit{opacity:0;visibility:hidden;pointer-events:none}
+.intro-content{position:relative;z-index:1;width:min(420px,calc(100% - 40px));text-align:center}
+.intro-logo{margin:0 auto 17px;color:#fff;font:900 clamp(76px,14vw,112px)/.9 var(--display);letter-spacing:-9px}.intro-logo span{color:var(--red)}
+.intro-rule{width:54px;height:2px;margin:0 auto 20px;background:var(--red);box-shadow:0 0 16px var(--red)}
+.intro-kicker{margin:0 0 10px;color:#ff899b;font:700 9px var(--display);letter-spacing:3px}
+.intro-content h2{margin:0;color:#fff;font:900 clamp(23px,5vw,34px) var(--display);letter-spacing:2px}
+.intro-loading{margin:31px 0 11px;color:#9b9ca6;font:700 8px var(--display);letter-spacing:2px}
+.loading-dots{display:inline-block;width:18px;animation:loadingDots 1s steps(4,end) infinite;overflow:hidden}
+.intro-loader{width:190px;height:2px;margin:auto;overflow:hidden;background:rgba(255,255,255,.12)}
+.intro-loader span{display:block;width:35%;height:100%;background:var(--red);box-shadow:0 0 12px var(--red);animation:loadBar 1.45s ease-in-out forwards}
+.intro-copyright{position:absolute;bottom:18px;left:12px;right:12px;color:#666873;text-align:center;font:600 7px var(--display);letter-spacing:1.3px}
+@keyframes loadBar{from{transform:translateX(-110%)}to{transform:translateX(300%)}}@keyframes loadingDots{from{width:0}to{width:18px}}
+#copyright{position:absolute;z-index:3;right:18px;bottom:19px;color:rgba(205,205,214,.52);font:600 7px var(--display);letter-spacing:1px;pointer-events:none}
+.mobile-control-note{display:none}
+#touch-controls{position:absolute;z-index:7;inset:0;display:none;pointer-events:none;touch-action:none}
+#move-joystick{position:absolute;left:24px;bottom:25px;width:136px;height:136px;border-radius:50%;display:grid;place-items:center;pointer-events:auto;touch-action:none;user-select:none;background:radial-gradient(circle,rgba(255,255,255,.045),rgba(10,11,16,.5));border:1px solid rgba(255,255,255,.16);box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.joystick-ring{position:absolute;inset:17px;border:1px dashed rgba(255,255,255,.13);border-radius:50%}
+#joystick-thumb{position:absolute;left:50%;top:50%;width:54px;height:54px;border-radius:50%;transform:translate(-50%,-50%);border:1px solid rgba(255,100,125,.65);background:radial-gradient(circle at 35% 30%,rgba(255,95,120,.65),rgba(110,8,28,.88));box-shadow:0 0 20px rgba(255,24,61,.24)}
+#touch-controls #jump-button{position:absolute;right:28px;bottom:47px;width:76px;height:76px;border-radius:50%;pointer-events:auto;touch-action:none;border:1px solid rgba(255,24,61,.7);color:#fff;background:rgba(75,8,23,.82);box-shadow:0 0 24px rgba(255,24,61,.16);font:800 9px var(--display);letter-spacing:1px}
+#mobile-look-hint{position:absolute;right:25px;bottom:132px;color:rgba(255,255,255,.48);font:700 7px var(--display);letter-spacing:1.2px;pointer-events:none}
+@media(pointer:coarse){#touch-controls{display:block}#mobile-look-hint,.mobile-control-note{display:block}#bottom-hint{display:none}#copyright{left:50%;right:auto;bottom:8px;transform:translateX(-50%);white-space:nowrap;font-size:6px}#hud{top:76px}}
+@media(max-width:520px){#move-joystick{left:14px;bottom:20px;width:116px;height:116px}.joystick-ring{inset:14px}#joystick-thumb{width:48px;height:48px}#touch-controls #jump-button{right:17px;bottom:35px;width:68px;height:68px}#mobile-look-hint{right:16px;bottom:112px}.mobile-control-note{margin-top:7px;color:#ff9aaa}}
+@media(orientation:landscape) and (pointer:coarse){#move-joystick{width:108px;height:108px;bottom:15px;left:18px}#touch-controls #jump-button{bottom:22px;right:22px}#mobile-look-hint{bottom:99px;right:24px}}
+@media(prefers-reduced-motion:reduce){#studio-intro,.intro-loader span,.loading-dots{animation:none;transition:none}}

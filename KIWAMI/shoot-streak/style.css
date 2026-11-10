@@ -124,3 +124,59 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 @media(max-width:520px){#move-joystick{left:14px;bottom:20px;width:116px;height:116px}.joystick-ring{inset:14px}#joystick-thumb{width:48px;height:48px}#touch-controls #jump-button{right:17px;bottom:35px;width:68px;height:68px}#mobile-look-hint{right:16px;bottom:112px}.mobile-control-note{margin-top:7px;color:#ff9aaa}}
 @media(orientation:landscape) and (pointer:coarse){#move-joystick{width:108px;height:108px;bottom:15px;left:18px}#touch-controls #jump-button{bottom:22px;right:22px}#mobile-look-hint{bottom:99px;right:24px}}
 @media(prefers-reduced-motion:reduce){#studio-intro,.intro-loader span,.loading-dots{animation:none;transition:none}}
+
+
+/* KILL-BALL cinematic arena intro */
+#studio-intro {
+  background:
+    radial-gradient(ellipse at 50% 57%, rgba(117, 5, 28, .2) 0%, transparent 34%),
+    radial-gradient(ellipse at 50% 48%, #100307 0%, #050407 48%, #010102 100%);
+}
+#studio-intro::before {
+  width: min(78vw, 720px);
+  border-color: rgba(255, 24, 61, .06);
+  box-shadow: 0 0 110px rgba(255, 24, 61, .07), inset 0 0 110px rgba(255, 24, 61, .035);
+}
+.intro-orb {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: clamp(82px, 13vw, 126px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -83%);
+  background: radial-gradient(circle at 34% 28%, #ff9aa9 0%, #ff294b 17%, #b90029 54%, #39000d 78%);
+  box-shadow: 0 0 22px rgba(255, 24, 61, .75), 0 0 75px rgba(255, 10, 48, .42), 0 0 150px rgba(255, 10, 48, .18);
+  animation: orb-drift 2.8s ease-in-out infinite;
+}
+.intro-orb::after {
+  content: "";
+  position: absolute;
+  left: -55%;
+  right: -55%;
+  bottom: -30%;
+  height: 25%;
+  border-radius: 50%;
+  background: rgba(255, 24, 61, .24);
+  filter: blur(19px);
+}
+.intro-content { z-index: 1; padding-top: clamp(92px, 15vh, 145px); }
+.intro-logo { margin-bottom: 13px; text-shadow: 0 0 30px rgba(255,255,255,.08); }
+.intro-rule { width: 72px; margin-bottom: 17px; }
+.intro-kicker { color: #ff7188; letter-spacing: 3.5px; }
+.intro-content h2 { font-size: clamp(30px, 6vw, 43px); letter-spacing: 4px; text-shadow: 0 0 28px rgba(255,24,61,.24); }
+.intro-tagline {
+  margin: 13px 0 0;
+  color: rgba(235, 218, 222, .68);
+  font: 700 8px var(--display);
+  letter-spacing: 2px;
+}
+.intro-loading { margin-top: 29px; color: #b1a3a8; }
+.intro-loader { width: min(230px, 65vw); background: rgba(255,255,255,.1); }
+.intro-loader span { animation-duration: 3.8s; }
+@keyframes orb-drift {
+  0%, 100% { translate: 0 0; scale: 1; }
+  50% { translate: 0 -12px; scale: 1.045; }
+}
+@media (prefers-reduced-motion: reduce) { .intro-orb { animation: none; } }

@@ -185,7 +185,7 @@ let cameraPitch = 0;
 let activeLookPointer = null;
 let lastLookX = 0;
 let lastLookY = 0;
-const LOOK_SENSITIVITY = 0.0022;
+const LOOK_SENSITIVITY = 0.0035;
 const roomBounds = { x: 6.65, z: 9.05 };
 const playerBounds = { x: 6.7, z: 8.95 };
 
@@ -410,22 +410,22 @@ function updateBall(delta) {
     ballVelocity.x = -Math.abs(ballVelocity.x) * wallBounce;
     turnBallRandomly(0.16 + difficulty.chaos * 0.13);
     aimBallAtPlayer(difficulty);
-    aimBallAtPlayer(difficulty);
-    aimBallAtPlayer(difficulty);
-    aimBallAtPlayer(difficulty);
   } else if (ball.position.x < -roomBounds.x) {
     ball.position.x = -roomBounds.x;
     ballVelocity.x = Math.abs(ballVelocity.x) * wallBounce;
     turnBallRandomly(0.16 + difficulty.chaos * 0.13);
+    aimBallAtPlayer(difficulty);
   }
   if (ball.position.z > roomBounds.z) {
     ball.position.z = roomBounds.z;
     ballVelocity.z = -Math.abs(ballVelocity.z) * wallBounce;
     turnBallRandomly(0.16 + difficulty.chaos * 0.13);
+    aimBallAtPlayer(difficulty);
   } else if (ball.position.z < -roomBounds.z) {
     ball.position.z = -roomBounds.z;
     ballVelocity.z = Math.abs(ballVelocity.z) * wallBounce;
     turnBallRandomly(0.16 + difficulty.chaos * 0.13);
+    aimBallAtPlayer(difficulty);
   }
 
   // Floor and ceiling bounces vary slightly each time, changing the next arc.

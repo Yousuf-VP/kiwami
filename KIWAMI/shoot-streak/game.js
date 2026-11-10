@@ -10,6 +10,11 @@ const pauseScreen = document.getElementById("pause-screen");
 const gameOverScreen = document.getElementById("game-over-screen");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
+const gameplayPauseButton = document.getElementById("gameplay-pause-button");
+const sensitivityInputs = ["menu-sensitivity","pause-sensitivity"].map(id=>document.getElementById(id));
+const fovInputs = ["menu-fov","pause-fov"].map(id=>document.getElementById(id));
+const sensitivityOutputs = ["menu-sensitivity-value","pause-sensitivity-value"].map(id=>document.getElementById(id));
+const fovOutputs = ["menu-fov-value","pause-fov-value"].map(id=>document.getElementById(id));
 const menuButton = document.getElementById("menu-button");
 const pauseMenuButton = document.getElementById("pause-menu-button");
 const overMenuButton = document.getElementById("over-menu-button");
@@ -82,7 +87,7 @@ renderer.domElement.addEventListener("click", () => {
 
 window.addEventListener("mousemove", (event) => {
   if (state !== "playing" || document.pointerLockElement !== renderer.domElement) return;
-  cameraYaw -= event.movementX * LOOK_SENSITIVITY;
+  cameraYaw -= event.movementX * lookSensitivity;
   cameraPitch = THREE.MathUtils.clamp(cameraPitch - event.movementY * LOOK_SENSITIVITY, -1.25, 1.25);
 });
 
@@ -189,7 +194,14 @@ let cameraPitch = 0;
 let activeLookPointer = null;
 let lastLookX = 0;
 let lastLookY = 0;
-const LOOK_SENSITIVITY = 0.0035;
+let lookSensitivity = 0.0035;
+let savedFov = 76;
+try {
+  lookSensitivity = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreSensitivity")) || 0.0035, 0.001, 0.01);
+  savedFov = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreFov")) || 76, 60, 100);
+} catch {}
+camera.fov = savedFov;
+camera.updateProjectionMatrix();
 const roomBounds = { x: 6.65, z: 9.05 };
 const playerBounds = { x: 6.7, z: 8.95 };
 
@@ -202,6 +214,27 @@ function resize() {
 }
 window.addEventListener("resize", resize);
 resize();
+
+
+function applySettings() {
+  sensitivityInputs.forEach(input=>{ if(input) input.value=String(lookSensitivity); });
+  fovInputs.forEach(input=>{ if(input) input.value=String(savedFov); });
+  sensitivityOutputs.forEach(output=>{ if(output) output.textContent=lookSensitivity.toFixed(4); });
+  fovOutputs.forEach(output=>{ if(output) output.textContent=savedFov+"°"; });
+  camera.fov=savedFov;
+  camera.updateProjectionMatrix();
+}
+sensitivityInputs.forEach(input=>input?.addEventListener("input",()=>{
+  lookSensitivity=Number(input.value);
+  try{localStorage.setItem("dodgeCoreSensitivity",String(lookSensitivity));}catch{}
+  applySettings();
+}));
+fovInputs.forEach(input=>input?.addEventListener("input",()=>{
+  savedFov=Number(input.value);
+  try{localStorage.setItem("dodgeCoreFov",String(savedFov));}catch{}
+  applySettings();
+}));
+applySettings();
 
 function selectDifficulty(level) {
   if (!DIFFICULTIES[level]) return;
@@ -219,6 +252,7 @@ difficultyButtons.forEach((button) => {
 });
 
 function setScreen(active) {
+  shell.classList.toggle("is-playing", active === "playing");
   startScreen.classList.toggle("hidden", active !== "ready");
   pauseScreen.classList.toggle("hidden", active !== "paused");
   gameOverScreen.classList.toggle("hidden", active !== "over");
@@ -295,6 +329,7 @@ function endRun() {
 startButton.addEventListener("click", startRun);
 restartButton.addEventListener("click", startRun);
 pauseButton.addEventListener("click", pauseRun);
+gameplayPauseButton.addEventListener("click", pauseRun);
 resumeButton.addEventListener("click", resumeRun);
 menuButton.addEventListener("click", showMainMenu);
 pauseMenuButton.addEventListener("click", showMainMenu);

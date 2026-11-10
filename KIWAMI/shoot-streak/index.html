@@ -23,6 +23,7 @@
       </div>
     </header>
 
+    <button id="gameplay-pause-button" type="button" aria-label="Pause game">Ⅱ</button>
     <section id="hud" aria-label="Game statistics">
       <div class="stat"><span>SCORE</span><strong id="score-value">0000</strong></div>
       <div class="stat"><span>BEST</span><strong id="best-value">0000</strong></div>
@@ -35,7 +36,7 @@
     <div id="start-screen" class="overlay">
       <div class="menu-card main-menu-card">
         <div class="menu-brand-row"><div class="eyebrow"><i></i> KIWAMI ARCADE / SURVIVAL SERIES</div><span class="version-tag">3D • ENDLESS</span></div>
-        <h1>KILL<span>-</span><br>BALL</h1>
+        <h1>DODGE<br><span>CORE</span></h1>
         <p class="description">One arena. One relentless red ball. How long can you survive?</p>
         <div class="menu-divider"></div>
         <div class="difficulty-heading"><span>SELECT DIFFICULTY</span><small>CHOOSE YOUR CHALLENGE</small></div>
@@ -45,6 +46,11 @@
           <button class="difficulty-option" type="button" data-difficulty="hard" aria-pressed="false"><strong>HARD</strong><small>Quick reflexes</small></button>
           <button class="difficulty-option" type="button" data-difficulty="extreme" aria-pressed="false"><strong>EXTREME</strong><small>No room to relax</small></button>
           <button class="difficulty-option master-option" type="button" data-difficulty="master" aria-pressed="false"><strong>MASTER</strong><small>For the fearless</small></button>
+        </div>
+        <div class="settings-panel" aria-label="Game settings">
+          <div class="settings-heading">GAME SETTINGS <small>APPLIES IMMEDIATELY</small></div>
+          <label class="setting-row" for="menu-sensitivity"><span>LOOK SENSITIVITY <output id="menu-sensitivity-value">0.0035</output></span><input id="menu-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
+          <label class="setting-row" for="menu-fov"><span>FIELD OF VIEW <output id="menu-fov-value">76°</output></span><input id="menu-fov" type="range" min="60" max="100" step="1" value="76"></label>
         </div>
         <button id="start-button" class="primary-button" type="button">START RUN <b>↗</b></button>
         <p class="control-note">WASD to move · Mouse to look · Space to jump<br><span class="mobile-control-note">Mobile: left joystick to move · drag the right side to look · JUMP button</span></p>
@@ -56,6 +62,11 @@
         <div class="eyebrow">RUN PAUSED</div>
         <h2>TAKE A BREATHER.</h2>
         <p class="description">Your run is waiting.</p>
+        <div class="settings-panel pause-settings" aria-label="Game settings">
+          <div class="settings-heading">GAME SETTINGS <small>APPLIES IMMEDIATELY</small></div>
+          <label class="setting-row" for="pause-sensitivity"><span>LOOK SENSITIVITY <output id="pause-sensitivity-value">0.0035</output></span><input id="pause-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
+          <label class="setting-row" for="pause-fov"><span>FIELD OF VIEW <output id="pause-fov-value">76°</output></span><input id="pause-fov" type="range" min="60" max="100" step="1" value="76"></label>
+        </div>
         <button id="resume-button" class="primary-button" type="button">RESUME RUN</button><button id="pause-menu-button" class="secondary-button" type="button">MAIN MENU</button>
       </div>
     </div>

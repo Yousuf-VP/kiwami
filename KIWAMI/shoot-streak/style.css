@@ -60,3 +60,39 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 @media (pointer:coarse) { #touch-controls { display:flex; } #bottom-hint { display:none; } #hud { top:88px; left:10px; gap:5px; } .stat { min-width:85px; padding:8px 10px; } .stat strong { font-size:15px; } #topbar { top:9px; width:calc(100% - 18px); min-height:49px; padding:7px 10px; } .brand { font-size:9px; gap:7px; } .brand-mark { width:27px; height:27px; } .top-button { min-height:30px; padding:7px 9px; font-size:7px; } .mode-label { display:none; } }
 @media (max-width:480px) { .menu-card { padding:29px 22px; } .feature-row { gap:5px; } .feature-row span { font-size:6px; } .stat { min-width:75px; } #hud { top:70px; } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+#touch-controls button#jump-button { width:58px; border-color:rgba(255,24,61,.55); color:#ffb8c2; background:rgba(42,10,18,.86); font:700 8px var(--display); letter-spacing:.5px; }
+#touch-controls button#jump-button:active { background:rgba(255,24,61,.42); }
+
+#game-canvas { touch-action:none; }
+
+
+/* PROFESSIONAL MAIN MENU + DIFFICULTY SELECTOR */
+.main-menu-card { width:min(540px,100%); padding:clamp(25px,4vw,42px); }
+.menu-brand-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.menu-brand-row .eyebrow { margin-bottom:18px; }
+.version-tag { margin-bottom:18px; padding:6px 9px; border:1px solid var(--line); border-radius:5px; color:#9b9ca6; font:700 7px var(--display); letter-spacing:1px; white-space:nowrap; }
+.main-menu-card h1 { font-size:clamp(46px,8vw,64px); }
+.main-menu-card .description { margin:13px 0 19px; }
+.menu-divider { height:1px; margin:0 0 19px; background:linear-gradient(90deg,rgba(255,255,255,.16),rgba(255,255,255,.025)); }
+.difficulty-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.difficulty-heading span { color:#f0f0f3; font:700 9px var(--display); letter-spacing:1.3px; }
+.difficulty-heading small { color:#777984; font:600 7px var(--display); letter-spacing:.7px; }
+.difficulty-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:17px; }
+.difficulty-option { min-height:62px; padding:10px 8px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:5px; border:1px solid rgba(255,255,255,.11); border-radius:8px; color:#e7e7eb; background:rgba(255,255,255,.025); text-align:left; cursor:pointer; transition:border-color .16s ease,background .16s ease,transform .16s ease; }
+.difficulty-option strong { font:800 9px var(--display); letter-spacing:.8px; }
+.difficulty-option small { color:#858691; font-size:9px; }
+.difficulty-option:hover { border-color:rgba(255,24,61,.48); transform:translateY(-1px); }
+.difficulty-option.selected { border-color:rgba(255,24,61,.82); background:linear-gradient(145deg,rgba(255,24,61,.16),rgba(255,24,61,.045)); box-shadow:inset 0 0 0 1px rgba(255,24,61,.12),0 0 18px rgba(255,24,61,.07); }
+.difficulty-option.selected strong { color:#fff; }
+.difficulty-option.selected small { color:#ff9aaa; }
+.master-option { grid-column:auto; }
+.secondary-button { width:100%; min-height:42px; margin-top:9px; border:1px solid var(--line); border-radius:8px; color:#bfc0c8; background:rgba(255,255,255,.035); font:700 9px var(--display); letter-spacing:1px; cursor:pointer; }
+.secondary-button:hover { border-color:rgba(255,24,61,.45); color:#fff; }
+#menu-button { color:#ffb3bf; border-color:rgba(255,24,61,.28); }
+@media(max-width:480px) {
+  .main-menu-card { padding:25px 19px; }
+  .difficulty-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .difficulty-option { min-height:56px; }
+  .difficulty-heading small { font-size:6px; }
+  .version-tag { font-size:6px; }
+}

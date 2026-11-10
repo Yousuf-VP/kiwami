@@ -138,6 +138,97 @@ function renderCareerStats() {
 }
 renderCareerStats();
 
+/* DAILY CHALLENGES — one rotating objective per local calendar day */
+const DAILY_CHALLENGE_KEY = "dodgeCoreDailyChallenge";
+const DAILY_CHALLENGES = [
+  { id:"stay-sharp", title:"STAY SHARP", description:"Survive 45 seconds in one run.", target:45, unit:"SEC", type:"survive" },
+  { id:"score-climber", title:"SCORE CLIMBER", description:"Reach 600 points in one run.", target:600, unit:"PTS", type:"score" },
+  { id:"hardened-run", title:"HARDENED RUN", description:"Finish a run on HARD difficulty or higher.", target:1, unit:"RUN", type:"hard-finish" },
+  { id:"long-haul", title:"LONG HAUL", description:"Survive 75 seconds in one run.", target:75, unit:"SEC", type:"survive" },
+  { id:"extreme-reflexes", title:"EXTREME REFLEXES", description:"Survive 30 seconds on EXTREME or MASTER.", target:30, unit:"SEC", type:"extreme-survive" }
+];
+function getDailyChallengeDate() {
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth()+1).padStart(2,"0"), String(now.getDate()).padStart(2,"0")].join("-");
+}
+function getDailyChallengeForDate(dateKey) {
+  const dayNumber = Number(dateKey.replace(/-/g,"")) || 0;
+  return DAILY_CHALLENGES[dayNumber % DAILY_CHALLENGES.length];
+}
+let dailyChallengeDate = getDailyChallengeDate();
+let dailyChallengeDefinition = getDailyChallengeForDate(dailyChallengeDate);
+let dailyChallengeProgress = 0;
+let dailyChallengeCompleted = false;
+let dailyChallengeUpdateTimer = 0;
+try {
+  const savedDaily = JSON.parse(localStorage.getItem(DAILY_CHALLENGE_KEY) || "null");
+  if (savedDaily && savedDaily.date === dailyChallengeDate && savedDaily.id === dailyChallengeDefinition.id) {
+    dailyChallengeProgress = THREE.MathUtils.clamp(Number(savedDaily.progress) || 0, 0, dailyChallengeDefinition.target);
+    dailyChallengeCompleted = savedDaily.completed === true;
+  }
+} catch {}
+function saveDailyChallengeState() {
+  try {
+    localStorage.setItem(DAILY_CHALLENGE_KEY, JSON.stringify({
+      date:dailyChallengeDate,
+      id:dailyChallengeDefinition.id,
+      progress:dailyChallengeProgress,
+      completed:dailyChallengeCompleted
+    }));
+  } catch {}
+}
+function renderDailyChallenge() {
+  const challenge = dailyChallengeDefinition;
+  const progress = Math.min(challenge.target, dailyChallengeProgress);
+  const percent = Math.round((progress / challenge.target) * 100);
+  const progressText = Math.floor(progress).toLocaleString() + " / " + challenge.target.toLocaleString() + " " + challenge.unit;
+  document.querySelectorAll("[data-daily-title]").forEach(node => node.textContent = challenge.title);
+  document.querySelectorAll("[data-daily-description]").forEach(node => node.textContent = challenge.description);
+  document.querySelectorAll("[data-daily-date]").forEach(node => node.textContent = "TODAY · " + dailyChallengeDate);
+  document.querySelectorAll("[data-daily-progress]").forEach(node => node.textContent = progressText);
+  document.querySelectorAll("[data-daily-status]").forEach(node => {
+    node.textContent = dailyChallengeCompleted ? "COMPLETED" : "IN PROGRESS";
+    node.dataset.completed = String(dailyChallengeCompleted);
+  });
+  document.querySelectorAll("[data-daily-summary]").forEach(node => node.textContent = dailyChallengeCompleted ? "COMPLETED" : percent + "%");
+  document.querySelectorAll("[data-daily-bar]").forEach(node => node.style.width = percent + "%");
+}
+function refreshDailyChallengeIfNeeded() {
+  const today = getDailyChallengeDate();
+  if (today === dailyChallengeDate) return;
+  dailyChallengeDate = today;
+  dailyChallengeDefinition = getDailyChallengeForDate(today);
+  dailyChallengeProgress = 0;
+  dailyChallengeCompleted = false;
+  dailyChallengeUpdateTimer = 0;
+  saveDailyChallengeState();
+  renderDailyChallenge();
+}
+function updateDailyChallenge(runEnded = false) {
+  refreshDailyChallengeIfNeeded();
+  if (dailyChallengeCompleted) return;
+  const challenge = dailyChallengeDefinition;
+  let currentProgress = 0;
+  if (challenge.type === "survive") currentProgress = elapsed;
+  else if (challenge.type === "score") currentProgress = elapsed * 10;
+  else if (challenge.type === "hard-finish" && runEnded && ["hard","extreme","master"].includes(selectedDifficulty)) currentProgress = 1;
+  else if (challenge.type === "extreme-survive" && ["extreme","master"].includes(selectedDifficulty)) currentProgress = elapsed;
+  const nextProgress = Math.min(challenge.target, Math.max(0, currentProgress));
+  if (Math.floor(nextProgress) <= Math.floor(dailyChallengeProgress) && nextProgress < challenge.target) return;
+  dailyChallengeProgress = Math.max(dailyChallengeProgress, nextProgress);
+  if (dailyChallengeProgress >= challenge.target) dailyChallengeCompleted = true;
+  saveDailyChallengeState();
+  renderDailyChallenge();
+}
+function tickDailyChallenge(delta) {
+  dailyChallengeUpdateTimer += delta;
+  if (dailyChallengeUpdateTimer >= 0.25) {
+    dailyChallengeUpdateTimer = 0;
+    updateDailyChallenge(false);
+  }
+}
+renderDailyChallenge();
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08090d);
 scene.fog = new THREE.Fog(0x08090d, 18, 34);
@@ -774,6 +865,7 @@ function resetRun() {
 }
 
 function startRun() {
+  refreshDailyChallengeIfNeeded();
   resetRun();
   careerStats.totalGamesPlayed += 1;
   saveCareerStats();
@@ -810,6 +902,7 @@ function endRun() {
   state = "over";
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
+  updateDailyChallenge(true);
   const newRecord = final > best;
   finalScore.textContent = String(final).padStart(4, "0");
   if (newRecord) {
@@ -1077,9 +1170,10 @@ let performanceSampleTime = 0;
 let performanceSampleFrames = 0;
 function animate() {
   requestAnimationFrame(animate);
-  const delta = Math.min(clock.getDelta(), 0.04);
+  const frameDelta = clock.getDelta();
+  const delta = Math.min(frameDelta, 0.04);
   if (graphicsSettings.performanceMonitor) {
-    performanceSampleTime += delta;
+    performanceSampleTime += Math.max(0, frameDelta);
     performanceSampleFrames += 1;
     if (performanceSampleTime >= 0.5) {
       const fps = Math.round(performanceSampleFrames / performanceSampleTime);
@@ -1097,6 +1191,7 @@ function animate() {
     updateArenaEvents(delta);
     updateCamera(delta);
     score = elapsed * 10;
+    tickDailyChallenge(delta);
     const reachedMilestone = Math.floor(score / 100);
     if (reachedMilestone > lastThemeMilestone) {
       lastThemeMilestone = reachedMilestone;

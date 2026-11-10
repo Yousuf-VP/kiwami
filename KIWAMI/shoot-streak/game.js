@@ -23,6 +23,9 @@ const timeValue = document.getElementById("time-value");
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
 const jumpButton = document.getElementById("jump-button");
+const introScreen = document.getElementById("studio-intro");
+const joystickBase = document.getElementById("move-joystick");
+const joystickThumb = document.getElementById("joystick-thumb");
 
 const DIFFICULTIES = {
   easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45, aim: 0.18 },
@@ -46,6 +49,7 @@ let best = 0;
 let lastFrame = 0;
 const keys = new Set();
 const touchDirections = new Set();
+let touchMoveX = 0, touchMoveY = 0, joystickPointerId = null;
 const clock = new THREE.Clock();
 
 try { best = Number(localStorage.getItem("ssDodgeBest") || 0); } catch {}
@@ -243,6 +247,7 @@ function resetRun() {
   timeValue.textContent = "0.0s";
   keys.clear();
   touchDirections.clear();
+  resetJoystick();
 }
 
 function startRun() {
@@ -269,6 +274,7 @@ function showMainMenu() {
   state = "ready";
   keys.clear();
   touchDirections.clear();
+  resetJoystick();
   if (document.pointerLockElement) document.exitPointerLock();
   setScreen(state);
 }
@@ -307,20 +313,19 @@ jumpButton.addEventListener("pointerdown", (event) => {
   jumpPlayer();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
-window.addEventListener("blur", () => { keys.clear(); touchDirections.clear(); });
+window.addEventListener("blur", () => { keys.clear(); touchDirections.clear(); resetJoystick(); });
 
-touchControls.querySelectorAll("button[data-dir]").forEach((button) => {
-  const dir = button.dataset.dir;
-  const release = () => touchDirections.delete(dir);
-  button.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    touchDirections.add(dir);
-    button.setPointerCapture(event.pointerId);
-  });
-  button.addEventListener("pointerup", release);
-  button.addEventListener("pointercancel", release);
-  button.addEventListener("lostpointercapture", release);
-});
+function updateJoystick(event) {
+  const rect=joystickBase.getBoundingClientRect(), cx=rect.left+rect.width/2, cy=rect.top+rect.height/2, max=rect.width*.34;
+  let dx=event.clientX-cx, dy=event.clientY-cy, d=Math.hypot(dx,dy);
+  if(d>max){const s=max/d;dx*=s;dy*=s;}
+  touchMoveX=THREE.MathUtils.clamp(dx/max,-1,1); touchMoveY=THREE.MathUtils.clamp(dy/max,-1,1);
+  joystickThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+}
+function resetJoystick(){joystickPointerId=null;touchMoveX=0;touchMoveY=0;joystickThumb.style.transform="translate(-50%,-50%)";}
+joystickBase.addEventListener("pointerdown",e=>{if(state!=="playing")return;e.preventDefault();joystickPointerId=e.pointerId;joystickBase.setPointerCapture(e.pointerId);updateJoystick(e);});
+joystickBase.addEventListener("pointermove",e=>{if(e.pointerId===joystickPointerId)updateJoystick(e);});
+for(const type of ["pointerup","pointercancel","lostpointercapture"])joystickBase.addEventListener(type,e=>{if(e.pointerId===joystickPointerId)resetJoystick();});
 
 function isDown(...names) {
   return names.some((name) => keys.has(name) || touchDirections.has(name));
@@ -333,8 +338,8 @@ function jumpPlayer() {
 }
 
 function updatePlayer(delta) {
-  let side = 0;
-  let forward = 0;
+  let side = touchMoveX;
+  let forward = -touchMoveY;
   if (isDown("a", "arrowleft", "left")) side -= 1;
   if (isDown("d", "arrowright", "right")) side += 1;
   if (isDown("w", "arrowup", "up")) forward += 1;
@@ -500,3 +505,7 @@ function animate() {
 
 setScreen("ready");
 animate();
+requestAnimationFrame(()=>requestAnimationFrame(()=>window.setTimeout(()=>{
+  introScreen.classList.add("intro-exit");
+  introScreen.addEventListener("transitionend",()=>introScreen.remove(),{once:true});
+},1250)));

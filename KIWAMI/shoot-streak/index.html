@@ -33,27 +33,38 @@
     <div id="bottom-hint">WASD <b>•</b> MOVE <b>•</b> MOUSE <b>•</b> LOOK <b>•</b> SPACE <b>•</b> JUMP</div>
     <div id="copyright">© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</div>
 
-    <div id="start-screen" class="overlay">
+    <div id="start-screen" class="overlay cinematic-menu">
       <div class="menu-card main-menu-card">
-        <div class="menu-brand-row"><div class="eyebrow"><i></i> KIWAMI ARCADE / SURVIVAL SERIES</div><span class="version-tag">3D • ENDLESS</span></div>
-        <h1>DODGE<br><span>CORE</span></h1>
-        <p class="description">One arena. One relentless red ball. How long can you survive?</p>
-        <div class="menu-divider"></div>
-        <div class="difficulty-heading"><span>SELECT DIFFICULTY</span><small>CHOOSE YOUR CHALLENGE</small></div>
-        <div class="difficulty-grid" role="group" aria-label="Select difficulty">
-          <button class="difficulty-option" type="button" data-difficulty="easy" aria-pressed="false"><strong>EASY</strong><small>Warm up</small></button>
-          <button class="difficulty-option selected" type="button" data-difficulty="medium" aria-pressed="true"><strong>MEDIUM</strong><small>Balanced</small></button>
-          <button class="difficulty-option" type="button" data-difficulty="hard" aria-pressed="false"><strong>HARD</strong><small>Quick reflexes</small></button>
-          <button class="difficulty-option" type="button" data-difficulty="extreme" aria-pressed="false"><strong>EXTREME</strong><small>No room to relax</small></button>
-          <button class="difficulty-option master-option" type="button" data-difficulty="master" aria-pressed="false"><strong>MASTER</strong><small>For the fearless</small></button>
+        <div class="cinema-topline">
+          <div class="cinema-studio"><span class="cinema-k">K<span>.</span></span><span>KIWAMI STUDIOS</span></div>
+          <span class="cinema-edition">KIWAMI ARCADE <i></i> SURVIVAL SERIES</span>
         </div>
-        <div class="settings-panel" aria-label="Game settings">
-          <div class="settings-heading">GAME SETTINGS <small>APPLIES IMMEDIATELY</small></div>
-          <label class="setting-row" for="menu-sensitivity"><span>LOOK SENSITIVITY <output id="menu-sensitivity-value">0.0035</output></span><input id="menu-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
-          <label class="setting-row" for="menu-fov"><span>FIELD OF VIEW <output id="menu-fov-value">76°</output></span><input id="menu-fov" type="range" min="60" max="100" step="1" value="76"></label>
+        <div class="cinema-layout">
+          <section class="cinema-hero">
+            <div class="cinema-kicker"><i></i> THE ARENA IS WAITING</div>
+            <h1>DODGE<br><span>CORE</span></h1>
+            <p class="description">One arena. One relentless red ball.<br>Every second is a new chance to survive.</p>
+            <div class="cinema-meta"><span>FIRST-PERSON SURVIVAL</span><b></b><span>ENDLESS RUN</span><b></b><span>3D EXPERIENCE</span></div>
+            <button id="start-button" class="primary-button cinema-start" type="button"><span>ENTER THE ARENA</span><b>↗</b></button>
+            <p class="control-note">WASD to move · Mouse to look · Space to jump<br><span class="mobile-control-note">Mobile: left joystick to move · drag right side to look · JUMP</span></p>
+          </section>
+          <aside class="cinema-console">
+            <div class="cinema-section-heading"><span>01 / DIFFICULTY</span><small>CHOOSE YOUR RUN</small></div>
+            <div class="difficulty-grid" role="group" aria-label="Select difficulty">
+              <button class="difficulty-option" type="button" data-difficulty="easy" aria-pressed="false"><strong>EASY</strong><small>Warm up</small></button>
+              <button class="difficulty-option selected" type="button" data-difficulty="medium" aria-pressed="true"><strong>MEDIUM</strong><small>Balanced</small></button>
+              <button class="difficulty-option" type="button" data-difficulty="hard" aria-pressed="false"><strong>HARD</strong><small>Quick reflexes</small></button>
+              <button class="difficulty-option" type="button" data-difficulty="extreme" aria-pressed="false"><strong>EXTREME</strong><small>No room to relax</small></button>
+              <button class="difficulty-option master-option" type="button" data-difficulty="master" aria-pressed="false"><strong>MASTER</strong><small>For the fearless</small></button>
+            </div>
+            <div class="cinema-settings">
+              <div class="cinema-section-heading"><span>02 / SETTINGS</span><small>LIVE ADJUSTMENT</small></div>
+              <label class="setting-row" for="menu-sensitivity"><span>LOOK SENSITIVITY <output id="menu-sensitivity-value">0.0035</output></span><input id="menu-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
+              <label class="setting-row" for="menu-fov"><span>FIELD OF VIEW <output id="menu-fov-value">76°</output></span><input id="menu-fov" type="range" min="60" max="100" step="1" value="76"></label>
+            </div>
+          </aside>
         </div>
-        <button id="start-button" class="primary-button" type="button">START RUN <b>↗</b></button>
-        <p class="control-note">WASD to move · Mouse to look · Space to jump<br><span class="mobile-control-note">Mobile: left joystick to move · drag the right side to look · JUMP button</span></p>
+        <div class="cinema-footer"><span>© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</span><span>NO SECOND CHANCES <i></i></span></div>
       </div>
     </div>
 

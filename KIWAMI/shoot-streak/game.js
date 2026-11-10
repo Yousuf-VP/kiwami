@@ -199,7 +199,7 @@ const arenaThemes = [
 const themeCurrent = {
   ball: mats.ball.color.clone(), ballEmissive: mats.ball.emissive.clone(),
   aura: ballAura.material.color.clone(), ballLight: ballLight.color.clone(),
-  roomGlow: redRoomGlow.color.clone(), ambientSky: ambient.color.clone(),
+  roomGlow: redRoomGlow.color.clone(), playerFill: playerFillLight.color.clone(), ambientSky: ambient.color.clone(),
   ambientGround: ambient.groundColor.clone(), ceiling: ceilingLight.color.clone(),
   wall: mats.wall.color.clone(), floor: mats.floor.color.clone(),
   trim: mats.trim.color.clone(), background: scene.background.clone(),
@@ -213,7 +213,7 @@ const themeBanner = document.getElementById("theme-banner");
 const themeDefault = {
   ball: new THREE.Color(0xff2447), ballEmissive: new THREE.Color(0xff002b),
   aura: new THREE.Color(0xff123c), ballLight: new THREE.Color(0xff123c),
-  roomGlow: new THREE.Color(0xff153d), ambientSky: new THREE.Color(0xd8dce6),
+  roomGlow: new THREE.Color(0xff153d), playerFill: new THREE.Color(0xd8dce6), ambientSky: new THREE.Color(0xd8dce6),
   ambientGround: new THREE.Color(0x17151a), ceiling: new THREE.Color(0xffffff),
   wall: new THREE.Color(0x202229), floor: new THREE.Color(0x17191f),
   trim: new THREE.Color(0x9d172d), background: new THREE.Color(0x08090d),
@@ -229,6 +229,7 @@ function applyThemeTargets(palette) {
   themeTarget.aura = glow.clone();
   themeTarget.ballLight = glow.clone();
   themeTarget.roomGlow = glow.clone();
+  themeTarget.playerFill = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.68);
   themeTarget.ambientSky = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.62);
   themeTarget.ambientGround = ground.clone();
   themeTarget.ceiling = accent.clone().lerp(new THREE.Color(0xffffff), 0.82);
@@ -261,14 +262,14 @@ function updateArenaTheme(delta) {
   const pairs = [
     [mats.ball.color, themeTarget.ball], [mats.ball.emissive, themeTarget.ballEmissive],
     [ballAura.material.color, themeTarget.aura], [ballLight.color, themeTarget.ballLight],
-    [redRoomGlow.color, themeTarget.roomGlow], [ambient.color, themeTarget.ambientSky],
+    [redRoomGlow.color, themeTarget.roomGlow], [playerFillLight.color, themeTarget.playerFill], [ambient.color, themeTarget.ambientSky],
     [ambient.groundColor, themeTarget.ambientGround], [ceilingLight.color, themeTarget.ceiling],
     [mats.wall.color, themeTarget.wall], [mats.floor.color, themeTarget.floor],
     [mats.trim.color, themeTarget.trim], [scene.background, themeTarget.background],
     [scene.fog.color, themeTarget.fog]
   ];
   for (const [current, target] of pairs) current.lerp(target, amount);
-  if (pairs.every(([current, target]) => current.distanceTo(target) < 0.012)) {
+  if (pairs.every(([current, target]) => Math.max(Math.abs(current.r-target.r),Math.abs(current.g-target.g),Math.abs(current.b-target.b)) < 0.006)) {
     pairs.forEach(([current, target]) => current.copy(target));
     themeTransitionActive = false;
   }
@@ -282,6 +283,7 @@ function resetArenaTheme() {
   ballAura.material.color.copy(themeDefault.aura);
   ballLight.color.copy(themeDefault.ballLight);
   redRoomGlow.color.copy(themeDefault.roomGlow);
+  playerFillLight.color.copy(themeDefault.playerFill);
   ambient.color.copy(themeDefault.ambientSky);
   ambient.groundColor.copy(themeDefault.ambientGround);
   ceilingLight.color.copy(themeDefault.ceiling);

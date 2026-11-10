@@ -138,43 +138,8 @@ const mats = {
   playerAccent: new THREE.MeshStandardMaterial({ color: 0xff294b, emissive: 0x5b0718, emissiveIntensity: 1.2 }),
   ball: new THREE.MeshStandardMaterial({ color: 0xff2447, emissive: 0xff002b, emissiveIntensity: 3.2, roughness: 0.22, metalness: 0.05 }),
   // Classic avatar-style arms: one consistent light neutral material, like the reference.
-  firstPersonBlock: new THREE.MeshStandardMaterial({ color: 0xd9dadd, roughness: 0.92, metalness: 0 })
+
 };
-
-// Simple blocky first-person arms, inspired by classic avatar proportions.
-// They are purely cosmetic: no tools or weapons are attached.
-const firstPersonHands = new THREE.Group();
-firstPersonHands.name = "FirstPersonAvatarArms";
-camera.add(firstPersonHands);
-firstPersonHands.visible = false;
-const firstPersonArms = [];
-function createBlockyArm(side) {
-  const arm = new THREE.Group();
-
-  // Broad, squared-off forearm reaching in from the lower screen corner.
-  // The overlapping palm block keeps the silhouette chunky and continuous.
-  arm.position.set(side * 0.49, -0.48, -0.72);
-  arm.rotation.z = side * -0.055;
-  arm.rotation.x = -0.12;
-
-  const forearm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.46, 0.92),
-    mats.firstPersonBlock
-  );
-  forearm.position.set(0, -0.015, -0.30);
-
-  const handBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.56, 0.47, 0.42),
-    mats.firstPersonBlock
-  );
-  handBlock.position.set(0, -0.015, -0.94);
-
-  arm.add(forearm, handBlock);
-  firstPersonHands.add(arm);
-  firstPersonArms.push(arm);
-}
-createBlockyArm(-1);
-createBlockyArm(1);
 
 function box(w, h, d, mat, x, y, z) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -360,7 +325,7 @@ function resetRun() {
   cameraYaw = 0;
   cameraPitch = 0;
   cameraMotionTime = 0;
-  firstPersonHands.visible = false;
+  landingKick = 0;
   ball.position.set(1.5, 2.1, -5.5);
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const startAngle = Math.random() * Math.PI * 2;
@@ -490,9 +455,11 @@ function updatePlayer(delta) {
     jumpVelocity -= CONFIG.player.jumpGravity * delta;
     jumpHeight += jumpVelocity * delta;
     if (jumpHeight <= 0) {
+      const landedFromHeight = jumpHeight < 0;
       jumpHeight = 0;
       jumpVelocity = 0;
       grounded = true;
+      if (landedFromHeight) landingKick = Math.min(0.16, Math.abs(jumpVelocity) * 0.012 + 0.09);
     }
   }
 }
@@ -602,27 +569,39 @@ function updateBall(delta) {
 }
 
 let cameraMotionTime = 0;
+let landingKick = 0;
 function updateCamera(delta = 0) {
-  // Subtle FPS locomotion: soft vertical bob, lateral sway and a restrained lean.
-  const eyeHeight = 1.65 + jumpHeight;
-  const moveAmount = Math.min(1, Math.hypot(playerVelocity.x, playerVelocity.z) / CONFIG.player.speed);
-  cameraMotionTime += delta * (moveAmount > 0.04 ? 10 : 2);
-  const bob = Math.sin(cameraMotionTime * 2) * 0.035 * moveAmount;
-  const lateralSway = Math.sin(cameraMotionTime) * 0.018 * moveAmount;
-  const movementLean = -playerVelocity.x / CONFIG.player.speed * 0.018;
-  camera.position.set(player.position.x + lateralSway, eyeHeight + bob, player.position.z);
-  camera.rotation.order = "YXZ";
-  camera.rotation.set(cameraPitch, cameraYaw, movementLean + Math.sin(cameraMotionTime * 2) * 0.004 * moveAmount);
-  firstPersonHands.visible = state === "playing" || state === "paused";
-  firstPersonHands.position.set(
-    -playerVelocity.x / CONFIG.player.speed * 0.022,
-    -0.015 + Math.sin(cameraMotionTime * 2) * 0.018 * moveAmount,
-    0
+  // Athletic parkour-style movement: stronger stride bob, directional lean,
+  // forward momentum pitch and a brief cushioned landing response.
+  const speed = Math.hypot(playerVelocity.x, playerVelocity.z);
+  const moveAmount = Math.min(1, speed / CONFIG.player.speed);
+  const forwardX = -Math.sin(cameraYaw);
+  const forwardZ = -Math.cos(cameraYaw);
+  const rightX = Math.cos(cameraYaw);
+  const rightZ = -Math.sin(cameraYaw);
+  const localForward = (playerVelocity.x * forwardX + playerVelocity.z * forwardZ) / CONFIG.player.speed;
+  const localStrafe = (playerVelocity.x * rightX + playerVelocity.z * rightZ) / CONFIG.player.speed;
+
+  cameraMotionTime += delta * (moveAmount > 0.04 ? 13 : 2.2);
+  landingKick = THREE.MathUtils.damp(landingKick, 0, 10, delta);
+  const strideBob = Math.abs(Math.sin(cameraMotionTime)) * 0.075 * moveAmount;
+  const verticalBounce = Math.sin(cameraMotionTime * 2) * 0.018 * moveAmount;
+  const lateralSway = Math.sin(cameraMotionTime) * 0.045 * moveAmount;
+  const forwardDip = -Math.max(0, localForward) * 0.045;
+  const strafeLean = -localStrafe * 0.075;
+  const strideRoll = Math.sin(cameraMotionTime) * 0.012 * moveAmount;
+
+  camera.position.set(
+    player.position.x + rightX * lateralSway,
+    1.65 + jumpHeight - strideBob + verticalBounce - landingKick + forwardDip * 0.18,
+    player.position.z + rightZ * lateralSway
   );
-  firstPersonHands.rotation.set(0, 0, -playerVelocity.x / CONFIG.player.speed * 0.035);
-  firstPersonArms.forEach((arm, index) => {
-    arm.rotation.x = Math.sin(cameraMotionTime * 2 + index * Math.PI) * 0.025 * moveAmount;
-  });
+  camera.rotation.order = "YXZ";
+  camera.rotation.set(
+    cameraPitch + Math.max(0, localForward) * 0.025 + landingKick * 0.22,
+    cameraYaw,
+    strafeLean + strideRoll
+  );
   playerFillLight.position.set(player.position.x, 1.9 + jumpHeight, player.position.z);
 }
 

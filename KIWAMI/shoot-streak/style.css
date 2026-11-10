@@ -98,8 +98,8 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 }
 
 /* KIWAMI startup ident and mobile joystick */
-#studio-intro{position:absolute;inset:0;z-index:30;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#210711,#09090d 48%,#050609);opacity:1;visibility:visible;transition:opacity .65s ease,visibility .65s ease}
-#studio-intro::before{content:"";position:absolute;width:min(70vw,620px);aspect-ratio:1;border:1px solid rgba(255,24,61,.12);border-radius:50%;box-shadow:0 0 90px rgba(255,24,61,.08)}
+#studio-intro{position:absolute;inset:0;z-index:30;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#100309 0%,#050508 46%,#020204 100%);opacity:1;visibility:visible;transition:opacity .9s ease,visibility .9s ease}
+#studio-intro::before{content:"";position:absolute;width:min(70vw,620px);aspect-ratio:1;border:1px solid rgba(255,24,61,.09);border-radius:50%;box-shadow:0 0 65px rgba(255,24,61,.045),inset 0 0 75px rgba(255,24,61,.025)}
 #studio-intro.intro-exit{opacity:0;visibility:hidden;pointer-events:none}
 .intro-content{position:relative;z-index:1;width:min(420px,calc(100% - 40px));text-align:center}
 .intro-logo{margin:0 auto 17px;color:#fff;font:900 clamp(76px,14vw,112px)/.9 var(--display);letter-spacing:-9px}.intro-logo span{color:var(--red)}

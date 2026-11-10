@@ -11,10 +11,10 @@ const gameOverScreen = document.getElementById("game-over-screen");
 const startButton = document.getElementById("start-button");
 const pauseButton = document.getElementById("pause-button");
 const gameplayPauseButton = document.getElementById("gameplay-pause-button");
-const sensitivityInputs = ["menu-sensitivity","pause-sensitivity"].map(id=>document.getElementById(id));
-const fovInputs = ["menu-fov","pause-fov"].map(id=>document.getElementById(id));
-const sensitivityOutputs = ["menu-sensitivity-value","pause-sensitivity-value"].map(id=>document.getElementById(id));
-const fovOutputs = ["menu-fov-value","pause-fov-value"].map(id=>document.getElementById(id));
+const sensitivityInputs = ["menu-sensitivity","pause-sensitivity","mobile-sensitivity"].map(id=>document.getElementById(id));
+const fovInputs = ["menu-fov","pause-fov","mobile-fov"].map(id=>document.getElementById(id));
+const sensitivityOutputs = ["menu-sensitivity-value","pause-sensitivity-value","mobile-sensitivity-value"].map(id=>document.getElementById(id));
+const fovOutputs = ["menu-fov-value","pause-fov-value","mobile-fov-value"].map(id=>document.getElementById(id));
 const menuButton = document.getElementById("menu-button");
 const pauseMenuButton = document.getElementById("pause-menu-button");
 const overMenuButton = document.getElementById("over-menu-button");
@@ -251,6 +251,58 @@ difficultyButtons.forEach((button) => {
   button.addEventListener("click", () => selectDifficulty(button.dataset.difficulty));
 });
 
+
+/* Mobile fullscreen: Chrome/Android supports immersive fullscreen after a user gesture.
+   iOS Safari may require adding the game to the Home Screen instead. */
+const fullscreenButtons = [...document.querySelectorAll("[data-fullscreen-toggle]")];
+const fullscreenLabels = [...document.querySelectorAll("[data-fullscreen-label]")];
+const fullscreenStatuses = ["mobile-fullscreen-status","pause-fullscreen-status"]
+  .map(id => document.getElementById(id)).filter(Boolean);
+function isGameFullscreen() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+function syncFullscreenUI() {
+  const active = isGameFullscreen();
+  fullscreenLabels.forEach(label => { label.textContent = active ? "EXIT FULLSCREEN" : "FULLSCREEN"; });
+  fullscreenButtons.forEach(button => {
+    button.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+    button.classList.toggle("is-fullscreen", active);
+  });
+}
+async function toggleGameFullscreen() {
+  if (isGameFullscreen()) {
+    try {
+      if (document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    } catch {}
+    return;
+  }
+  const target = document.documentElement;
+  try {
+    if (target.requestFullscreen) {
+      await target.requestFullscreen({ navigationUI: "hide" });
+    } else if (target.webkitRequestFullscreen) {
+      target.webkitRequestFullscreen();
+    } else {
+      fullscreenStatuses.forEach(status => {
+        status.textContent = "This browser cannot hide its address bar here. On iPhone, use Share → Add to Home Screen, then launch the game from its icon.";
+      });
+      return;
+    }
+    fullscreenStatuses.forEach(status => { status.textContent = ""; });
+  } catch {
+    fullscreenStatuses.forEach(status => {
+      status.textContent = "Fullscreen was blocked by the browser. Tap FULLSCREEN again, or use Add to Home Screen if your browser requires it.";
+    });
+  }
+  syncFullscreenUI();
+}
+fullscreenButtons.forEach(button => button.addEventListener("click", toggleGameFullscreen));
+document.addEventListener("fullscreenchange", syncFullscreenUI);
+document.addEventListener("webkitfullscreenchange", syncFullscreenUI);
+window.addEventListener("orientationchange", () => window.setTimeout(resize, 180));
+syncFullscreenUI();
+
 function setScreen(active) {
   shell.classList.toggle("is-playing", active === "playing");
   startScreen.classList.toggle("hidden", active !== "ready");
@@ -327,6 +379,7 @@ function endRun() {
 }
 
 startButton.addEventListener("click", startRun);
+document.getElementById("mobile-start-button")?.addEventListener("click", startRun);
 restartButton.addEventListener("click", startRun);
 pauseButton.addEventListener("click", pauseRun);
 gameplayPauseButton.addEventListener("click", pauseRun);

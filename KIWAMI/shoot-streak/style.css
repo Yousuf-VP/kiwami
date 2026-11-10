@@ -189,7 +189,7 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
   background: #000;
   opacity: 1;
   visibility: visible;
-  transition: opacity .9s ease, visibility .9s ease;
+  transition: opacity 1.1s ease, visibility 1.1s ease;
 }
 #studio-intro::before,
 #studio-intro::after,

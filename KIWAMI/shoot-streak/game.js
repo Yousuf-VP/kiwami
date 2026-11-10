@@ -115,12 +115,17 @@ const ceilingLight = new THREE.PointLight(0xffffff, 22, 28);
 ceilingLight.position.set(0, 4.8, 0);
 scene.add(ceilingLight);
 
-const redRoomGlow = new THREE.PointLight(0xff153d, 18, 11);
-redRoomGlow.position.set(0, 2.3, -5.5);
+const redRoomGlow = new THREE.PointLight(0xff153d, 32, 17, 1.6);
+redRoomGlow.position.set(0, 2.8, -5.5);
 scene.add(redRoomGlow);
 
+// Soft red fill from the entrance side helps reveal the floor and nearby walls.
+const redFrontFill = new THREE.PointLight(0xff2948, 15, 15, 1.8);
+redFrontFill.position.set(0, 3.1, 5.5);
+scene.add(redFrontFill);
+
 // Very soft neutral fill follows the player, keeping nearby wall edges readable.
-const playerFillLight = new THREE.PointLight(0xd8dce8, 2.4, 9, 2);
+const playerFillLight = new THREE.PointLight(0xff5268, 5.8, 12, 2);
 playerFillLight.position.set(0, 1.9, CONFIG.player.startZ);
 scene.add(playerFillLight);
 
@@ -508,4 +513,4 @@ animate();
 requestAnimationFrame(()=>requestAnimationFrame(()=>window.setTimeout(()=>{
   introScreen.classList.add("intro-exit");
   introScreen.addEventListener("transitionend",()=>introScreen.remove(),{once:true});
-},1250)));
+},4200)));

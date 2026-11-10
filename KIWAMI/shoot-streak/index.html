@@ -13,6 +13,7 @@
 </head>
 <body>
   <main id="game-shell">
+  <div id="studio-intro"><div class="intro-content"><div class="intro-logo">K<span>.</span></div><div class="intro-rule"></div><p class="intro-kicker">KIWAMI STUDIOS PRESENTS</p><h2>SHOOT-STREAK</h2><p class="intro-loading">PREPARING YOUR RUN<span class="loading-dots">...</span></p><div class="intro-loader"><span></span></div></div><div class="intro-copyright">© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</div></div>
     <header id="topbar">
       <a class="brand" href="../index.html"><span class="brand-mark">K</span><span>SHOOT-STREAK</span></a>
       <div class="top-actions">
@@ -28,7 +29,8 @@
       <div class="stat"><span>SURVIVAL</span><strong id="time-value">0.0s</strong></div>
     </section>
 
-    <div id="bottom-hint">MOUSE <b>•</b> LOOK <b>•</b> WASD / ARROWS <b>•</b> MOVE</div>
+    <div id="bottom-hint">WASD <b>•</b> MOVE <b>•</b> MOUSE <b>•</b> LOOK <b>•</b> SPACE <b>•</b> JUMP</div>
+    <div id="copyright">© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</div>
 
     <div id="start-screen" class="overlay">
       <div class="menu-card main-menu-card">
@@ -45,7 +47,7 @@
           <button class="difficulty-option master-option" type="button" data-difficulty="master" aria-pressed="false"><strong>MASTER</strong><small>For the fearless</small></button>
         </div>
         <button id="start-button" class="primary-button" type="button">START RUN <b>↗</b></button>
-        <p class="control-note">WASD to move · Mouse to look · Space to jump · Click the game to capture your mouse</p>
+        <p class="control-note">WASD to move · Mouse to look · Space to jump<br><span class="mobile-control-note">Mobile: left joystick to move · drag the right side to look · JUMP button</span></p>
       </div>
     </div>
 
@@ -68,15 +70,7 @@
       </div>
     </div>
 
-    <div id="touch-controls" aria-label="Touch movement controls">
-      <button data-dir="up" aria-label="Move forward">▲</button>
-      <div class="touch-middle">
-        <button data-dir="left" aria-label="Move left">◀</button>
-        <button data-dir="down" aria-label="Move backward">▼</button>
-        <button data-dir="right" aria-label="Move right">▶</button>
-        <button id="jump-button" type="button" aria-label="Jump">JUMP</button>
-      </div>
-    </div>
+    <div id="touch-controls" aria-label="Touch controls"><div id="move-joystick" aria-label="Movement joystick"><span class="joystick-ring"></span><span id="joystick-thumb"></span></div><button id="jump-button" type="button" aria-label="Jump">JUMP</button><div id="mobile-look-hint">DRAG TO LOOK</div></div>
   </main>
 
   <script type="importmap">

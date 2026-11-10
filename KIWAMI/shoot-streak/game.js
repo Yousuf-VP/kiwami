@@ -135,8 +135,37 @@ const mats = {
   trim: new THREE.MeshBasicMaterial({ color: 0x9d172d, toneMapped: false }),
   player: new THREE.MeshStandardMaterial({ color: 0xd8dbe2, roughness: 0.65 }),
   playerAccent: new THREE.MeshStandardMaterial({ color: 0xff294b, emissive: 0x5b0718, emissiveIntensity: 1.2 }),
-  ball: new THREE.MeshStandardMaterial({ color: 0xff2447, emissive: 0xff002b, emissiveIntensity: 3.2, roughness: 0.22, metalness: 0.05 })
+  ball: new THREE.MeshStandardMaterial({ color: 0xff2447, emissive: 0xff002b, emissiveIntensity: 3.2, roughness: 0.22, metalness: 0.05 }),
+  firstPersonSleeve: new THREE.MeshStandardMaterial({ color: 0x252832, roughness: 0.86 }),
+  firstPersonCuff: new THREE.MeshStandardMaterial({ color: 0x8f1028, emissive: 0x260008, emissiveIntensity: 0.55, roughness: 0.7 }),
+  firstPersonSkin: new THREE.MeshStandardMaterial({ color: 0xc99573, roughness: 0.88 })
 };
+
+// Simple blocky first-person arms, inspired by classic avatar proportions.
+// They are purely cosmetic: no tools or weapons are attached.
+const firstPersonHands = new THREE.Group();
+firstPersonHands.name = "FirstPersonAvatarArms";
+camera.add(firstPersonHands);
+firstPersonHands.visible = false;
+const firstPersonArms = [];
+function createBlockyArm(side) {
+  const arm = new THREE.Group();
+  arm.position.set(side * 0.34, -0.39, -0.78);
+  arm.rotation.z = side * -0.08;
+  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.43, 0.24), mats.firstPersonSleeve);
+  sleeve.position.y = -0.025;
+  const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.225, 0.085, 0.245), mats.firstPersonCuff);
+  cuff.position.y = -0.265;
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.215, 0.19, 0.235), mats.firstPersonSkin);
+  palm.position.y = -0.39;
+  const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.12, 0.13), mats.firstPersonSkin);
+  thumb.position.set(-side * 0.115, -0.365, -0.035);
+  arm.add(sleeve, cuff, palm, thumb);
+  firstPersonHands.add(arm);
+  firstPersonArms.push(arm);
+}
+createBlockyArm(-1);
+createBlockyArm(1);
 
 function box(w, h, d, mat, x, y, z) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -321,6 +350,8 @@ function resetRun() {
   grounded = true;
   cameraYaw = 0;
   cameraPitch = 0;
+  cameraMotionTime = 0;
+  firstPersonHands.visible = false;
   ball.position.set(1.5, 2.1, -5.5);
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const startAngle = Math.random() * Math.PI * 2;
@@ -561,12 +592,28 @@ function updateBall(delta) {
   if (distance < CONFIG.ball.radius + CONFIG.player.radius + 0.22) endRun();
 }
 
-function updateCamera() {
-  // First-person mouse-look / touch-look with a level, camera-relative movement plane.
+let cameraMotionTime = 0;
+function updateCamera(delta = 0) {
+  // Subtle FPS locomotion: soft vertical bob, lateral sway and a restrained lean.
   const eyeHeight = 1.65 + jumpHeight;
-  camera.position.set(player.position.x, eyeHeight, player.position.z);
+  const moveAmount = Math.min(1, Math.hypot(playerVelocity.x, playerVelocity.z) / CONFIG.player.speed);
+  cameraMotionTime += delta * (moveAmount > 0.04 ? 10 : 2);
+  const bob = Math.sin(cameraMotionTime * 2) * 0.035 * moveAmount;
+  const lateralSway = Math.sin(cameraMotionTime) * 0.018 * moveAmount;
+  const movementLean = -playerVelocity.x / CONFIG.player.speed * 0.018;
+  camera.position.set(player.position.x + lateralSway, eyeHeight + bob, player.position.z);
   camera.rotation.order = "YXZ";
-  camera.rotation.set(cameraPitch, cameraYaw, 0);
+  camera.rotation.set(cameraPitch, cameraYaw, movementLean + Math.sin(cameraMotionTime * 2) * 0.004 * moveAmount);
+  firstPersonHands.visible = state === "playing" || state === "paused";
+  firstPersonHands.position.set(
+    -playerVelocity.x / CONFIG.player.speed * 0.022,
+    -0.015 + Math.sin(cameraMotionTime * 2) * 0.018 * moveAmount,
+    0
+  );
+  firstPersonHands.rotation.set(0, 0, -playerVelocity.x / CONFIG.player.speed * 0.035);
+  firstPersonArms.forEach((arm, index) => {
+    arm.rotation.x = Math.sin(cameraMotionTime * 2 + index * Math.PI) * 0.025 * moveAmount;
+  });
   playerFillLight.position.set(player.position.x, 1.9 + jumpHeight, player.position.z);
 }
 
@@ -596,4 +643,4 @@ animate();
 requestAnimationFrame(()=>requestAnimationFrame(()=>window.setTimeout(()=>{
   introScreen.classList.add("intro-exit");
   introScreen.addEventListener("transitionend",()=>introScreen.remove(),{once:true});
-},1250)));
+},3200)));

@@ -65,6 +65,7 @@ scene.background = new THREE.Color(0x08090d);
 scene.fog = new THREE.Fog(0x08090d, 18, 34);
 
 const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 90);
+scene.add(camera); // Camera-attached avatar arms are rendered with the scene.
 camera.position.set(0, 1.65, CONFIG.player.startZ);
 camera.lookAt(0, 1.65, CONFIG.player.startZ - 12);
 

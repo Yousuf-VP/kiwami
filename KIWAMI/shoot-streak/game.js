@@ -19,6 +19,7 @@ const graphicsQualityInputs = [...document.querySelectorAll("[data-graphics-qual
 const graphicsShadowInputs = [...document.querySelectorAll("[data-graphics-shadows]")];
 const graphicsMotionInputs = [...document.querySelectorAll("[data-graphics-motion]")];
 const graphicsStatusOutputs = [...document.querySelectorAll("[data-graphics-status]")];
+const graphicsMonitorInputs = [...document.querySelectorAll("[data-graphics-monitor]")];
 const menuButton = document.getElementById("menu-button");
 const pauseMenuButton = document.getElementById("pause-menu-button");
 const overMenuButton = document.getElementById("over-menu-button");
@@ -57,13 +58,14 @@ const GRAPHICS_PRESETS = {
   balanced: { label: "BALANCED", scale: 1.0, maxPixelRatio: 1.5, shadowMapSize: 512 },
   high: { label: "HIGH", scale: 1.08, maxPixelRatio: 2.0, shadowMapSize: 1024 }
 };
-const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true };
+const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true, performanceMonitor: false };
 try {
   const savedGraphics = JSON.parse(localStorage.getItem("dodgeCoreGraphics") || "null");
   if (savedGraphics && typeof savedGraphics === "object") {
     if (GRAPHICS_PRESETS[savedGraphics.quality]) graphicsSettings.quality = savedGraphics.quality;
     if (typeof savedGraphics.shadows === "boolean") graphicsSettings.shadows = savedGraphics.shadows;
     if (typeof savedGraphics.motionEffects === "boolean") graphicsSettings.motionEffects = savedGraphics.motionEffects;
+    if (typeof savedGraphics.performanceMonitor === "boolean") graphicsSettings.performanceMonitor = savedGraphics.performanceMonitor;
   }
 } catch {}
 let elapsed = 0;
@@ -135,6 +137,97 @@ function renderCareerStats() {
   }
 }
 renderCareerStats();
+
+/* DAILY CHALLENGES — one rotating objective per local calendar day */
+const DAILY_CHALLENGE_KEY = "dodgeCoreDailyChallenge";
+const DAILY_CHALLENGES = [
+  { id:"stay-sharp", title:"STAY SHARP", description:"Survive 45 seconds in one run.", target:45, unit:"SEC", type:"survive" },
+  { id:"score-climber", title:"SCORE CLIMBER", description:"Reach 600 points in one run.", target:600, unit:"PTS", type:"score" },
+  { id:"hardened-run", title:"HARDENED RUN", description:"Finish a run on HARD difficulty or higher.", target:1, unit:"RUN", type:"hard-finish" },
+  { id:"long-haul", title:"LONG HAUL", description:"Survive 75 seconds in one run.", target:75, unit:"SEC", type:"survive" },
+  { id:"extreme-reflexes", title:"EXTREME REFLEXES", description:"Survive 30 seconds on EXTREME or MASTER.", target:30, unit:"SEC", type:"extreme-survive" }
+];
+function getDailyChallengeDate() {
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth()+1).padStart(2,"0"), String(now.getDate()).padStart(2,"0")].join("-");
+}
+function getDailyChallengeForDate(dateKey) {
+  const dayNumber = Number(dateKey.replace(/-/g,"")) || 0;
+  return DAILY_CHALLENGES[dayNumber % DAILY_CHALLENGES.length];
+}
+let dailyChallengeDate = getDailyChallengeDate();
+let dailyChallengeDefinition = getDailyChallengeForDate(dailyChallengeDate);
+let dailyChallengeProgress = 0;
+let dailyChallengeCompleted = false;
+let dailyChallengeUpdateTimer = 0;
+try {
+  const savedDaily = JSON.parse(localStorage.getItem(DAILY_CHALLENGE_KEY) || "null");
+  if (savedDaily && savedDaily.date === dailyChallengeDate && savedDaily.id === dailyChallengeDefinition.id) {
+    dailyChallengeProgress = THREE.MathUtils.clamp(Number(savedDaily.progress) || 0, 0, dailyChallengeDefinition.target);
+    dailyChallengeCompleted = savedDaily.completed === true;
+  }
+} catch {}
+function saveDailyChallengeState() {
+  try {
+    localStorage.setItem(DAILY_CHALLENGE_KEY, JSON.stringify({
+      date:dailyChallengeDate,
+      id:dailyChallengeDefinition.id,
+      progress:dailyChallengeProgress,
+      completed:dailyChallengeCompleted
+    }));
+  } catch {}
+}
+function renderDailyChallenge() {
+  const challenge = dailyChallengeDefinition;
+  const progress = Math.min(challenge.target, dailyChallengeProgress);
+  const percent = Math.round((progress / challenge.target) * 100);
+  const progressText = Math.floor(progress).toLocaleString() + " / " + challenge.target.toLocaleString() + " " + challenge.unit;
+  document.querySelectorAll("[data-daily-title]").forEach(node => node.textContent = challenge.title);
+  document.querySelectorAll("[data-daily-description]").forEach(node => node.textContent = challenge.description);
+  document.querySelectorAll("[data-daily-date]").forEach(node => node.textContent = "TODAY · " + dailyChallengeDate);
+  document.querySelectorAll("[data-daily-progress]").forEach(node => node.textContent = progressText);
+  document.querySelectorAll("[data-daily-status]").forEach(node => {
+    node.textContent = dailyChallengeCompleted ? "COMPLETED" : "IN PROGRESS";
+    node.dataset.completed = String(dailyChallengeCompleted);
+  });
+  document.querySelectorAll("[data-daily-summary]").forEach(node => node.textContent = dailyChallengeCompleted ? "COMPLETED" : percent + "%");
+  document.querySelectorAll("[data-daily-bar]").forEach(node => node.style.width = percent + "%");
+}
+function refreshDailyChallengeIfNeeded() {
+  const today = getDailyChallengeDate();
+  if (today === dailyChallengeDate) return;
+  dailyChallengeDate = today;
+  dailyChallengeDefinition = getDailyChallengeForDate(today);
+  dailyChallengeProgress = 0;
+  dailyChallengeCompleted = false;
+  dailyChallengeUpdateTimer = 0;
+  saveDailyChallengeState();
+  renderDailyChallenge();
+}
+function updateDailyChallenge(runEnded = false) {
+  refreshDailyChallengeIfNeeded();
+  if (dailyChallengeCompleted) return;
+  const challenge = dailyChallengeDefinition;
+  let currentProgress = 0;
+  if (challenge.type === "survive") currentProgress = elapsed;
+  else if (challenge.type === "score") currentProgress = elapsed * 10;
+  else if (challenge.type === "hard-finish" && runEnded && ["hard","extreme","master"].includes(selectedDifficulty)) currentProgress = 1;
+  else if (challenge.type === "extreme-survive" && ["extreme","master"].includes(selectedDifficulty)) currentProgress = elapsed;
+  const nextProgress = Math.min(challenge.target, Math.max(0, currentProgress));
+  if (Math.floor(nextProgress) <= Math.floor(dailyChallengeProgress) && nextProgress < challenge.target) return;
+  dailyChallengeProgress = Math.max(dailyChallengeProgress, nextProgress);
+  if (dailyChallengeProgress >= challenge.target) dailyChallengeCompleted = true;
+  saveDailyChallengeState();
+  renderDailyChallenge();
+}
+function tickDailyChallenge(delta) {
+  dailyChallengeUpdateTimer += delta;
+  if (dailyChallengeUpdateTimer >= 0.25) {
+    dailyChallengeUpdateTimer = 0;
+    updateDailyChallenge(false);
+  }
+}
+renderDailyChallenge();
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x08090d);
@@ -286,6 +379,7 @@ ball.add(ballLight);
 // SCORE-BASED ARENA COLOUR EVOLUTION
 // Ordered as a cool-to-warm colour journey, with white as the neutral finale.
 const arenaThemes = [
+  { name:"RED", hex:0xff2447, glow:0xff002b, dark:0x210811, ground:0x18070d },
   { name:"GREEN", hex:0x39d98a, glow:0x16b96d, dark:0x071b12, ground:0x07140d },
   { name:"LIGHT BLUE", hex:0x55dcff, glow:0x21bfff, dark:0x071a25, ground:0x07131c },
   { name:"BLUE", hex:0x397dff, glow:0x185dff, dark:0x07152b, ground:0x07101f },
@@ -293,6 +387,48 @@ const arenaThemes = [
   { name:"PINK", hex:0xff5aa9, glow:0xff278b, dark:0x210b19, ground:0x180812 },
   { name:"WHITE", hex:0xf2f5ff, glow:0xcbd8ff, dark:0x171a24, ground:0x10131b }
 ];
+const ARENA_THEME_OPTIONS = [
+  { value:"red", label:"CLASSIC RED", threshold:0, index:0 },
+  { value:"green", label:"EMERALD", threshold:300, index:1 },
+  { value:"ice", label:"ICE BLUE", threshold:600, index:2 },
+  { value:"blue", label:"COBALT", threshold:900, index:3 },
+  { value:"purple", label:"VIOLET", threshold:1200, index:4 },
+  { value:"pink", label:"ROSE", threshold:1500, index:5 },
+  { value:"white", label:"WHITEOUT", threshold:2000, index:6 }
+];
+let selectedArenaTheme = "red";
+try {
+  const savedTheme = localStorage.getItem("dodgeCoreArenaTheme");
+  if (ARENA_THEME_OPTIONS.some(theme => theme.value === savedTheme)) selectedArenaTheme = savedTheme;
+} catch {}
+function selectedArenaThemeConfig() {
+  return ARENA_THEME_OPTIONS.find(theme => theme.value === selectedArenaTheme) || ARENA_THEME_OPTIONS[0];
+}
+function syncArenaThemeControls() {
+  const current = selectedArenaThemeConfig();
+  document.querySelectorAll("[data-arena-theme]").forEach(select => {
+    for (const option of select.options) {
+      const config = ARENA_THEME_OPTIONS.find(theme => theme.value === option.value);
+      option.disabled = Boolean(config && careerStats.bestScore < config.threshold);
+    }
+    select.value = selectedArenaTheme;
+  });
+  document.querySelectorAll("[data-arena-theme-status]").forEach(output => {
+    output.textContent = current.label + " SELECTED  /  BEST SCORE " + careerStats.bestScore.toLocaleString();
+  });
+}
+document.querySelectorAll("[data-arena-theme]").forEach(select => select.addEventListener("change", () => {
+  const choice = ARENA_THEME_OPTIONS.find(theme => theme.value === select.value);
+  if (!choice || careerStats.bestScore < choice.threshold) {
+    syncArenaThemeControls();
+    return;
+  }
+  selectedArenaTheme = choice.value;
+  try { localStorage.setItem("dodgeCoreArenaTheme", selectedArenaTheme); } catch {}
+  syncArenaThemeControls();
+  if (state !== "playing") resetArenaTheme();
+}));
+
 const themeCurrent = {
   ball: mats.ball.color.clone(), ballEmissive: mats.ball.emissive.clone(),
   aura: ballAura.material.color.clone(), ballLight: ballLight.color.clone(),
@@ -338,7 +474,8 @@ function applyThemeTargets(palette) {
   currentThemeName = palette.name;
 }
 function triggerArenaTheme(milestone) {
-  const palette = arenaThemes[(milestone - 1) % arenaThemes.length];
+  const paletteIndex = (selectedArenaThemeConfig().index + milestone) % arenaThemes.length;
+  const palette = arenaThemes[paletteIndex];
   applyThemeTargets(palette);
   themeTransitionActive = true;
   document.documentElement.style.setProperty("--theme-accent", "#" + new THREE.Color(palette.hex).getHexString());
@@ -393,7 +530,59 @@ function resetArenaTheme() {
   document.documentElement.style.setProperty("--theme-accent", "#ff183d");
   document.documentElement.style.setProperty("--theme-glow", "#ff536b");
   document.documentElement.style.setProperty("--theme-accent-rgb", "255,24,61");
+  triggerArenaTheme(0);
   if (themeBanner) themeBanner.classList.remove("theme-banner-show");
+  syncArenaThemeControls();
+}
+
+const eventBanner = document.getElementById("event-banner");
+const ARENA_EVENTS = [
+  { id:"low-gravity", label:"LOW GRAVITY", description:"JUMPS STAY AIRBORNE LONGER", duration:7.5 },
+  { id:"fog-surge", label:"FOG SURGE", description:"VISIBILITY TEMPORARILY REDUCED", duration:7.5 },
+  { id:"ball-tempo", label:"BALL TEMPO", description:"THE BALL MOVES FASTER", duration:7.5 },
+  { id:"light-shift", label:"LIGHT SHIFT", description:"ARENA LIGHTING CHANGES", duration:7.5 }
+];
+let activeArenaEvent = null;
+let arenaEventRemaining = 0;
+let arenaEventCooldown = 18;
+function finishArenaEvent() {
+  if (!activeArenaEvent) return;
+  if (activeArenaEvent.id === "fog-surge") { scene.fog.near = 18; scene.fog.far = 34; }
+  if (activeArenaEvent.id === "ball-tempo") { ballVelocity.multiplyScalar(1 / 1.15); }
+  if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = 22; redRoomGlow.intensity = 18; }
+  activeArenaEvent = null;
+  arenaEventRemaining = 0;
+}
+function startArenaEvent() {
+  const event = ARENA_EVENTS[Math.floor(Math.random() * ARENA_EVENTS.length)];
+  activeArenaEvent = event;
+  arenaEventRemaining = event.duration;
+  if (event.id === "fog-surge") { scene.fog.near = 8; scene.fog.far = 23; }
+  if (event.id === "ball-tempo") { ballVelocity.multiplyScalar(1.15); }
+  if (event.id === "light-shift") { ceilingLight.intensity = 12; redRoomGlow.intensity = 26; }
+  if (eventBanner) {
+    eventBanner.textContent = "ARENA EVENT  /  " + event.label + " — " + event.description;
+    eventBanner.classList.remove("event-banner-show");
+    void eventBanner.offsetWidth;
+    eventBanner.classList.add("event-banner-show");
+  }
+}
+function updateArenaEvents(delta) {
+  if (activeArenaEvent) {
+    arenaEventRemaining -= delta;
+    if (arenaEventRemaining <= 0) finishArenaEvent();
+    return;
+  }
+  arenaEventCooldown -= delta;
+  if (arenaEventCooldown <= 0) {
+    startArenaEvent();
+    arenaEventCooldown = 22 + Math.random() * 8;
+  }
+}
+function resetArenaEvents() {
+  finishArenaEvent();
+  arenaEventCooldown = 18;
+  if (eventBanner) eventBanner.classList.remove("event-banner-show");
 }
 
 let ballVelocity = new THREE.Vector3(-4.8, 1.6, 6.2);
@@ -409,6 +598,70 @@ let cameraPitch = 0;
 let activeLookPointer = null;
 let lastLookX = 0;
 let lastLookY = 0;
+
+const DEFAULT_KEYBINDS = { forward:"w", backward:"s", left:"a", right:"d", jump:" " };
+let keybinds = { ...DEFAULT_KEYBINDS };
+let rebindingAction = null;
+try {
+  const savedBinds = JSON.parse(localStorage.getItem("dodgeCoreKeybinds") || "null");
+  if (savedBinds && typeof savedBinds === "object") {
+    for (const action of Object.keys(DEFAULT_KEYBINDS)) {
+      if (typeof savedBinds[action] === "string" && savedBinds[action].length <= 20) keybinds[action] = savedBinds[action];
+    }
+  }
+} catch {}
+function displayKey(key) {
+  if (key === " ") return "SPACE";
+  if (key.startsWith("arrow")) return key.replace("arrow", "ARROW ").toUpperCase();
+  return key.toUpperCase();
+}
+function syncKeybindButtons() {
+  document.querySelectorAll("[data-rebind]").forEach(button => {
+    const action = button.dataset.rebind;
+    button.textContent = displayKey(keybinds[action] || DEFAULT_KEYBINDS[action]);
+    button.classList.toggle("is-rebinding", rebindingAction === action);
+    button.setAttribute("aria-label", "Rebind " + action + " key");
+  });
+}
+function beginKeyRebind(action) {
+  if (!Object.prototype.hasOwnProperty.call(DEFAULT_KEYBINDS, action)) return;
+  rebindingAction = action;
+  syncKeybindButtons();
+}
+document.querySelectorAll("[data-rebind]").forEach(button => button.addEventListener("click", () => beginKeyRebind(button.dataset.rebind)));
+syncKeybindButtons();
+
+let joystickScale = 1;
+let joystickResponse = 1;
+try {
+  const savedTouch = JSON.parse(localStorage.getItem("dodgeCoreTouchControls") || "null");
+  if (savedTouch && typeof savedTouch === "object") {
+    joystickScale = THREE.MathUtils.clamp(Number(savedTouch.size) || 1, 0.8, 1.3);
+    joystickResponse = THREE.MathUtils.clamp(Number(savedTouch.response) || 1, 0.6, 1.6);
+  }
+} catch {}
+const joystickSizeInputs = [...document.querySelectorAll("[data-joystick-size]")];
+const joystickResponseInputs = [...document.querySelectorAll("[data-joystick-sensitivity]")];
+function applyTouchControlSettings(persist = false) {
+  joystickBase.style.setProperty("--joystick-scale", String(joystickScale));
+  joystickSizeInputs.forEach(input => { input.value = String(Math.round(joystickScale * 100)); });
+  joystickResponseInputs.forEach(input => { input.value = String(Math.round(joystickResponse * 100)); });
+  document.querySelectorAll("[data-joystick-size-value]").forEach(output => output.textContent = Math.round(joystickScale * 100) + "%");
+  document.querySelectorAll("[data-joystick-sensitivity-value]").forEach(output => output.textContent = Math.round(joystickResponse * 100) + "%");
+  if (persist) {
+    try { localStorage.setItem("dodgeCoreTouchControls", JSON.stringify({ size:joystickScale, response:joystickResponse })); } catch {}
+  }
+}
+joystickSizeInputs.forEach(input => input.addEventListener("input", () => {
+  joystickScale = THREE.MathUtils.clamp(Number(input.value) / 100, 0.8, 1.3);
+  applyTouchControlSettings(true);
+}));
+joystickResponseInputs.forEach(input => input.addEventListener("input", () => {
+  joystickResponse = THREE.MathUtils.clamp(Number(input.value) / 100, 0.6, 1.6);
+  applyTouchControlSettings(true);
+}));
+applyTouchControlSettings();
+
 let lookSensitivity = 0.0035;
 let savedFov = 76;
 try {
@@ -438,6 +691,9 @@ function applyGraphicsSettings(persist = false) {
   graphicsQualityInputs.forEach(input => { input.value = graphicsSettings.quality; });
   graphicsShadowInputs.forEach(input => { input.checked = graphicsSettings.shadows; });
   graphicsMotionInputs.forEach(input => { input.checked = graphicsSettings.motionEffects; });
+  graphicsMonitorInputs.forEach(input => { input.checked = graphicsSettings.performanceMonitor; });
+  const monitor = document.getElementById("performance-monitor");
+  if (monitor) monitor.hidden = !graphicsSettings.performanceMonitor;
   graphicsStatusOutputs.forEach(output => {
     output.textContent = preset.label + "  /  " + (graphicsSettings.shadows ? "SHADOWS ON" : "SHADOWS OFF");
   });
@@ -462,6 +718,10 @@ graphicsShadowInputs.forEach(input => input.addEventListener("change", () => {
 }));
 graphicsMotionInputs.forEach(input => input.addEventListener("change", () => {
   graphicsSettings.motionEffects = input.checked;
+  applyGraphicsSettings(true);
+}));
+graphicsMonitorInputs.forEach(input => input.addEventListener("change", () => {
+  graphicsSettings.performanceMonitor = input.checked;
   applyGraphicsSettings(true);
 }));
 applyGraphicsSettings();
@@ -577,6 +837,7 @@ function setScreen(active) {
 }
 
 function resetRun() {
+  resetArenaEvents();
   elapsed = 0;
   score = 0;
   player.position.set(CONFIG.player.startX, 0, CONFIG.player.startZ);
@@ -604,6 +865,7 @@ function resetRun() {
 }
 
 function startRun() {
+  refreshDailyChallengeIfNeeded();
   resetRun();
   careerStats.totalGamesPlayed += 1;
   saveCareerStats();
@@ -640,6 +902,7 @@ function endRun() {
   state = "over";
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
+  updateDailyChallenge(true);
   const newRecord = final > best;
   finalScore.textContent = String(final).padStart(4, "0");
   if (newRecord) {
@@ -651,6 +914,7 @@ function endRun() {
   careerStats.difficultyCounts[selectedDifficulty] = (careerStats.difficultyCounts[selectedDifficulty] || 0) + 1;
   saveCareerStats();
   renderCareerStats();
+  syncArenaThemeControls();
 
   const runBest = document.getElementById("run-best-value");
   const runTime = document.getElementById("run-time-value");
@@ -677,9 +941,22 @@ overMenuButton.addEventListener("click", showMainMenu);
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
-  if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) event.preventDefault();
+  if (rebindingAction) {
+    event.preventDefault();
+    if (key === "escape") {
+      rebindingAction = null;
+      syncKeybindButtons();
+      return;
+    }
+    keybinds[rebindingAction] = key === "spacebar" ? " " : key;
+    try { localStorage.setItem("dodgeCoreKeybinds", JSON.stringify(keybinds)); } catch {}
+    rebindingAction = null;
+    syncKeybindButtons();
+    return;
+  }
+  if ([...Object.values(keybinds), "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) || key === " ") event.preventDefault();
   keys.add(key);
-  if (key === " " && state === "playing" && !event.repeat) jumpPlayer();
+  if (key === keybinds.jump && state === "playing" && !event.repeat) jumpPlayer();
   if (key === "escape" && state === "playing") pauseRun();
   else if (key === "escape" && state === "paused") resumeRun();
 });
@@ -695,7 +972,7 @@ function updateJoystick(event) {
   const rect=joystickBase.getBoundingClientRect(), cx=rect.left+rect.width/2, cy=rect.top+rect.height/2, max=rect.width*.34;
   let dx=event.clientX-cx, dy=event.clientY-cy, d=Math.hypot(dx,dy);
   if(d>max){const s=max/d;dx*=s;dy*=s;}
-  touchMoveX=THREE.MathUtils.clamp(dx/max,-1,1); touchMoveY=THREE.MathUtils.clamp(dy/max,-1,1);
+  touchMoveX=THREE.MathUtils.clamp((dx/max)*joystickResponse,-1,1); touchMoveY=THREE.MathUtils.clamp((dy/max)*joystickResponse,-1,1);
   joystickThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 }
 function resetJoystick(){joystickPointerId=null;touchMoveX=0;touchMoveY=0;joystickThumb.style.transform="translate(-50%,-50%)";}
@@ -716,10 +993,10 @@ function jumpPlayer() {
 function updatePlayer(delta) {
   let side = touchMoveX;
   let forward = -touchMoveY;
-  if (isDown("a", "arrowleft", "left")) side -= 1;
-  if (isDown("d", "arrowright", "right")) side += 1;
-  if (isDown("w", "arrowup", "up")) forward += 1;
-  if (isDown("s", "arrowdown", "down")) forward -= 1;
+  if (isDown(keybinds.left, "arrowleft", "left")) side -= 1;
+  if (isDown(keybinds.right, "arrowright", "right")) side += 1;
+  if (isDown(keybinds.forward, "arrowup", "up")) forward += 1;
+  if (isDown(keybinds.backward, "arrowdown", "down")) forward -= 1;
 
   // Movement stays level with the floor but follows the camera heading, like an FPS.
   const forwardX = -Math.sin(cameraYaw);
@@ -735,7 +1012,7 @@ function updatePlayer(delta) {
   if (side || forward) player.rotation.y = Math.atan2(playerVelocity.x, playerVelocity.z);
 
   if (!grounded) {
-    jumpVelocity -= CONFIG.player.jumpGravity * delta;
+    jumpVelocity -= CONFIG.player.jumpGravity * (activeArenaEvent?.id === "low-gravity" ? 0.72 : 1) * delta;
     jumpHeight += jumpVelocity * delta;
     if (jumpHeight <= 0) {
       const landedFromHeight = jumpHeight < 0;
@@ -827,7 +1104,7 @@ function updateBall(delta) {
 
   // Accelerate toward a difficulty-scaled target, with a hard cap for stable physics.
   const targetSpeed = Math.min(
-    (CONFIG.ball.speed + Math.min(elapsed * 0.09 * difficulty.ramp, 5.5 * difficulty.ramp)) * difficulty.speed,
+    (CONFIG.ball.speed + Math.min(elapsed * 0.09 * difficulty.ramp, 5.5 * difficulty.ramp)) * difficulty.speed * (activeArenaEvent?.id === "ball-tempo" ? 1.15 : 1),
     CONFIG.ball.maxSpeed
   );
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
@@ -889,15 +1166,32 @@ function updateCamera(delta = 0) {
   playerFillLight.position.set(player.position.x, 1.9 + jumpHeight, player.position.z);
 }
 
+let performanceSampleTime = 0;
+let performanceSampleFrames = 0;
 function animate() {
   requestAnimationFrame(animate);
-  const delta = Math.min(clock.getDelta(), 0.04);
+  const frameDelta = clock.getDelta();
+  const delta = Math.min(frameDelta, 0.04);
+  if (graphicsSettings.performanceMonitor) {
+    performanceSampleTime += Math.max(0, frameDelta);
+    performanceSampleFrames += 1;
+    if (performanceSampleTime >= 0.5) {
+      const fps = Math.round(performanceSampleFrames / performanceSampleTime);
+      const frameMs = fps > 0 ? (1000 / fps).toFixed(1) : "--";
+      const monitor = document.getElementById("performance-monitor");
+      if (monitor) monitor.innerHTML = "FPS " + fps + "<span>FRAME " + frameMs + " ms</span>";
+      performanceSampleTime = 0;
+      performanceSampleFrames = 0;
+    }
+  }
   if (state === "playing") {
     elapsed += delta;
     updatePlayer(delta);
     updateBall(delta);
+    updateArenaEvents(delta);
     updateCamera(delta);
     score = elapsed * 10;
+    tickDailyChallenge(delta);
     const reachedMilestone = Math.floor(score / 100);
     if (reachedMilestone > lastThemeMilestone) {
       lastThemeMilestone = reachedMilestone;

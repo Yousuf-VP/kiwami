@@ -30,7 +30,7 @@
       <div class="stat"><span>BEST</span><strong id="best-value">0000</strong></div>
       <div class="stat"><span>SURVIVAL</span><strong id="time-value">0.0s</strong></div>
     </section>
-    <div id="theme-banner" role="status" aria-live="polite"></div>
+    <div id="theme-banner" role="status" aria-live="polite"></div><div id="event-banner" role="status" aria-live="polite"></div><div id="performance-monitor" hidden>FPS -- <span>FRAME -- ms</span></div>
 
     <div id="bottom-hint">WASD <b>•</b> MOVE <b>•</b> MOUSE <b>•</b> LOOK <b>•</b> SPACE <b>•</b> JUMP</div>
     <div id="copyright">© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</div>
@@ -77,6 +77,27 @@
               <input id="mobile-motion" data-graphics-motion type="checkbox" checked>
             </label>
             <output class="graphics-status" data-graphics-status aria-live="polite">BALANCED / SHADOWS OFF</output>
+            <label class="graphics-toggle-row">
+              <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
+              <input type="checkbox" data-graphics-monitor>
+            </label>
+            <details class="advanced-settings-details">
+              <summary>CUSTOM CONTROLS</summary>
+              <div class="keybind-grid" aria-label="Keyboard controls">
+                <span>MOVE FORWARD</span><button type="button" data-rebind="forward">W</button>
+                <span>MOVE BACK</span><button type="button" data-rebind="backward">S</button>
+                <span>MOVE LEFT</span><button type="button" data-rebind="left">A</button>
+                <span>MOVE RIGHT</span><button type="button" data-rebind="right">D</button>
+                <span>JUMP</span><button type="button" data-rebind="jump">SPACE</button>
+              </div>
+              <label class="advanced-setting-row"><span>JOYSTICK SIZE <output data-joystick-size-value>100%</output></span>
+                <input type="range" min="80" max="130" step="5" value="100" data-joystick-size>
+              </label>
+              <label class="advanced-setting-row"><span>JOYSTICK RESPONSE <output data-joystick-sensitivity-value>100%</output></span>
+                <input type="range" min="60" max="160" step="5" value="100" data-joystick-sensitivity>
+              </label>
+              <p class="advanced-help">Select a key, then press the replacement key. ESC cancels rebinding.</p>
+            </details>
           </div>
           </div>
           <button class="menu-panel-toggle" type="button" data-panel-toggle="mobile-career-panel" aria-expanded="false"><span><b>03</b> CAREER STATS</span><strong>YOUR RECORD</strong><i>+</i></button>
@@ -86,6 +107,17 @@
               <div class="career-stat"><span>SURVIVAL TIME</span><strong id="career-time-mobile">0s</strong></div>
               <div class="career-stat"><span>PERSONAL BEST</span><strong id="career-best-mobile">0000</strong></div>
               <div class="career-stat"><span>FAVOURITE MODE</span><strong id="career-favourite-mobile">—</strong></div>
+            </div>
+          </div>
+
+          <button class="menu-panel-toggle" type="button" data-panel-toggle="mobile-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
+          <div id="mobile-daily-challenge-panel" class="menu-panel-content hidden">
+            <div class="daily-challenge-card">
+              <div class="daily-challenge-topline"><span>DAILY OBJECTIVE</span><small data-daily-date>REFRESHES DAILY</small></div>
+              <strong class="daily-challenge-title" data-daily-title>STAY SHARP</strong>
+              <p class="daily-challenge-description" data-daily-description>Survive 45 seconds in one run.</p>
+              <div class="daily-challenge-track" aria-hidden="true"><span data-daily-bar></span></div>
+              <div class="daily-challenge-meta"><span data-daily-progress>0 / 45 SEC</span><strong data-daily-status>IN PROGRESS</strong></div>
             </div>
           </div>
         </div>
@@ -137,6 +169,27 @@
               <input id="desktop-motion" data-graphics-motion type="checkbox" checked>
             </label>
             <output class="graphics-status" data-graphics-status aria-live="polite">BALANCED / SHADOWS OFF</output>
+            <label class="graphics-toggle-row">
+              <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
+              <input type="checkbox" data-graphics-monitor>
+            </label>
+            <details class="advanced-settings-details">
+              <summary>CUSTOM CONTROLS</summary>
+              <div class="keybind-grid" aria-label="Keyboard controls">
+                <span>MOVE FORWARD</span><button type="button" data-rebind="forward">W</button>
+                <span>MOVE BACK</span><button type="button" data-rebind="backward">S</button>
+                <span>MOVE LEFT</span><button type="button" data-rebind="left">A</button>
+                <span>MOVE RIGHT</span><button type="button" data-rebind="right">D</button>
+                <span>JUMP</span><button type="button" data-rebind="jump">SPACE</button>
+              </div>
+              <label class="advanced-setting-row"><span>JOYSTICK SIZE <output data-joystick-size-value>100%</output></span>
+                <input type="range" min="80" max="130" step="5" value="100" data-joystick-size>
+              </label>
+              <label class="advanced-setting-row"><span>JOYSTICK RESPONSE <output data-joystick-sensitivity-value>100%</output></span>
+                <input type="range" min="60" max="160" step="5" value="100" data-joystick-sensitivity>
+              </label>
+              <p class="advanced-help">Select a key, then press the replacement key. ESC cancels rebinding.</p>
+            </details>
           </div>
               </div>
             </div>
@@ -149,6 +202,17 @@
                 <div class="career-stat"><span>FAVOURITE MODE</span><strong id="career-favourite">—</strong></div>
               </div>
             </div>
+            
+          <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
+          <div id="desktop-daily-challenge-panel" class="menu-panel-content hidden">
+            <div class="daily-challenge-card">
+              <div class="daily-challenge-topline"><span>DAILY OBJECTIVE</span><small data-daily-date>REFRESHES DAILY</small></div>
+              <strong class="daily-challenge-title" data-daily-title>STAY SHARP</strong>
+              <p class="daily-challenge-description" data-daily-description>Survive 45 seconds in one run.</p>
+              <div class="daily-challenge-track" aria-hidden="true"><span data-daily-bar></span></div>
+              <div class="daily-challenge-meta"><span data-daily-progress>0 / 45 SEC</span><strong data-daily-status>IN PROGRESS</strong></div>
+            </div>
+          </div>
           </aside>
         </div>
         <div class="cinema-footer"><span>© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</span><span>NO SECOND CHANCES <i></i></span></div>
@@ -188,6 +252,27 @@
               <input id="pause-motion" data-graphics-motion type="checkbox" checked>
             </label>
             <output class="graphics-status" data-graphics-status aria-live="polite">BALANCED / SHADOWS OFF</output>
+            <label class="graphics-toggle-row">
+              <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
+              <input type="checkbox" data-graphics-monitor>
+            </label>
+            <details class="advanced-settings-details">
+              <summary>CUSTOM CONTROLS</summary>
+              <div class="keybind-grid" aria-label="Keyboard controls">
+                <span>MOVE FORWARD</span><button type="button" data-rebind="forward">W</button>
+                <span>MOVE BACK</span><button type="button" data-rebind="backward">S</button>
+                <span>MOVE LEFT</span><button type="button" data-rebind="left">A</button>
+                <span>MOVE RIGHT</span><button type="button" data-rebind="right">D</button>
+                <span>JUMP</span><button type="button" data-rebind="jump">SPACE</button>
+              </div>
+              <label class="advanced-setting-row"><span>JOYSTICK SIZE <output data-joystick-size-value>100%</output></span>
+                <input type="range" min="80" max="130" step="5" value="100" data-joystick-size>
+              </label>
+              <label class="advanced-setting-row"><span>JOYSTICK RESPONSE <output data-joystick-sensitivity-value>100%</output></span>
+                <input type="range" min="60" max="160" step="5" value="100" data-joystick-sensitivity>
+              </label>
+              <p class="advanced-help">Select a key, then press the replacement key. ESC cancels rebinding.</p>
+            </details>
           </div>
         </div></div>
         <button id="resume-button" class="primary-button" type="button">RESUME RUN</button><button id="pause-menu-button" class="secondary-button" type="button">MAIN MENU</button><button class="secondary-button mobile-pause-fullscreen" type="button" data-fullscreen-toggle><span data-fullscreen-label>ENTER FULLSCREEN</span></button><p id="pause-fullscreen-status" class="mobile-fullscreen-status" role="status" aria-live="polite"></p>

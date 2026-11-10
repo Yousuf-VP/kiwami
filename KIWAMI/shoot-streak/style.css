@@ -543,3 +543,56 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
   .graphics-quality-row select { min-height:38px; font-size:9px; }
   .graphics-toggle-row { min-height:46px; }
 }
+
+
+/* DODGE CORE — ARENA EVENTS, THEMES & CUSTOM INPUTS */
+#event-banner{position:absolute;z-index:6;top:clamp(112px,20vh,170px);left:50%;transform:translate(-50%,-8px);padding:9px 15px;border:1px solid rgba(255,255,255,.22);border-radius:999px;color:#fff;background:rgba(8,9,13,.9);box-shadow:0 0 24px rgba(255,255,255,.08);font:800 8px var(--display);letter-spacing:1.3px;opacity:0;pointer-events:none;white-space:nowrap}
+#event-banner.event-banner-show{animation:eventBannerPop 3.2s ease both}
+@keyframes eventBannerPop{0%{opacity:0;transform:translate(-50%,-10px)}12%,78%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-5px)}}
+#performance-monitor{position:absolute;z-index:12;top:12px;right:14px;padding:7px 10px;border:1px solid rgba(255,255,255,.13);border-radius:5px;color:#f5f5f7;background:rgba(5,6,9,.78);font:700 9px var(--display);letter-spacing:.8px;pointer-events:none}
+#performance-monitor span{display:block;margin-top:4px;color:#a7a8b1;font:600 8px var(--body);letter-spacing:.3px}
+#performance-monitor[hidden]{display:none}
+.advanced-settings-details{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08)}
+.advanced-settings-details summary{cursor:pointer;color:#f0f0f4;font:800 7px var(--display);letter-spacing:1px;list-style:none}
+.advanced-settings-details summary::-webkit-details-marker{display:none}
+.advanced-settings-details summary:after{content:"+";float:right;color:var(--red);font-size:12px}
+.advanced-settings-details[open] summary:after{content:"−"}
+.advanced-setting-row{display:grid;gap:7px;margin-top:12px;color:#cfd0d8;font:700 7px var(--display);letter-spacing:.7px}
+.advanced-setting-row select{width:100%;min-height:34px;padding:0 9px;border:1px solid rgba(255,255,255,.13);border-radius:4px;color:#f3f3f5;background:#111218;font:700 8px var(--display);color-scheme:dark}
+.advanced-setting-row input[type=range]{width:100%;accent-color:var(--red)}
+.advanced-setting-row output{float:right;color:#ff899b}
+.advanced-status,.advanced-help{display:block;margin-top:7px;color:#999ba5;font:600 7px var(--body);letter-spacing:.2px}
+.keybind-grid{display:grid;grid-template-columns:1fr auto;align-items:center;gap:7px 10px;margin-top:12px}
+.keybind-grid span{color:#bfc0c9;font:700 7px var(--display);letter-spacing:.6px}
+.keybind-grid button{min-width:48px;min-height:29px;padding:0 8px;border:1px solid rgba(255,255,255,.16);border-radius:4px;color:#fff;background:#171820;font:800 8px var(--display);cursor:pointer}
+.keybind-grid button.is-rebinding{border-color:var(--red);color:#ff8c9e;box-shadow:0 0 14px rgba(255,24,61,.2)}
+#move-joystick{transform:scale(var(--joystick-scale,1))}
+@media(max-width:600px){#event-banner{top:clamp(142px,22vh,190px);font-size:7px;padding:8px 12px}#performance-monitor{top:auto;right:10px;bottom:12px;font-size:8px}.advanced-settings-details summary{font-size:8px}.advanced-setting-row{font-size:8px}.keybind-grid span{font-size:7px}}
+
+
+/* DAILY CHALLENGE PANEL */
+.daily-challenge-card{padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:linear-gradient(135deg,rgba(255,24,61,.075),rgba(255,255,255,.018))}
+.daily-challenge-topline,.daily-challenge-meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.daily-challenge-topline{margin-bottom:10px;color:#ff9aaa;font:700 7px var(--display);letter-spacing:1.2px}
+.daily-challenge-topline small{color:#777985;font:600 6px var(--display);letter-spacing:.5px}
+.daily-challenge-title{display:block;color:#fff;font:800 12px var(--display);letter-spacing:1px}
+.daily-challenge-description{margin:8px 0 13px;color:#aeb0ba;font:500 10px/1.55 var(--body)}
+.daily-challenge-track{height:6px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.1)}
+.daily-challenge-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#d90d31,#ff7188);box-shadow:0 0 12px rgba(255,24,61,.4);transition:width .25s ease}
+.daily-challenge-meta{margin-top:9px;color:#aeb0ba;font:700 7px var(--display);letter-spacing:.7px}
+.daily-challenge-meta strong{color:#ff9aaa}
+.daily-challenge-meta strong[data-completed="true"]{color:#9ce7c0}
+.mobile-menu-options .daily-challenge-card{padding:12px}
+@media(prefers-reduced-motion:reduce){.daily-challenge-track span{transition:none}}
+
+/* CINEMATIC MAIN MENU — ambient arena light and staggered reveal */
+#start-screen.cinematic-menu{isolation:isolate}
+#start-screen.cinematic-menu::before{content:"";position:absolute;inset:-18%;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 52% 42%,rgba(255,24,61,.13),transparent 34%),radial-gradient(ellipse at 18% 82%,rgba(255,255,255,.035),transparent 38%);animation:cinemaAmbientPulse 9s ease-in-out infinite alternate}
+#start-screen.cinematic-menu::after{content:"";position:absolute;top:-35%;bottom:-35%;left:-48%;width:38%;z-index:0;pointer-events:none;transform:skewX(-19deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.035),rgba(255,24,61,.045),transparent);animation:cinemaLightSweep 15s ease-in-out infinite}
+#start-screen.cinematic-menu>*{position:relative;z-index:1}
+#start-screen.cinematic-menu .cinema-hero{animation:cinemaReveal .85s cubic-bezier(.2,.75,.25,1) both}
+#start-screen.cinematic-menu .cinema-console{animation:cinemaReveal .95s cubic-bezier(.2,.75,.25,1) .12s both}
+#start-screen.cinematic-menu .cinema-topline{animation:cinemaReveal .75s ease both}
+@keyframes cinemaAmbientPulse{from{opacity:.45;scale:1}to{opacity:1;scale:1.04}}
+@keyframes cinemaLightSweep{0%,55%{left:-48%;opacity:0}65%{opacity:1}100%{left:120%;opacity:0}}
+@media(prefers-reduced-motion:reduce){#start-screen.cinematic-menu::before,#start-screen.cinematic-menu::after{animation:none}}

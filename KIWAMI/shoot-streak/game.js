@@ -89,11 +89,11 @@ renderer.domElement.addEventListener("click", () => {
 window.addEventListener("mousemove", (event) => {
   if (state !== "playing" || document.pointerLockElement !== renderer.domElement) return;
   cameraYaw -= event.movementX * lookSensitivity;
-  cameraPitch = THREE.MathUtils.clamp(cameraPitch - event.movementY * LOOK_SENSITIVITY, -1.25, 1.25);
+  cameraPitch = THREE.MathUtils.clamp(cameraPitch - event.movementY * lookSensitivity, -1.25, 1.25);
 });
 
 renderer.domElement.addEventListener("pointerdown", (event) => {
-  if (state !== "playing" || event.pointerType !== "touch") return;
+  if (state !== "playing" || event.pointerType !== "touch" || event.clientX < window.innerWidth * 0.38) return;
   activeLookPointer = event.pointerId;
   lastLookX = event.clientX;
   lastLookY = event.clientY;
@@ -105,8 +105,8 @@ renderer.domElement.addEventListener("pointermove", (event) => {
   const dy = event.clientY - lastLookY;
   lastLookX = event.clientX;
   lastLookY = event.clientY;
-  cameraYaw -= dx * LOOK_SENSITIVITY * 1.35;
-  cameraPitch = THREE.MathUtils.clamp(cameraPitch - dy * LOOK_SENSITIVITY * 1.35, -1.25, 1.25);
+  cameraYaw -= dx * lookSensitivity * 1.6;
+  cameraPitch = THREE.MathUtils.clamp(cameraPitch - dy * lookSensitivity * 1.6, -1.25, 1.25);
 });
 function releaseLookPointer(event) {
   if (event.pointerId === activeLookPointer) activeLookPointer = null;
@@ -248,10 +248,23 @@ function selectDifficulty(level) {
     button.setAttribute("aria-pressed", String(selected));
   });
   if (modeLabel) modeLabel.innerHTML = '<i></i> ' + DIFFICULTIES[level].label + ' MODE';
+  document.querySelectorAll('[data-panel-summary="difficulty"]').forEach(label=>label.textContent=DIFFICULTIES[level].label);
 }
 
 difficultyButtons.forEach((button) => {
   button.addEventListener("click", () => selectDifficulty(button.dataset.difficulty));
+});
+
+document.querySelectorAll("[data-panel-toggle]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    const panel=document.getElementById(button.dataset.panelToggle);
+    if(!panel)return;
+    const opening=panel.classList.contains("hidden");
+    panel.classList.toggle("hidden",!opening);
+    button.setAttribute("aria-expanded",String(opening));
+    const icon=button.querySelector("i");
+    if(icon)icon.textContent=opening?"−":"+";
+  });
 });
 
 
@@ -403,6 +416,7 @@ window.addEventListener("keydown", (event) => {
 });
 jumpButton.addEventListener("pointerdown", (event) => {
   event.preventDefault();
+  event.stopPropagation();
   jumpPlayer();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
@@ -416,8 +430,8 @@ function updateJoystick(event) {
   joystickThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 }
 function resetJoystick(){joystickPointerId=null;touchMoveX=0;touchMoveY=0;joystickThumb.style.transform="translate(-50%,-50%)";}
-joystickBase.addEventListener("pointerdown",e=>{if(state!=="playing")return;e.preventDefault();joystickPointerId=e.pointerId;joystickBase.setPointerCapture(e.pointerId);updateJoystick(e);});
-joystickBase.addEventListener("pointermove",e=>{if(e.pointerId===joystickPointerId)updateJoystick(e);});
+joystickBase.addEventListener("pointerdown",e=>{if(state!=="playing")return;e.preventDefault();e.stopPropagation();joystickPointerId=e.pointerId;joystickBase.setPointerCapture(e.pointerId);updateJoystick(e);});
+joystickBase.addEventListener("pointermove",e=>{if(e.pointerId===joystickPointerId){e.preventDefault();e.stopPropagation();updateJoystick(e);}});
 for(const type of ["pointerup","pointercancel","lostpointercapture"])joystickBase.addEventListener(type,e=>{if(e.pointerId===joystickPointerId)resetJoystick();});
 
 function isDown(...names) {

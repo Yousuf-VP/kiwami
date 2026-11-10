@@ -448,3 +448,14 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 @media(max-width:600px){.mobile-main-menu{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}.mobile-menu-hero{padding:clamp(12px,3vh,28px) 0 6px}.mobile-menu-hero h1{font-size:clamp(60px,17vw,94px)}.mobile-menu-options{max-width:100%}.menu-panel-toggle{min-height:48px}.menu-panel-content{padding:9px}.pause-panel-toggle{font-size:8px}}
 @media(orientation:landscape) and (pointer:coarse){#move-joystick{width:clamp(94px,19vh,124px);height:clamp(94px,19vh,124px);left:max(18px,env(safe-area-inset-left));bottom:max(15px,env(safe-area-inset-bottom))}#touch-controls #jump-button{width:clamp(64px,14vh,78px);height:clamp(64px,14vh,78px);right:max(22px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom))}#mobile-look-hint{bottom:12px}}
 @media(max-width:380px) and (orientation:portrait){.mobile-menu-hero h1{font-size:clamp(56px,16vw,70px)}.mobile-menu-footer span{display:none}.mobile-difficulty-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* SCORE MILESTONE THEME ACCENTS */
+:root{--theme-accent:#ff183d;--theme-glow:#ff536b;--theme-accent-rgb:255,24,61}
+#hud .stat{border-color:rgba(var(--theme-accent-rgb),.3);box-shadow:0 0 22px rgba(var(--theme-accent-rgb),.07);transition:border-color 1.8s ease,box-shadow 1.8s ease}
+#time-value{color:var(--theme-accent);transition:color 1.8s ease}
+#theme-banner{position:absolute;z-index:5;top:clamp(74px,13vh,122px);left:50%;transform:translate(-50%,-10px);padding:10px 17px;border:1px solid color-mix(in srgb,var(--theme-accent) 55%,transparent);border-radius:999px;color:#fff;background:rgba(5,7,12,.82);box-shadow:0 0 28px color-mix(in srgb,var(--theme-accent) 24%,transparent);font:800 9px var(--display);letter-spacing:1.8px;opacity:0;pointer-events:none;white-space:nowrap;backdrop-filter:blur(10px)}
+#theme-banner.theme-banner-show{animation:themeMilestonePop 2.25s cubic-bezier(.2,.75,.25,1) both}
+@keyframes themeMilestonePop{0%{opacity:0;transform:translate(-50%,-14px) scale(.92)}12%,72%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-7px) scale(.98)}}
+@media(max-width:600px){#theme-banner{top:clamp(105px,17vh,150px);font-size:8px;letter-spacing:1.2px;padding:9px 13px}}
+@media(prefers-reduced-motion:reduce){#theme-banner.theme-banner-show{animation:none;opacity:1}}

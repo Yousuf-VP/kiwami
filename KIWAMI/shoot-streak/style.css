@@ -180,3 +180,47 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
   50% { translate: 0 -12px; scale: 1.045; }
 }
 @media (prefers-reduced-motion: reduce) { .intro-orb { animation: none; } }
+
+
+/* DODGE CORE — minimal KIWAMI studio ident */
+#studio-intro {
+  display: grid;
+  place-items: center;
+  background: #000;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .9s ease, visibility .9s ease;
+}
+#studio-intro::before,
+#studio-intro::after,
+#studio-intro .intro-orb,
+#studio-intro .intro-content,
+#studio-intro .intro-copyright { display: none !important; }
+.studio-ident {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  color: #fff;
+  text-align: center;
+  animation: studio-ident-in .9s ease both;
+}
+.studio-ident-mark {
+  color: #fff;
+  font: 900 clamp(76px, 13vw, 112px)/.9 var(--display);
+  letter-spacing: -9px;
+}
+.studio-ident-mark span { color: var(--red); }
+.studio-ident-name {
+  color: rgba(255,255,255,.9);
+  font: 700 10px var(--display);
+  letter-spacing: 4px;
+}
+#studio-intro.intro-exit { opacity: 0; visibility: hidden; pointer-events: none; }
+@keyframes studio-ident-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-ident { animation: none; }
+}

@@ -1,0 +1,86 @@
+/* DODGE CORE — CAREER STATS + GAME OVER POLISH */
+.career-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:12px 0 3px;
+}
+.career-stat {
+  min-width:0;
+  padding:11px 12px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:8px;
+  background:rgba(255,255,255,.025);
+  text-align:left;
+}
+.career-stat span,
+.run-summary span {
+  display:block;
+  margin-bottom:6px;
+  color:#858691;
+  font:700 7px var(--display);
+  letter-spacing:1px;
+}
+.career-stat strong,
+.run-summary strong {
+  display:block;
+  overflow:hidden;
+  color:#f4f4f7;
+  font:800 13px var(--display);
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.game-over-card { width:min(470px,100%); }
+.game-over-card .description { margin-bottom:15px; }
+.new-record-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 12px;
+  padding:8px 12px;
+  border:1px solid rgba(255,24,61,.45);
+  border-radius:999px;
+  color:#ff9aaa;
+  background:rgba(255,24,61,.09);
+  font:800 8px var(--display);
+  letter-spacing:1.3px;
+  animation:recordPulse 1.8s ease-in-out infinite;
+}
+.final-score { margin:12px 0 10px; }
+.final-score small {
+  display:block;
+  margin-top:7px;
+  color:#ff8194;
+  font:700 7px var(--display);
+  letter-spacing:1px;
+}
+.run-summary {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  margin:0 0 17px;
+  text-align:left;
+}
+.run-summary > div {
+  min-width:0;
+  padding:10px 9px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:8px;
+  background:rgba(255,255,255,.025);
+}
+.run-summary strong { font-size:11px; }
+#game-over-screen .secondary-button {
+  width:100%;
+  margin-top:9px;
+}
+@keyframes recordPulse {
+  0%,100% { box-shadow:0 0 0 rgba(255,24,61,0); }
+  50% { box-shadow:0 0 20px rgba(255,24,61,.16); }
+}
+@media (max-width:480px) {
+  .game-over-card { padding:23px 18px; }
+  .run-summary { gap:5px; }
+  .run-summary > div { padding:9px 6px; }
+  .run-summary span { font-size:6px; letter-spacing:.6px; }
+  .run-summary strong { font-size:9px; }
+}

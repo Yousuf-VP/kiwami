@@ -1528,3 +1528,248 @@ body.menu-detail-open { overflow:hidden; }
   .auth-card { padding:15px; }
   .auth-gate-footer { font-size:5px; }
 }
+
+
+/* REFERENCE-INSPIRED UI ALIGNMENT — sharp panels, aligned actions, compact player identity */
+.auth-gate-shell {
+  width:min(1280px,calc(100% - 64px));
+  max-width:1280px;
+}
+.auth-gate-brand {
+  min-height:58px;
+  padding:0 18px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(5,7,12,.78);
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+.auth-gate-brand>span:nth-child(2) { margin-right:auto; }
+.auth-gate-brand>i {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:#f4f4f4;
+  color:#08090d;
+  font-style:normal;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:1.2px;
+}
+.auth-gate-layout {
+  grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr);
+  align-items:center;
+  gap:clamp(28px,5vw,76px);
+  padding:clamp(24px,4vh,48px) 0;
+}
+.auth-gate-intro h1 { letter-spacing:-.055em; }
+.auth-card-wrap { width:100%;max-width:510px;justify-self:end; }
+.auth-card {
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:2px;
+  background:linear-gradient(145deg,rgba(15,18,25,.98),rgba(5,6,10,.98));
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+  padding:clamp(22px,2.8vw,36px);
+}
+.auth-card-topline {
+  min-height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.15);
+  padding-bottom:12px;
+  letter-spacing:1.5px;
+}
+.auth-card-heading { margin:22px 0 24px; }
+.auth-card-heading h2 {
+  font-size:clamp(30px,3vw,42px);
+  line-height:.98;
+  letter-spacing:-1.5px;
+}
+.auth-account-form {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:13px 12px;
+  align-items:end;
+}
+.auth-account-form label {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.auth-account-form label:first-child,
+.auth-account-form label:nth-child(2),
+.auth-account-form label:nth-child(3),
+.auth-account-form .auth-submit { grid-column:1/-1; }
+.auth-account-form input {
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:0;
+  background:#090b10;
+  color:#fff;
+  padding:0 14px;
+  font-size:14px;
+  box-sizing:border-box;
+}
+.auth-account-form input:focus {
+  outline:2px solid #fff;
+  outline-offset:1px;
+  border-color:#fff;
+}
+.auth-submit,
+.auth-offline-button {
+  min-height:58px;
+  border-radius:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  letter-spacing:1.2px;
+  font-weight:950;
+}
+.auth-submit {
+  margin-top:7px;
+  background:#f5f5f5;
+  color:#08090d;
+  border:1px solid #fff;
+  box-shadow:none;
+}
+.auth-submit:hover { background:#fff;transform:translateY(-1px); }
+.auth-submit b { color:#08090d; }
+.auth-account-switch {
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.auth-account-switch button {
+  min-height:34px;
+  min-width:92px;
+  padding:0 13px;
+  border:1px solid rgba(255,255,255,.65);
+  border-radius:0;
+  color:#fff;
+  background:transparent;
+  font-weight:900;
+  letter-spacing:.8px;
+}
+.auth-account-message {
+  min-height:28px;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+.auth-offline-button {
+  width:100%;
+  min-height:46px;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:0;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+}
+.auth-gate-footer {
+  border-top:1px solid rgba(255,255,255,.14);
+  padding-top:14px;
+}
+
+/* Main menu: consistent rectangular controls and a clear primary action */
+.main-menu-card { border-radius:2px; }
+.cinema-topline {
+  min-height:54px;
+  align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.13);
+  padding-bottom:12px;
+}
+.menu-player-card {
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:2px;
+  background:rgba(5,7,12,.82);
+}
+.menu-player-status {
+  padding:7px 10px;
+  border-radius:0;
+  border:1px solid rgba(255,255,255,.2);
+  letter-spacing:1px;
+}
+.menu-panel-toggle {
+  min-height:52px;
+  border-radius:0;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.045);
+  margin-bottom:7px;
+  padding:0 15px;
+}
+.menu-panel-toggle:hover,
+.menu-panel-toggle[aria-expanded="true"] {
+  border-color:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.09);
+}
+.menu-panel-toggle>i {
+  width:24px;height:24px;
+  display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:0;
+}
+.cinema-start,
+.mobile-play-button {
+  min-height:68px;
+  border-radius:0;
+  background:#f5f5f5;
+  color:#08090d;
+  border:1px solid #fff;
+  box-shadow:none;
+  letter-spacing:1.5px;
+}
+.cinema-start:hover,
+.mobile-play-button:hover {
+  background:#fff;
+  color:#05060a;
+  transform:translateY(-2px);
+}
+.cinema-start b,
+.mobile-play-button b { color:#08090d; }
+
+@media (max-width:800px) {
+  .auth-gate-shell {
+    width:min(100% - 28px,560px);
+  }
+  .auth-gate-brand {
+    min-height:48px;
+    padding:0 10px;
+    gap:9px;
+  }
+  .auth-gate-brand>i {
+    min-height:26px;
+    padding:0 8px;
+    font-size:7px;
+  }
+  .auth-gate-layout {
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    padding:12px 0 16px;
+  }
+  .auth-card-wrap { max-width:none; }
+  .auth-card { padding:clamp(16px,4vw,22px); }
+  .auth-card-heading { margin:14px 0 16px; }
+  .auth-account-form { display:flex;flex-direction:column;gap:10px; }
+  .auth-account-form label { width:100%; }
+  .auth-account-form input { min-height:48px;font-size:16px; }
+  .auth-submit { width:100%;min-height:54px;margin-top:2px; }
+  .auth-account-switch { width:100%; }
+  .auth-offline-button { min-height:44px; }
+  .cinema-start,.mobile-play-button { min-height:58px; }
+}
+@media (max-width:380px) {
+  .auth-gate-brand>i { font-size:6px;letter-spacing:.5px; }
+  .auth-card-topline { font-size:7px; }
+  .auth-account-switch { align-items:flex-start;flex-direction:column;padding:9px 0; }
+  .auth-account-switch button { width:100%; }
+}

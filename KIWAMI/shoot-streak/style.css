@@ -1945,3 +1945,96 @@ button:focus-visible{outline:2px solid #ff7188;outline-offset:3px}
   }
   .game-over-card.game-over-results{transition:none}
 }
+
+
+/* DODGE CORE — persistent cinematic results and optional forced landscape */
+.game-over-overlay{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:clamp(4px,1.2vh,14px);
+  overflow-x:hidden;
+  overflow-y:auto;
+  padding:clamp(8px,2vh,20px);
+}
+.game-over-cinematic{
+  position:relative;
+  inset:auto;
+  flex:0 0 clamp(230px,39vh,360px);
+  width:min(760px,100%);
+  opacity:1;
+  visibility:visible;
+  background:
+    radial-gradient(ellipse at 50% 48%,rgba(102,7,22,.22),transparent 52%),
+    linear-gradient(180deg,rgba(3,4,7,.15),rgba(9,7,11,.08),rgba(3,4,7,.15));
+}
+.game-over-cinematic.is-playing{visibility:visible;animation:none}
+.game-over-cinematic.is-finished{opacity:1;visibility:visible;transition:none}
+.game-over-cinematic .cinematic-vignette{pointer-events:none}
+.game-over-cinematic .cinematic-title{animation:gameover-title .85s cubic-bezier(.16,1,.3,1) .52s both}
+.game-over-cinematic .cinematic-subtitle{animation:gameover-subtitle .55s ease .95s both}
+.game-over-card.game-over-results{
+  flex:0 0 auto;
+  width:min(520px,100%);
+  max-height:none;
+  overflow:visible;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transform:none;
+  transition:none;
+  animation:none;
+  margin:0 auto;
+}
+.game-over-card.game-over-results.is-visible{opacity:1;visibility:visible;transform:none}
+.game-over-card .description{margin-bottom:12px}
+@media(max-width:600px){
+  .game-over-overlay{justify-content:flex-start;gap:0;padding:8px 10px max(12px,env(safe-area-inset-bottom))}
+  .game-over-cinematic{flex-basis:clamp(205px,34vh,270px);width:100%}
+  .game-over-card.game-over-results{width:min(440px,100%);padding:18px 15px}
+  .cinematic-kicker{top:calc(50% - 68px)}
+  .cinematic-title span{font-size:clamp(40px,12vw,66px)}
+  .cinematic-title strong{font-size:clamp(54px,17vw,88px)}
+  .cinematic-subtitle{top:calc(50% + 72px)}
+  .cinematic-progress{bottom:10px}
+}
+@media(max-height:620px){
+  .game-over-overlay{justify-content:flex-start;gap:0}
+  .game-over-cinematic{flex-basis:190px}
+  .game-over-card.game-over-results{padding:12px 16px}
+  .game-over-card .description{margin:6px 0 8px}
+  .game-over-card .final-score{margin:8px 0;padding:8px}
+  .game-over-card .run-summary{margin-bottom:8px}
+}
+@media(max-width:900px) and (orientation:portrait){
+  body.force-landscape #game-shell{
+    position:fixed;
+    top:0;
+    left:100vw;
+    width:100dvh;
+    height:100vw;
+    min-height:0;
+    transform:rotate(90deg);
+    transform-origin:top left;
+    overflow:hidden;
+  }
+  body.force-landscape #game-shell .overlay{overflow-y:auto}
+  body.force-landscape #game-shell #touch-controls{inset:0}
+  body.force-landscape #game-shell #move-joystick{
+    left:max(18px,env(safe-area-inset-left));
+    bottom:max(18px,env(safe-area-inset-bottom));
+    width:clamp(92px,18vw,128px);
+    height:clamp(92px,18vw,128px);
+  }
+  body.force-landscape #game-shell #touch-controls #jump-button{
+    right:max(22px,env(safe-area-inset-right));
+    bottom:max(24px,env(safe-area-inset-bottom));
+    width:clamp(64px,12vw,84px);
+    height:clamp(64px,12vw,84px);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .game-over-cinematic .cinematic-title,.game-over-cinematic .cinematic-subtitle{animation:none;opacity:1;filter:none;transform:none}
+  .game-over-card.game-over-results{transition:none}
+}

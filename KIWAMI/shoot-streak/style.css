@@ -1530,251 +1530,6 @@ body.menu-detail-open { overflow:hidden; }
 }
 
 
-/* REFERENCE-INSPIRED UI ALIGNMENT — sharp panels, aligned actions, compact player identity */
-.auth-gate-shell {
-  width:min(1280px,calc(100% - 64px));
-  max-width:1280px;
-}
-.auth-gate-brand {
-  min-height:58px;
-  padding:0 18px;
-  border:1px solid rgba(255,255,255,.12);
-  background:rgba(5,7,12,.78);
-  display:flex;
-  align-items:center;
-  gap:13px;
-}
-.auth-gate-brand>span:nth-child(2) { margin-right:auto; }
-.auth-gate-brand>i {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:30px;
-  padding:0 12px;
-  border:1px solid rgba(255,255,255,.18);
-  background:#f4f4f4;
-  color:#08090d;
-  font-style:normal;
-  font-size:8px;
-  font-weight:900;
-  letter-spacing:1.2px;
-}
-.auth-gate-layout {
-  grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr);
-  align-items:center;
-  gap:clamp(28px,5vw,76px);
-  padding:clamp(24px,4vh,48px) 0;
-}
-.auth-gate-intro h1 { letter-spacing:-.055em; }
-.auth-card-wrap { width:100%;max-width:510px;justify-self:end; }
-.auth-card {
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:2px;
-  background:linear-gradient(145deg,rgba(15,18,25,.98),rgba(5,6,10,.98));
-  box-shadow:0 24px 70px rgba(0,0,0,.55);
-  padding:clamp(22px,2.8vw,36px);
-}
-.auth-card-topline {
-  min-height:30px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  border-bottom:1px solid rgba(255,255,255,.15);
-  padding-bottom:12px;
-  letter-spacing:1.5px;
-}
-.auth-card-heading { margin:22px 0 24px; }
-.auth-card-heading h2 {
-  font-size:clamp(30px,3vw,42px);
-  line-height:.98;
-  letter-spacing:-1.5px;
-}
-.auth-account-form {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:13px 12px;
-  align-items:end;
-}
-.auth-account-form label {
-  min-width:0;
-  display:flex;
-  flex-direction:column;
-  gap:7px;
-}
-.auth-account-form label:first-child,
-.auth-account-form label:nth-child(2),
-.auth-account-form label:nth-child(3),
-.auth-account-form .auth-submit { grid-column:1/-1; }
-.auth-account-form input {
-  width:100%;
-  min-width:0;
-  min-height:48px;
-  border:1px solid rgba(255,255,255,.2);
-  border-radius:0;
-  background:#090b10;
-  color:#fff;
-  padding:0 14px;
-  font-size:14px;
-  box-sizing:border-box;
-}
-.auth-account-form input:focus {
-  outline:2px solid #fff;
-  outline-offset:1px;
-  border-color:#fff;
-}
-.auth-submit,
-.auth-offline-button {
-  min-height:58px;
-  border-radius:0;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 20px;
-  letter-spacing:1.2px;
-  font-weight:950;
-}
-.auth-submit {
-  margin-top:7px;
-  background:#f5f5f5;
-  color:#08090d;
-  border:1px solid #fff;
-  box-shadow:none;
-}
-.auth-submit:hover { background:#fff;transform:translateY(-1px); }
-.auth-submit b { color:#08090d; }
-.auth-account-switch {
-  min-height:46px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  border-bottom:1px solid rgba(255,255,255,.12);
-}
-.auth-account-switch button {
-  min-height:34px;
-  min-width:92px;
-  padding:0 13px;
-  border:1px solid rgba(255,255,255,.65);
-  border-radius:0;
-  color:#fff;
-  background:transparent;
-  font-weight:900;
-  letter-spacing:.8px;
-}
-.auth-account-message {
-  min-height:28px;
-  line-height:1.55;
-  overflow-wrap:anywhere;
-}
-.auth-offline-button {
-  width:100%;
-  min-height:46px;
-  border:1px solid rgba(255,255,255,.28);
-  border-radius:0;
-  background:rgba(255,255,255,.06);
-  color:#fff;
-}
-.auth-gate-footer {
-  border-top:1px solid rgba(255,255,255,.14);
-  padding-top:14px;
-}
-
-/* Main menu: consistent rectangular controls and a clear primary action */
-.main-menu-card { border-radius:2px; }
-.cinema-topline {
-  min-height:54px;
-  align-items:center;
-  border-bottom:1px solid rgba(255,255,255,.13);
-  padding-bottom:12px;
-}
-.menu-player-card {
-  border:1px solid rgba(255,255,255,.22);
-  border-radius:2px;
-  background:rgba(5,7,12,.82);
-}
-.menu-player-status {
-  padding:7px 10px;
-  border-radius:0;
-  border:1px solid rgba(255,255,255,.2);
-  letter-spacing:1px;
-}
-.menu-panel-toggle {
-  min-height:52px;
-  border-radius:0;
-  border:1px solid rgba(255,255,255,.16);
-  background:rgba(255,255,255,.045);
-  margin-bottom:7px;
-  padding:0 15px;
-}
-.menu-panel-toggle:hover,
-.menu-panel-toggle[aria-expanded="true"] {
-  border-color:rgba(255,255,255,.55);
-  background:rgba(255,255,255,.09);
-}
-.menu-panel-toggle>i {
-  width:24px;height:24px;
-  display:grid;place-items:center;
-  border:1px solid rgba(255,255,255,.3);
-  border-radius:0;
-}
-.cinema-start,
-.mobile-play-button {
-  min-height:68px;
-  border-radius:0;
-  background:#f5f5f5;
-  color:#08090d;
-  border:1px solid #fff;
-  box-shadow:none;
-  letter-spacing:1.5px;
-}
-.cinema-start:hover,
-.mobile-play-button:hover {
-  background:#fff;
-  color:#05060a;
-  transform:translateY(-2px);
-}
-.cinema-start b,
-.mobile-play-button b { color:#08090d; }
-
-@media (max-width:800px) {
-  .auth-gate-shell {
-    width:min(100% - 28px,560px);
-  }
-  .auth-gate-brand {
-    min-height:48px;
-    padding:0 10px;
-    gap:9px;
-  }
-  .auth-gate-brand>i {
-    min-height:26px;
-    padding:0 8px;
-    font-size:7px;
-  }
-  .auth-gate-layout {
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    padding:12px 0 16px;
-  }
-  .auth-card-wrap { max-width:none; }
-  .auth-card { padding:clamp(16px,4vw,22px); }
-  .auth-card-heading { margin:14px 0 16px; }
-  .auth-account-form { display:flex;flex-direction:column;gap:10px; }
-  .auth-account-form label { width:100%; }
-  .auth-account-form input { min-height:48px;font-size:16px; }
-  .auth-submit { width:100%;min-height:54px;margin-top:2px; }
-  .auth-account-switch { width:100%; }
-  .auth-offline-button { min-height:44px; }
-  .cinema-start,.mobile-play-button { min-height:58px; }
-}
-@media (max-width:380px) {
-  .auth-gate-brand>i { font-size:6px;letter-spacing:.5px; }
-  .auth-card-topline { font-size:7px; }
-  .auth-account-switch { align-items:flex-start;flex-direction:column;padding:9px 0; }
-  .auth-account-switch button { width:100%; }
-}
-
-
 /* KIWAMI TOP COMMAND BAR + RIGHT TASK RAIL */
 .kiwami-topbar{display:grid;grid-template-columns:auto minmax(260px,1fr) minmax(230px,300px);align-items:center;gap:22px;padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(3,4,8,.88)}
 .kiwami-topbar .cinema-studio{display:flex;align-items:center;gap:10px;white-space:nowrap}
@@ -1822,4 +1577,88 @@ body.menu-detail-open { overflow:hidden; }
  .kiwami-menu-nav{gap:2px}
  .kiwami-nav-button{min-height:34px;padding:0 12px;font-size:8px}
  .cinema-console>.kiwami-task-panel{padding:12px}
+}
+
+
+/* KIWAMI RESTORE + ACCESSIBILITY PATCH
+   Keep the original dimensional red/black login gate and make all menu routes usable. */
+.cinema-edition{display:block;margin:10px 22px 0;text-align:right}
+.kiwami-topbar{position:relative;z-index:5}
+.kiwami-menu-nav,.kiwami-nav-button,.mobile-menu-nav,.mobile-nav-button{pointer-events:auto}
+.kiwami-nav-button:focus-visible,.mobile-nav-button:focus-visible{outline:2px solid #ff526b;outline-offset:3px}
+.kiwami-nav-button[aria-expanded="true"],.mobile-nav-button[aria-expanded="true"]{background:#ff304f;color:#fff;border-color:#ff526b}
+.kiwami-task-panel{align-self:stretch}
+#menu-detail-screen{z-index:45}
+#menu-detail-content{max-height:min(72vh,680px);overflow:auto;overscroll-behavior:contain}
+#menu-detail-back{min-height:44px;touch-action:manipulation}
+
+@media(max-width:800px){
+  .mobile-main-menu{max-height:100vh;max-height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .mobile-menu-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(105px,1.1fr) 34px;align-items:center;gap:7px}
+  .mobile-studio-mark{min-width:0}
+  .mobile-studio-mark>span{font-size:7px;letter-spacing:1px}
+  .mobile-player-card{display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;gap:6px!important;width:100%;min-width:0;margin:0!important;padding:5px!important}
+  .mobile-player-card .menu-player-avatar{width:30px;height:30px;min-width:30px;font:900 22px/1 Impact,'Arial Black',var(--display);font-style:italic}
+  .mobile-player-card .menu-player-copy{gap:3px}
+  .mobile-player-card .menu-player-copy>span:first-child{font-size:6px;letter-spacing:.35px}
+  .mobile-player-card .menu-player-copy>strong{display:flex;justify-content:space-between;gap:3px;font-size:6px}
+  .mobile-player-card .kiwami-level-track{height:3px}
+  .mobile-player-card .menu-player-status{display:none}
+  .mobile-fullscreen-button{width:34px;min-width:34px;height:34px;padding:0;display:grid;place-items:center}
+  .mobile-fullscreen-button [data-fullscreen-label]{display:none}
+  .mobile-menu-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 12px}
+  .mobile-nav-button{min-width:0;min-height:38px;padding:0 5px;border:1px solid rgba(255,255,255,.16);background:rgba(8,9,14,.86);color:#d7d5df;font:800 8px var(--display);letter-spacing:1px}
+  .mobile-menu-options>[data-panel-toggle="mobile-difficulty-panel"],
+  .mobile-menu-options>[data-panel-toggle="mobile-settings-panel"],
+  .mobile-menu-options>[data-panel-toggle="mobile-career-panel"]{display:none!important}
+  .mobile-menu-hero{padding-top:5px}
+  .mobile-menu-hero .menu-player-card{display:none!important}
+  .mobile-menu-options{padding-top:8px}
+  .mobile-menu-footer{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .cinema-edition{margin:8px 12px 0;font-size:6px}
+  .auth-gate{display:block;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .auth-gate-shell{width:min(100% - 24px,520px);min-height:100vh;min-height:100dvh;height:auto;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 12px) 0 calc(env(safe-area-inset-bottom,0px) + 14px);justify-content:flex-start;gap:10px}
+  .auth-gate-layout{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:8px 0 12px}
+  .auth-gate-intro h1{margin:8px 0 5px;font-size:clamp(30px,8vw,44px);line-height:.98;letter-spacing:-1.5px}
+  .auth-gate-intro>p{margin:5px 0 0;font-size:10px;line-height:1.45}
+  .auth-feature-list{display:none}
+  .auth-card-wrap{width:100%;min-width:0;transform:none;animation:none}
+  .auth-card{padding:clamp(15px,4vw,21px)}
+  .auth-card-heading{margin:12px 0 13px}
+  .auth-account-form{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+  .auth-account-form label{width:100%;min-width:0}
+  .auth-account-form input{width:100%;min-height:44px;box-sizing:border-box;font-size:16px}
+  .auth-submit{width:100%;min-height:48px}
+  .auth-account-switch{flex-wrap:wrap;gap:8px;margin-top:10px}
+  .auth-account-message{min-height:0;margin-top:8px;font-size:10px;line-height:1.45;overflow-wrap:anywhere}
+  .auth-gate-footer{gap:8px;padding-top:10px;font-size:6px;line-height:1.5}
+}
+@media(max-width:380px){
+  .mobile-menu-top{grid-template-columns:minmax(0,1fr) minmax(96px,1.1fr) 30px;gap:5px}
+  .mobile-studio-mark>span{font-size:6px}
+  .mobile-player-card{grid-template-columns:27px minmax(0,1fr)!important;padding:4px!important}
+  .mobile-player-card .menu-player-avatar{width:27px;height:27px;min-width:27px;font-size:20px}
+  .mobile-player-card .menu-player-copy>span:first-child{font-size:5.5px}
+  .mobile-nav-button{font-size:7px;min-height:35px}
+  .auth-gate-brand>i{display:none}
+  .auth-card{padding:14px}
+  .auth-gate-footer{font-size:5px}
+}
+@media(max-height:720px) and (max-width:800px){
+  .auth-gate-shell{gap:6px;padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
+  .auth-gate-layout{gap:7px;padding:5px 0 8px}
+  .auth-gate-intro h1{font-size:clamp(27px,7vw,36px);margin:5px 0 3px}
+  .auth-gate-intro>p{font-size:9px}
+  .auth-card{padding:13px}
+  .auth-card-heading{margin:8px 0}
+  .auth-account-form{gap:7px}
+  .auth-account-form input{min-height:40px}
+  .auth-submit{min-height:44px}
+  .auth-gate-footer{padding-top:7px}
+}
+@media(max-width:900px){
+  .kiwami-topbar{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px;padding:10px}
+  .kiwami-menu-nav{grid-column:1/-1;grid-row:2}
+  .kiwami-account-chip{grid-column:2;grid-row:1;width:100%}
+  .cinema-layout{grid-template-columns:minmax(0,1fr)}
 }

@@ -1059,6 +1059,7 @@ function closeMenuDetail() {
   }
   if (activeDetailTrigger) {
     activeDetailTrigger.setAttribute("aria-expanded", "false");
+    activeDetailTrigger.classList.remove("active");
     activeDetailTrigger.focus({ preventScroll: true });
   }
   activeDetailPanel = null;
@@ -1074,6 +1075,9 @@ function openMenuDetail(button) {
   if (!panel || !detailScreen || !detailContent) return;
   closeMenuDetail();
   activeDetailTrigger = button;
+  document.querySelectorAll(".kiwami-nav-button,.mobile-nav-button").forEach(node => node.classList.toggle("active", node === button));
+  button.classList.add("active");
+  button.setAttribute("aria-expanded", "true");
   activeDetailPanel = panel;
   activeDetailPlaceholder = document.createComment("menu-panel-position");
   panel.parentNode.insertBefore(activeDetailPlaceholder, panel);

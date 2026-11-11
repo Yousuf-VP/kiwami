@@ -1696,18 +1696,14 @@ function turnBallRandomly(maxAngle) {
   ballVelocity.z = horizontal.y;
 }
 
-// The ball continuously tracks the player position so its approach stays deliberate.
-function aimBallAtPlayer(difficulty) {
-  const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
-  const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
-  if (toPlayer.lengthSq() < 0.001 || currentSpeed < 0.001) return;
-  const direction = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
-  const target = toPlayer.normalize();
-  direction.lerp(target, difficulty.aim).normalize();
-  const spread = selectedDifficulty === "master" ? 0.025 : 0.11 * difficulty.chaos;
-  direction.rotateAround(new THREE.Vector2(), (Math.random() - 0.5) * spread);
-  ballVelocity.x = direction.x * currentSpeed;
-  ballVelocity.z = direction.y * currentSpeed;
+// The hazard is a free-moving physics object: it never steers toward the player.
+// Random ricochets change its trajectory only at irregular intervals and collisions.
+function deflectBallOnImpact(baseAngle, chaos) {
+  const angle = (Math.random() - 0.5) * baseAngle * (1 + chaos);
+  const horizontal = new THREE.Vector2(ballVelocity.x, ballVelocity.z)
+    .rotateAround(new THREE.Vector2(), angle);
+  ballVelocity.x = horizontal.x;
+  ballVelocity.z = horizontal.y;
 }
 
 function updateBall(delta) {
@@ -1719,25 +1715,12 @@ function updateBall(delta) {
   if (courseChangeTimer >= nextCourseChange) {
     courseChangeTimer = 0;
     nextCourseChange = 0.85 + Math.random() * 1.8;
-    turnBallRandomly(0.18 + difficulty.chaos * 0.16);
-    ballVerticalVelocity += (Math.random() - 0.5) * difficulty.chaos * 2.4;
+    // Irregular mid-flight drift: occasional sharp or gentle changes, never aimed at the player.
+    deflectBallOnImpact(0.28 + Math.random() * 0.42, difficulty.chaos * 0.45);
+    ballVerticalVelocity += (Math.random() - 0.5) * difficulty.chaos * 3.2;
   }
 
-  // Smooth pursuit: steer toward the player's current arena position every frame.
-  const targetDirection = new THREE.Vector2(
-    player.position.x - ball.position.x,
-    player.position.z - ball.position.z
-  );
-  const horizontalSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
-  if (targetDirection.lengthSq() > 0.001 && horizontalSpeed > 0.001) {
-    targetDirection.normalize();
-    const currentDirection = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
-    const trackingStrength = 1 - Math.exp(-delta * (1.35 + difficulty.aim * 2.8));
-    currentDirection.lerp(targetDirection, trackingStrength).normalize();
-    ballVelocity.x = currentDirection.x * horizontalSpeed;
-    ballVelocity.z = currentDirection.y * horizontalSpeed;
-  }
-
+  // No homing or player-position steering: the ball follows its own momentum.
   ball.position.x += ballVelocity.x * delta;
   ball.position.z += ballVelocity.z * delta;
   ballVerticalVelocity -= CONFIG.ball.gravity * delta;
@@ -1748,38 +1731,32 @@ function updateBall(delta) {
   if (ball.position.x > roomBounds.x) {
     ball.position.x = roomBounds.x;
     ballVelocity.x = -Math.abs(ballVelocity.x) * wallBounce;
-    turnBallRandomly(0.16 + difficulty.chaos * 0.13);
-    aimBallAtPlayer(difficulty);
+    deflectBallOnImpact(0.42 + Math.random() * 0.38, difficulty.chaos);
   } else if (ball.position.x < -roomBounds.x) {
     ball.position.x = -roomBounds.x;
     ballVelocity.x = Math.abs(ballVelocity.x) * wallBounce;
-    turnBallRandomly(0.16 + difficulty.chaos * 0.13);
-    aimBallAtPlayer(difficulty);
+    deflectBallOnImpact(0.42 + Math.random() * 0.38, difficulty.chaos);
   }
   if (ball.position.z > roomBounds.z) {
     ball.position.z = roomBounds.z;
     ballVelocity.z = -Math.abs(ballVelocity.z) * wallBounce;
-    turnBallRandomly(0.16 + difficulty.chaos * 0.13);
-    aimBallAtPlayer(difficulty);
+    deflectBallOnImpact(0.42 + Math.random() * 0.38, difficulty.chaos);
   } else if (ball.position.z < -roomBounds.z) {
     ball.position.z = -roomBounds.z;
     ballVelocity.z = Math.abs(ballVelocity.z) * wallBounce;
-    turnBallRandomly(0.16 + difficulty.chaos * 0.13);
-    aimBallAtPlayer(difficulty);
+    deflectBallOnImpact(0.42 + Math.random() * 0.38, difficulty.chaos);
   }
 
   // Floor and ceiling bounces vary slightly each time, changing the next arc.
   if (ball.position.y < CONFIG.ball.radius) {
     ball.position.y = CONFIG.ball.radius;
     ballVerticalVelocity = Math.abs(ballVerticalVelocity) * (0.86 + difficulty.chaos * 0.035) + 2.0 + Math.random() * (1.1 + difficulty.chaos);
-    turnBallRandomly(0.08 + difficulty.chaos * 0.12);
-    aimBallAtPlayer(difficulty);
+    deflectBallOnImpact(0.24 + Math.random() * 0.42, difficulty.chaos);
   }
   if (ball.position.y > CONFIG.room.height - CONFIG.ball.radius) {
     ball.position.y = CONFIG.room.height - CONFIG.ball.radius;
     ballVerticalVelocity = -Math.abs(ballVerticalVelocity) * (0.88 + difficulty.chaos * 0.025);
-    turnBallRandomly(0.1 + difficulty.chaos * 0.12);
-    aimBallAtPlayer(difficulty);
+    deflectBallOnImpact(0.3 + Math.random() * 0.45, difficulty.chaos);
   }
 
   // Accelerate toward a difficulty-scaled target, with a hard cap for stable physics.

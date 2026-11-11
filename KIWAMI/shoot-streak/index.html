@@ -39,6 +39,47 @@
     <div id="bottom-hint">WASD <b>•</b> MOVE <b>•</b> MOUSE <b>•</b> LOOK <b>•</b> SPACE <b>•</b> JUMP</div>
     <div id="copyright">© 2026 KIWAMI STUDIOS. ALL RIGHTS RESERVED.</div>
 
+
+    <section id="auth-gate" class="auth-gate" aria-label="DODGE CORE player access">
+      <div class="auth-world" aria-hidden="true">
+        <div class="auth-world-glow"></div><div class="auth-world-grid"></div>
+        <div class="auth-orbit auth-orbit-one"><i></i></div><div class="auth-orbit auth-orbit-two"><i></i></div>
+        <div class="auth-platform"><span></span><b></b></div>
+        <div class="auth-core"><span>K.</span></div>
+        <div class="auth-light-beam"></div><div class="auth-world-vignette"></div>
+      </div>
+      <div class="auth-gate-shell">
+        <header class="auth-gate-brand"><span class="auth-brand-mark">K<span>.</span></span><span><b>KIWAMI STUDIOS</b><small>DODGE CORE / PLAYER NETWORK</small></span><i>ONLINE ACCESS</i></header>
+        <div class="auth-gate-layout">
+          <section class="auth-gate-intro">
+            <div class="auth-gate-kicker"><i></i> YOUR NEXT RUN STARTS HERE</div>
+            <h1>ENTER THE<br><span>CORE.</span></h1>
+            <p>Build your record. Earn XP. Keep your progression with you.</p>
+            <div class="auth-feature-list"><span><b>01</b> CLOUD PLAYER PROFILE</span><span><b>02</b> PERSISTENT LEVEL & XP</span><span><b>03</b> ONE ARENA. ENDLESS RUNS.</span></div>
+          </section>
+          <section class="auth-card-wrap">
+            <div class="auth-card-depth"></div>
+            <div class="auth-card" data-account-panel>
+              <div class="auth-card-topline"><span>PLAYER AUTHENTICATION</span><i></i></div>
+              <div class="auth-card-heading"><small>WELCOME TO DODGE CORE</small><h2>CREATE YOUR<br>IDENTITY.</h2><p>Sign in or create an account to continue.</p></div>
+              <form class="account-form auth-account-form" data-account-form data-account-mode="signup">
+                <label>PLAYER NAME<input type="text" name="username" minlength="3" maxlength="18" autocomplete="nickname" placeholder="Choose a player name" required></label>
+                <label>EMAIL ADDRESS<input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
+                <label>PASSWORD<input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required></label>
+                <button class="primary-button auth-submit" type="submit" data-account-submit><span>CREATE ACCOUNT</span><b>↗</b></button>
+              </form>
+              <div class="account-switch auth-account-switch"><span data-account-switch-label>Already have an account?</span><button type="button" data-account-mode-switch>LOG IN</button></div>
+              <p class="account-message auth-account-message" data-account-message role="status" aria-live="polite">Checking player network…</p>
+              <div class="auth-card-divider"><span>OR</span></div>
+              <button class="auth-offline-button" type="button" id="auth-offline-button">CONTINUE OFFLINE <span>→</span></button>
+            </div>
+            <div class="auth-card-reflection"></div>
+          </section>
+        </div>
+        <footer class="auth-gate-footer"><span>© 2026 KIWAMI STUDIOS</span><span>NO SECOND CHANCES <i></i> JUST ONE MORE RUN</span></footer>
+      </div>
+    </section>
+
     <div id="start-screen" class="overlay cinematic-menu">
       <section id="mobile-main-menu" class="mobile-main-menu" aria-label="Mobile main menu">
         <div class="mobile-menu-top">

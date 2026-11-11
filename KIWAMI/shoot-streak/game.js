@@ -148,7 +148,7 @@ async function syncCloudProgression() {
   if (!supabase || !currentUser) return;
   const userId = currentUser.id;
   const xpSnapshot = totalXP;
-  cloudSaveInFlight = cloudSaveInFlight.then(async () => {
+  cloudSaveInFlight = cloudSaveInFlight.catch(() => {}).then(async () => {
     if (!currentUser || currentUser.id !== userId) return;
     const { error } = await supabase.from("player_profiles")
       .update({ total_xp: xpSnapshot, username: currentUsername })
@@ -1257,9 +1257,17 @@ function renderRewardProgress(xp) {
   const levelNode = document.getElementById("xp-reward-level");
   const totalNode = document.getElementById("xp-reward-total");
   const fill = document.getElementById("xp-reward-fill");
+  const hudLevel = document.getElementById("level-value");
+  const hudXP = document.getElementById("xp-value");
+  const hudFill = document.getElementById("xp-fill");
   if (levelNode) levelNode.textContent = String(level);
   if (totalNode) totalNode.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
   if (fill) fill.style.width = percent + "%";
+  if (hudLevel) hudLevel.textContent = String(level);
+  if (hudXP) hudXP.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  if (hudFill) hudFill.style.width = percent + "%";
+  document.querySelectorAll("[data-menu-level]").forEach(node => node.textContent = String(level));
+  document.querySelectorAll("[data-menu-xp]").forEach(node => node.textContent = Math.floor(xp).toLocaleString() + " XP");
 }
 function animateRunXPReward(startXP, endXP) {
   if (xpAnimationFrame) cancelAnimationFrame(xpAnimationFrame);

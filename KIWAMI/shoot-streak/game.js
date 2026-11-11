@@ -259,7 +259,12 @@ document.querySelectorAll("[data-account-form]").forEach(form => {
       if (signup) {
         if (username.length < 3) throw new Error("Player name must be at least 3 characters.");
         const { data, error } = await supabase.auth.signUp({
-          email, password, options: { data: { username } }
+          email,
+          password,
+          options: {
+            data: { username },
+            emailRedirectTo: window.location.href.split("#")[0]
+          }
         });
         if (error) throw error;
         if (data.session) {
@@ -270,7 +275,7 @@ document.querySelectorAll("[data-account-form]").forEach(form => {
           document.getElementById("auth-gate")?.classList.add("hidden");
           setAccountMessage("Account created. Cloud progression is ready.");
         } else {
-          setAccountMessage("Check your email to confirm your account, then log in.");
+          setAccountMessage("ACCOUNT CREATED — check your inbox and tap the confirmation link. You’ll return here signed in automatically; no separate login is needed.");
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -304,7 +309,7 @@ document.querySelectorAll("[data-account-signout]").forEach(button => {
       currentUser = null;
       currentUsername = "GUEST PLAYER";
       document.getElementById("auth-gate")?.classList.remove("hidden");
-      setAccountMessage("Signed out. Sign in again or continue offline.");
+      setAccountMessage("Signed out. Sign in again to restore your cloud progression.");
       renderAccountUI();
     }
   });

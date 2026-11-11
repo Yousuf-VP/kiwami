@@ -1499,6 +1499,9 @@ function startRun() {
   saveCareerStats();
   renderCareerStats();
   state = "playing";
+  gameOverTrack.pause();
+  gameOverTrack.currentTime = 0;
+  if (musicEnabled) startBackgroundMusic();
   setScreen(state);
   clock.getDelta();
 }
@@ -1518,6 +1521,8 @@ function resumeRun() {
 
 function showMainMenu() {
   state = "ready";
+  gameOverTrack.pause();
+  if (musicEnabled) startBackgroundMusic();
   keys.clear();
   touchDirections.clear();
   resetJoystick();
@@ -1595,6 +1600,7 @@ function animateRunXPReward(startXP, endXP) {
 function endRun() {
   if (state !== "playing") return;
   state = "over";
+  playGameOverSound();
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
   const earnedThisRun = Math.max(0, totalXP - runStartingXP);
@@ -1631,117 +1637,94 @@ function endRun() {
 }
 
 
-/* ORIGINAL DODGE CORE AMBIENT SCORE — synthesized with Web Audio API */
+/* DODGE CORE AUDIO — user-provided MP3 assets */
 const MUSIC_PREF_KEY = "dodgeCoreMusicEnabled";
 let musicEnabled = true;
-let musicContext = null;
-let musicMaster = null;
-let musicPadOscillators = [];
-let musicBassOscillator = null;
-let musicNoteTimer = 0;
-let musicChordTimer = 0;
-let musicNoteIndex = 0;
-let musicChordIndex = 0;
-const MUSIC_CHORDS = [
-  [146.83, 174.61, 220.00, 261.63],
-  [116.54, 146.83, 174.61, 220.00],
-  [87.31, 110.00, 130.81, 174.61],
-  [130.81, 164.81, 196.00, 261.63]
-];
-const MUSIC_ARPEGGIO = [293.66, 349.23, 440.00, 523.25, 440.00, 349.23, 261.63, 349.23];
+const backgroundTrack = new Audio(new URL("./bg.mp3", import.meta.url).href);
+backgroundTrack.loop = true;
+backgroundTrack.preload = "auto";
+backgroundTrack.volume = 0.42;
+
+const gameOverTrack = new Audio(new URL("./gameover.mp3", import.meta.url).href);
+gameOverTrack.preload = "auto";
+gameOverTrack.volume = 0.82;
+
+const buttonSoundUrl = new URL("./Button.mp3", import.meta.url).href;
 try { musicEnabled = localStorage.getItem(MUSIC_PREF_KEY) !== "0"; } catch {}
-function updateMusicControls(){
-  document.querySelectorAll("[data-music-toggle]").forEach(button=>{
+
+function updateMusicControls() {
+  document.querySelectorAll("[data-music-toggle]").forEach(button => {
     button.textContent = musicEnabled ? "ON" : "OFF";
     button.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
     button.classList.toggle("is-on", musicEnabled);
   });
 }
-function setMusicEnabled(enabled){
+
+function startBackgroundMusic() {
+  if (!musicEnabled || document.hidden) return;
+  gameOverTrack.pause();
+  backgroundTrack.play().catch(() => {
+    // Browsers may block playback until the next user interaction.
+  });
+}
+
+function stopBackgroundMusic() {
+  backgroundTrack.pause();
+}
+
+function setMusicEnabled(enabled) {
   musicEnabled = Boolean(enabled);
   try { localStorage.setItem(MUSIC_PREF_KEY, musicEnabled ? "1" : "0"); } catch {}
   updateMusicControls();
-  if (musicEnabled) startAmbientMusic();
-  else if (musicMaster && musicContext) {
-    musicMaster.gain.cancelScheduledValues(musicContext.currentTime);
-    musicMaster.gain.setTargetAtTime(0, musicContext.currentTime, 0.22);
-  }
+  if (musicEnabled) startBackgroundMusic();
+  else stopBackgroundMusic();
 }
-function playMusicPluck(frequency){
-  if (!musicContext || !musicMaster || !musicEnabled) return;
-  const now = musicContext.currentTime;
-  const oscillator = musicContext.createOscillator();
-  const envelope = musicContext.createGain();
-  const filter = musicContext.createBiquadFilter();
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(frequency, now);
-  filter.type = "lowpass";
-  filter.frequency.setValueAtTime(1450, now);
-  envelope.gain.setValueAtTime(0.0001, now);
-  envelope.gain.exponentialRampToValueAtTime(0.035, now + 0.035);
-  envelope.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
-  oscillator.connect(filter); filter.connect(envelope); envelope.connect(musicMaster);
-  oscillator.start(now); oscillator.stop(now + 1.2);
-  oscillator.onended = () => { oscillator.disconnect(); filter.disconnect(); envelope.disconnect(); };
+
+function playButtonSound() {
+  const sound = new Audio(buttonSoundUrl);
+  sound.preload = "auto";
+  sound.volume = 0.48;
+  sound.play().catch(() => {
+    // Missing assets or browser playback restrictions fail silently.
+  });
 }
-function setMusicChord(index){
-  if (!musicContext || !musicEnabled) return;
-  const chord = MUSIC_CHORDS[index % MUSIC_CHORDS.length];
-  const now = musicContext.currentTime;
-  musicPadOscillators.forEach((oscillator,i)=>oscillator.frequency.setTargetAtTime(chord[i], now, 1.1));
-  if (musicBassOscillator) musicBassOscillator.frequency.setTargetAtTime(chord[0] / 2, now, 0.9);
+
+function playGameOverSound() {
+  stopBackgroundMusic();
+  gameOverTrack.currentTime = 0;
+  gameOverTrack.play().catch(() => {
+    // The game remains playable if the optional audio file is not present.
+  });
 }
-function startAmbientMusic(){
-  if (!musicEnabled) return;
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
-  if (!musicContext) {
-    musicContext = new AudioContextClass();
-    musicMaster = musicContext.createGain();
-    musicMaster.gain.value = 0;
-    musicMaster.connect(musicContext.destination);
-    const padFilter = musicContext.createBiquadFilter();
-    padFilter.type = "lowpass"; padFilter.frequency.value = 780; padFilter.Q.value = 0.35;
-    const padBus = musicContext.createGain(); padBus.gain.value = 0.62;
-    padFilter.connect(padBus); padBus.connect(musicMaster);
-    MUSIC_CHORDS[0].forEach((frequency,index)=>{
-      const oscillator = musicContext.createOscillator();
-      const gain = musicContext.createGain();
-      oscillator.type = index === 1 ? "triangle" : "sine";
-      oscillator.frequency.value = frequency;
-      gain.gain.value = index === 0 ? 0.035 : 0.022;
-      oscillator.connect(gain); gain.connect(padFilter); oscillator.start();
-      musicPadOscillators.push(oscillator);
-    });
-    musicBassOscillator = musicContext.createOscillator();
-    const bassGain = musicContext.createGain();
-    musicBassOscillator.type = "sine";
-    musicBassOscillator.frequency.value = MUSIC_CHORDS[0][0] / 2;
-    bassGain.gain.value = 0.055;
-    musicBassOscillator.connect(bassGain); bassGain.connect(musicMaster); musicBassOscillator.start();
-    musicChordIndex = 0; setMusicChord(0);
-    musicChordTimer = window.setInterval(()=>{
-      musicChordIndex = (musicChordIndex + 1) % MUSIC_CHORDS.length;
-      setMusicChord(musicChordIndex);
-    }, 5200);
-    musicNoteTimer = window.setInterval(()=>{
-      playMusicPluck(MUSIC_ARPEGGIO[musicNoteIndex % MUSIC_ARPEGGIO.length]);
-      musicNoteIndex++;
-    }, 780);
-  }
-  if (musicContext.state === "suspended") musicContext.resume().catch(()=>{});
-  const now = musicContext.currentTime;
-  musicMaster.gain.cancelScheduledValues(now);
-  musicMaster.gain.setTargetAtTime(0.72, now, 1.4);
-}
-document.querySelectorAll("[data-music-toggle]").forEach(button=>button.addEventListener("click",()=>setMusicEnabled(!musicEnabled)));
-document.addEventListener("click",()=>{ if (musicEnabled) startAmbientMusic(); });
-document.addEventListener("keydown",()=>{ if (musicEnabled) startAmbientMusic(); },{once:true});
-document.addEventListener("visibilitychange",()=>{
-  if (!musicContext) return;
-  if (document.hidden) musicContext.suspend().catch(()=>{});
-  else if (musicEnabled) musicContext.resume().catch(()=>{});
+
+gameOverTrack.addEventListener("ended", () => {
+  if (musicEnabled && state === "over") startBackgroundMusic();
 });
+
+document.querySelectorAll("[data-music-toggle]").forEach(button => {
+  button.addEventListener("click", () => setMusicEnabled(!musicEnabled));
+});
+
+document.addEventListener("click", event => {
+  if (event.target instanceof Element && event.target.closest("button")) {
+    playButtonSound();
+  }
+  if (musicEnabled) startBackgroundMusic();
+});
+
+document.addEventListener("keydown", () => {
+  if (musicEnabled) startBackgroundMusic();
+}, { once: true });
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    backgroundTrack.pause();
+    gameOverTrack.pause();
+  } else if (musicEnabled && state !== "over") {
+    startBackgroundMusic();
+  }
+});
+
 updateMusicControls();
 
 startButton.addEventListener("click", startRun);

@@ -1,4 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
 
 /* SHOOT-STREAK — RED BALL SURVIVAL REBUILD
    Lightweight, non-combat arcade game.
@@ -85,8 +87,11 @@ let careerStats = emptyCareerStats();
    Every 100 score grants 10 XP. Level N begins at 100 * N^2 total XP.
 */
 const PROGRESSION_KEY = "dodgeCoreProgression";
+const PROGRESSION_OWNER_KEY = "dodgeCoreProgressionOwner";
 let totalXP = 0;
 let lastXpMilestone = 0;
+let runStartingXP = 0;
+let xpAnimationFrame = 0;
 try {
   const savedProgression = JSON.parse(localStorage.getItem(PROGRESSION_KEY) || "null");
   if (savedProgression && typeof savedProgression === "object") {
@@ -107,6 +112,191 @@ function getLevelProgress() {
     percent: Math.min(100, Math.max(0, ((totalXP - levelStartXP) / (nextLevelXP - levelStartXP)) * 100))
   };
 }
+
+/* SUPABASE AUTH + CLOUD PLAYER PROFILE */
+const supabaseReady = /^https:\/\//.test(SUPABASE_URL) &&
+  !SUPABASE_URL.includes("YOUR_PROJECT") &&
+  SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE");
+const supabase = supabaseReady ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let currentUser = null;
+let currentUsername = "GUEST PLAYER";
+let cloudSaveInFlight = Promise.resolve();
+
+function setAccountMessage(message, isError = false) {
+  document.querySelectorAll("[data-account-message]").forEach(node => {
+    node.textContent = message;
+    node.classList.toggle("is-error", isError);
+  });
+}
+function renderAccountUI() {
+  const signedIn = Boolean(currentUser);
+  document.querySelectorAll("[data-player-name]").forEach(node => node.textContent = signedIn ? currentUsername : "GUEST PLAYER");
+  document.querySelectorAll("[data-player-status]").forEach(node => node.textContent = signedIn ? "CLOUD SYNC" : "LOCAL");
+  document.querySelectorAll("[data-account-summary]").forEach(node => node.textContent = signedIn ? "SIGNED IN" : "GUEST MODE");
+  document.querySelectorAll("[data-account-identity]").forEach(node => node.classList.toggle("hidden", !signedIn));
+  document.querySelectorAll("[data-account-form]").forEach(node => node.classList.toggle("hidden", signedIn));
+  document.querySelectorAll("[data-account-switch-label], [data-account-mode-switch]").forEach(node => node.classList.toggle("hidden", signedIn));
+  document.querySelectorAll("[data-account-identity-name]").forEach(node => node.textContent = currentUsername);
+  document.querySelectorAll("[data-account-identity-email]").forEach(node => node.textContent = currentUser?.email || "");
+  renderProgression();
+}
+function syncMenuProgression() {
+  const progress = getLevelProgress();
+  document.querySelectorAll("[data-menu-level]").forEach(node => node.textContent = String(progress.level));
+  document.querySelectorAll("[data-menu-xp]").forEach(node => node.textContent = totalXP.toLocaleString() + " XP");
+}
+async function syncCloudProgression() {
+  if (!supabase || !currentUser) return;
+  const userId = currentUser.id;
+  const xpSnapshot = totalXP;
+  cloudSaveInFlight = cloudSaveInFlight.catch(() => {}).then(async () => {
+    if (!currentUser || currentUser.id !== userId) return;
+    const { error } = await supabase.from("player_profiles")
+      .update({ total_xp: xpSnapshot, username: currentUsername })
+      .eq("id", userId);
+    if (error) throw error;
+  });
+  try {
+    await cloudSaveInFlight;
+    setAccountMessage("Cloud save complete.");
+  } catch (error) {
+    setAccountMessage("Cloud save failed: " + (error.message || "Please try again."), true);
+  }
+}
+async function loadCloudProgression(user) {
+  if (!supabase || !user) return;
+  let localOwner = null;
+  try { localOwner = localStorage.getItem(PROGRESSION_OWNER_KEY); } catch {}
+  const { data, error } = await supabase.from("player_profiles")
+    .select("username,total_xp").eq("id", user.id).maybeSingle();
+  if (error) {
+    setAccountMessage("Could not load cloud profile: " + error.message, true);
+    return;
+  }
+  const cloudXP = Math.max(0, Number(data?.total_xp) || 0);
+  if (localOwner && localOwner !== user.id) {
+    // Never carry one signed-in player's local progress into another account.
+    totalXP = cloudXP;
+  } else {
+    // Import guest progress once, or merge this account's local progress with cloud.
+    totalXP = Math.max(totalXP, cloudXP);
+  }
+  try { localStorage.setItem(PROGRESSION_OWNER_KEY, user.id); } catch {}
+  currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
+  saveProgression();
+  renderCareerStats();
+  renderProgression();
+  syncMenuProgression();
+  if (!data || totalXP > cloudXP) await syncCloudProgression();
+}
+async function initializeCloudAccount() {
+  if (!supabase) {
+    setAccountMessage("Cloud accounts are not configured yet. Add your Supabase project URL and anon key to supabase-config.js.");
+    renderAccountUI();
+    return;
+  }
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    currentUser = data.session?.user || null;
+    if (currentUser) await loadCloudProgression(currentUser);
+    renderAccountUI();
+    supabase.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user || null;
+      if (currentUser) {
+        queueMicrotask(() => loadCloudProgression(currentUser).then(renderAccountUI));
+      } else {
+        currentUsername = "GUEST PLAYER";
+        renderAccountUI();
+      }
+    });
+    if (!currentUser) setAccountMessage("Create an account or log in to enable cloud saves.");
+  } catch (error) {
+    setAccountMessage("Account service error: " + (error.message || "Check your Supabase setup."), true);
+  }
+}
+document.querySelectorAll("[data-account-mode-switch]").forEach(button => {
+  button.addEventListener("click", () => {
+    const panel = button.closest("[data-account-panel]");
+    const form = panel?.querySelector("[data-account-form]");
+    if (!form) return;
+    const signup = form.dataset.accountMode !== "login";
+    form.dataset.accountMode = signup ? "login" : "signup";
+    const username = form.querySelector('[name="username"]');
+    if (username) {
+      username.closest("label").classList.toggle("hidden", !signup);
+      username.required = signup;
+    }
+    const submit = form.querySelector("[data-account-submit]");
+    if (submit) submit.textContent = signup ? "LOG IN" : "CREATE ACCOUNT";
+    const switchLabel = panel.querySelector("[data-account-switch-label]");
+    if (switchLabel) switchLabel.textContent = signup ? "New to DODGE CORE?" : "Already registered?";
+    button.textContent = signup ? "CREATE ACCOUNT" : "LOG IN";
+    setAccountMessage(signup ? "Enter your email and password to sign in." : "Choose a player name and create your account.");
+  });
+});
+document.querySelectorAll("[data-account-form]").forEach(form => {
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!supabase) {
+      setAccountMessage("Supabase is not configured. Follow the setup guide in supabase-schema.sql.", true);
+      return;
+    }
+    const values = new FormData(form);
+    const email = String(values.get("email") || "").trim();
+    const password = String(values.get("password") || "");
+    const username = String(values.get("username") || "").trim();
+    const signup = form.dataset.accountMode !== "login";
+    const submit = form.querySelector("[data-account-submit]");
+    if (submit) submit.disabled = true;
+    setAccountMessage(signup ? "Creating your account…" : "Signing in…");
+    try {
+      if (signup) {
+        if (username.length < 3) throw new Error("Player name must be at least 3 characters.");
+        const { data, error } = await supabase.auth.signUp({
+          email, password, options: { data: { username } }
+        });
+        if (error) throw error;
+        if (data.session) {
+          currentUser = data.user;
+          currentUsername = username;
+          await loadCloudProgression(currentUser);
+          renderAccountUI();
+          setAccountMessage("Account created. Cloud progression is ready.");
+        } else {
+          setAccountMessage("Check your email to confirm your account, then log in.");
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        currentUser = data.user;
+        await loadCloudProgression(currentUser);
+        renderAccountUI();
+        setAccountMessage("Welcome back. Your cloud progress is loaded.");
+      }
+    } catch (error) {
+      setAccountMessage(error.message || "Account action failed.", true);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+});
+document.querySelectorAll("[data-account-signout]").forEach(button => {
+  button.addEventListener("click", async () => {
+    if (!supabase) return;
+    button.disabled = true;
+    const { error } = await supabase.auth.signOut();
+    button.disabled = false;
+    if (error) setAccountMessage(error.message, true);
+    else {
+      currentUser = null;
+      currentUsername = "GUEST PLAYER";
+      setAccountMessage("Signed out. Your local progress remains on this device.");
+      renderAccountUI();
+    }
+  });
+});
+
 function saveProgression() {
   try {
     localStorage.setItem(PROGRESSION_KEY, JSON.stringify({ totalXP }));
@@ -120,6 +310,7 @@ function renderProgression() {
   if (levelNode) levelNode.textContent = String(progress.level);
   if (xpNode) xpNode.textContent = totalXP.toLocaleString() + " / " + progress.nextLevelXP.toLocaleString() + " XP";
   if (fillNode) fillNode.style.width = progress.percent + "%";
+  syncMenuProgression();
 }
 function awardXPForScore(currentScore) {
   const reachedMilestone = Math.floor(currentScore / 100);
@@ -130,6 +321,7 @@ function awardXPForScore(currentScore) {
   saveProgression();
   renderProgression();
   renderCareerStats();
+  syncCloudProgression();
 }
 
 const keys = new Set();
@@ -193,6 +385,8 @@ function renderCareerStats() {
   }
 }
 renderCareerStats();
+renderProgression();
+initializeCloudAccount();
 
 /* DAILY CHALLENGES — one rotating objective per local calendar day */
 const DAILY_CHALLENGE_KEY = "dodgeCoreDailyChallenge";
@@ -1001,6 +1195,7 @@ function resetRun() {
   elapsed = 0;
   score = 0;
   lastXpMilestone = 0;
+  runStartingXP = totalXP;
   renderProgression();
   player.position.set(CONFIG.player.startX, 0, CONFIG.player.startZ);
   jumpHeight = 0;
@@ -1059,11 +1254,77 @@ function showMainMenu() {
   setScreen(state);
 }
 
+
+function renderRewardProgress(xp) {
+  const level = Math.floor(Math.sqrt(Math.max(0, xp) / 100) + 1e-9);
+  const start = 100 * level * level;
+  const next = 100 * (level + 1) * (level + 1);
+  const percent = Math.min(100, Math.max(0, ((xp - start) / (next - start)) * 100));
+  const levelNode = document.getElementById("xp-reward-level");
+  const totalNode = document.getElementById("xp-reward-total");
+  const fill = document.getElementById("xp-reward-fill");
+  const hudLevel = document.getElementById("level-value");
+  const hudXP = document.getElementById("xp-value");
+  const hudFill = document.getElementById("xp-fill");
+  if (levelNode) levelNode.textContent = String(level);
+  if (totalNode) totalNode.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  if (fill) fill.style.width = percent + "%";
+  if (hudLevel) hudLevel.textContent = String(level);
+  if (hudXP) hudXP.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  if (hudFill) hudFill.style.width = percent + "%";
+  document.querySelectorAll("[data-menu-level]").forEach(node => node.textContent = String(level));
+  document.querySelectorAll("[data-menu-xp]").forEach(node => node.textContent = Math.floor(xp).toLocaleString() + " XP");
+}
+function animateRunXPReward(startXP, endXP) {
+  if (xpAnimationFrame) cancelAnimationFrame(xpAnimationFrame);
+  const panel = document.getElementById("xp-reward-panel");
+  const amount = document.getElementById("xp-reward-amount");
+  const levelup = document.getElementById("xp-levelup-banner");
+  const levelupValue = document.getElementById("xp-levelup-value");
+  if (!panel || !amount) return;
+  const gained = Math.max(0, endXP - startXP);
+  const startLevel = Math.floor(Math.sqrt(Math.max(0, startXP) / 100) + 1e-9);
+  const endLevel = Math.floor(Math.sqrt(Math.max(0, endXP) / 100) + 1e-9);
+  amount.textContent = "+" + gained.toLocaleString() + " XP";
+  panel.classList.toggle("has-reward", gained > 0);
+  if (levelup) levelup.classList.add("hidden");
+  renderRewardProgress(startXP);
+  const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2200;
+  if (!duration || !gained) {
+    renderRewardProgress(endXP);
+    if (endLevel > startLevel && levelup) {
+      levelupValue.textContent = String(endLevel);
+      levelup.classList.remove("hidden");
+    }
+    return;
+  }
+  const startedAt = performance.now();
+  const tick = now => {
+    const raw = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - raw, 3);
+    const currentXP = startXP + gained * eased;
+    renderRewardProgress(currentXP);
+    if (raw < 1) {
+      xpAnimationFrame = requestAnimationFrame(tick);
+    } else {
+      xpAnimationFrame = 0;
+      renderRewardProgress(endXP);
+      if (endLevel > startLevel && levelup) {
+        levelupValue.textContent = String(endLevel);
+        levelup.classList.remove("hidden");
+        panel.classList.add("level-up");
+      }
+    }
+  };
+  xpAnimationFrame = requestAnimationFrame(tick);
+}
+
 function endRun() {
   if (state !== "playing") return;
   state = "over";
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
+  const earnedThisRun = Math.max(0, totalXP - runStartingXP);
   updateDailyChallenge(true);
   const newRecord = final > best;
   finalScore.textContent = String(final).padStart(4, "0");
@@ -1088,6 +1349,8 @@ function endRun() {
   if (runDifficulty) runDifficulty.textContent = DIFFICULTIES[selectedDifficulty].label;
   if (recordBadge) recordBadge.classList.toggle("hidden", !newRecord);
   if (recordStatus) recordStatus.textContent = newRecord ? "NEW PERSONAL BEST" : "PERSONAL BEST  /  " + String(best).padStart(4, "0");
+  animateRunXPReward(runStartingXP, totalXP);
+  if (earnedThisRun > 0) syncCloudProgression();
   setScreen(state);
 }
 

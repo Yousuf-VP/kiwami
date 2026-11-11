@@ -1230,3 +1230,133 @@ body.menu-detail-open { overflow:hidden; }
 @media (prefers-reduced-motion:reduce) {
   .xp-track i { transition:none; }
 }
+
+
+/* PLAYER PROFILE + ACCOUNT PANEL */
+.menu-player-card {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:min(100%,360px);
+  margin:18px 0 15px;
+  padding:10px 12px;
+  border:1px solid rgba(255,65,91,.24);
+  border-radius:12px;
+  background:linear-gradient(110deg,rgba(255,35,70,.12),rgba(8,9,14,.72) 65%);
+  box-shadow:0 0 24px rgba(255,35,70,.08),inset 0 1px rgba(255,255,255,.04);
+}
+.menu-player-avatar {
+  display:grid;
+  place-items:center;
+  flex:0 0 34px;
+  height:34px;
+  border:1px solid rgba(255,77,102,.5);
+  border-radius:9px;
+  color:#fff;
+  background:linear-gradient(145deg,#45101c,#140b11);
+  font:800 18px var(--display);
+  box-shadow:0 0 15px rgba(255,36,71,.18);
+}
+.menu-player-copy { display:grid; gap:4px; min-width:0; flex:1; }
+.menu-player-copy > span {
+  overflow:hidden;
+  color:#fff;
+  font:700 9px var(--display);
+  letter-spacing:1px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.menu-player-copy > strong {
+  color:#ff7387;
+  font:700 8px var(--display);
+  letter-spacing:.7px;
+}
+.menu-player-copy > strong i {
+  margin-left:8px;
+  color:var(--muted);
+  font-style:normal;
+}
+.menu-player-status {
+  color:#ff7185;
+  font:700 7px var(--display);
+  letter-spacing:.8px;
+  white-space:nowrap;
+}
+.account-panel { display:grid; gap:12px; padding:12px 2px 4px; }
+.account-description { margin:0; color:var(--muted); font-size:11px; line-height:1.5; }
+.account-form { display:grid; gap:10px; }
+.account-form label { display:grid; gap:6px; color:#b8b7c3; font:700 8px var(--display); letter-spacing:.9px; }
+.account-form input {
+  width:100%;
+  min-height:40px;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  outline:none;
+  color:#fff;
+  background:rgba(4,5,9,.78);
+  font:500 12px var(--body);
+}
+.account-form input:focus { border-color:rgba(255,70,98,.7); box-shadow:0 0 0 3px rgba(255,48,78,.1); }
+.account-form .primary-button { width:100%; margin-top:2px; }
+.account-form button:disabled,.account-identity button:disabled { opacity:.55; cursor:wait; }
+.account-switch { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:10px; }
+.account-switch button {
+  padding:4px 0;
+  border:0;
+  color:#ff7588;
+  background:none;
+  font:700 9px var(--display);
+  cursor:pointer;
+}
+.account-message { margin:0; color:#a9a6b4; font-size:10px; line-height:1.5; }
+.account-message.is-error { color:#ff7888; }
+.account-identity { display:grid; gap:6px; }
+.account-identity strong { color:#fff; font:800 13px var(--display); }
+.account-identity span { color:var(--muted); font-size:10px; overflow-wrap:anywhere; }
+.account-identity .secondary-button { justify-self:start; margin-top:5px; }
+.xp-reward-panel {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  margin:16px 0 18px;
+  padding:13px 14px 15px;
+  border:1px solid rgba(255,54,88,.25);
+  border-radius:12px;
+  background:linear-gradient(115deg,rgba(255,36,71,.11),rgba(9,10,16,.86) 58%);
+  box-shadow:inset 0 0 22px rgba(255,42,72,.045);
+}
+.xp-reward-panel.has-reward { animation:xpRewardPulse .75s ease both; }
+.xp-reward-heading,.xp-reward-level-row { position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.xp-reward-heading span { color:#b6b2c0; font:700 8px var(--display); letter-spacing:1.3px; }
+.xp-reward-heading strong { color:#ff637c; font:800 16px var(--display); text-shadow:0 0 16px rgba(255,47,80,.45); }
+.xp-reward-level-row { margin:11px 0 8px; color:#fff; font:700 8px var(--display); letter-spacing:.8px; }
+.xp-reward-level-row b { color:#ff6c82; font-size:14px; }
+.xp-reward-level-row strong { color:#c6c2ce; font-size:8px; }
+.xp-reward-track { position:relative; z-index:2; height:8px; overflow:hidden; border-radius:99px; background:rgba(255,255,255,.1); }
+.xp-reward-track i { display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,#ff2447,#ff9aaa); box-shadow:0 0 16px #ff3658; transition:width .08s linear; }
+.xp-reward-levelup { position:relative; z-index:3; margin-top:12px; text-align:center; color:#ff8a9b; font:800 11px var(--display); letter-spacing:2px; animation:xpLevelUp .7s ease both; }
+.xp-reward-levelup b { display:inline-grid; place-items:center; width:24px; height:24px; margin-left:7px; border:1px solid rgba(255,111,133,.6); border-radius:50%; color:#fff; box-shadow:0 0 18px rgba(255,47,80,.5); }
+.xp-reward-particles { position:absolute; inset:0; z-index:1; pointer-events:none; }
+.xp-reward-particles i { position:absolute; left:50%; top:50%; width:4px; height:4px; border-radius:50%; background:#ff8092; box-shadow:0 0 10px #ff3658; opacity:0; }
+.xp-reward-panel.has-reward .xp-reward-particles i { animation:xpParticleFlow 1.2s ease-out both; }
+.xp-reward-particles i:nth-child(1){--px:-110px;--py:-24px;animation-delay:.02s}
+.xp-reward-particles i:nth-child(2){--px:95px;--py:-34px;animation-delay:.12s}
+.xp-reward-particles i:nth-child(3){--px:-75px;--py:28px;animation-delay:.2s}
+.xp-reward-particles i:nth-child(4){--px:125px;--py:25px;animation-delay:.28s}
+.xp-reward-particles i:nth-child(5){--px:-30px;--py:-42px;animation-delay:.36s}
+.xp-reward-particles i:nth-child(6){--px:45px;--py:38px;animation-delay:.44s}
+.xp-reward-particles i:nth-child(7){--px:-140px;--py:5px;animation-delay:.52s}
+.xp-reward-particles i:nth-child(8){--px:145px;--py:-5px;animation-delay:.6s}
+@keyframes xpParticleFlow { 0%{transform:translate(var(--px),var(--py)) scale(.3);opacity:0} 25%{opacity:1} 100%{transform:translate(0,0) scale(0);opacity:0} }
+@keyframes xpRewardPulse { 0%{box-shadow:0 0 0 rgba(255,48,78,0)} 45%{box-shadow:0 0 32px rgba(255,48,78,.24),inset 0 0 28px rgba(255,48,78,.1)} 100%{box-shadow:inset 0 0 22px rgba(255,42,72,.045)} }
+@keyframes xpLevelUp { 0%{transform:translateY(8px) scale(.8);opacity:0;text-shadow:0 0 0 #ff3658} 65%{transform:translateY(-2px) scale(1.08);opacity:1;text-shadow:0 0 22px #ff3658} 100%{transform:translateY(0) scale(1);opacity:1} }
+@media(max-width:520px) {
+  .menu-player-card { margin:12px 0; padding:8px 10px; }
+  .desktop-player-card { display:none; }
+  .account-form input { min-height:38px; }
+  .xp-reward-panel { margin:12px 0 15px; padding:11px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .xp-reward-panel.has-reward,.xp-reward-panel.has-reward .xp-reward-particles i,.xp-reward-levelup { animation:none!important; }
+}

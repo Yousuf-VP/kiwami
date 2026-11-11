@@ -47,6 +47,11 @@
         </div>
         <div class="mobile-menu-hero">
           <div class="mobile-menu-kicker"><i></i> THE ARENA IS WAITING</div>
+          <div class="menu-player-card" data-player-card>
+            <div class="menu-player-avatar">K</div>
+            <div class="menu-player-copy"><span data-player-name>GUEST PLAYER</span><strong>LEVEL <b data-menu-level>0</b> <i data-menu-xp>0 XP</i></strong></div>
+            <span class="menu-player-status" data-player-status>LOCAL</span>
+          </div>
           <h1>DODGE<br><span>CORE</span></h1>
           <p>ONE ARENA. ONE RED BALL.<br>HOW LONG CAN YOU SURVIVE?</p>
           <button id="mobile-start-button" class="primary-button mobile-play-button" type="button"><span>ENTER THE ARENA</span><b>↗</b></button>
@@ -116,7 +121,22 @@
             </div>
           </div>
 
-          <button class="menu-panel-toggle" type="button" data-panel-toggle="mobile-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
+                    <button class="menu-panel-toggle" type="button" data-panel-toggle="mobile-account-panel" aria-expanded="false"><span><b>05</b> PLAYER ACCOUNT</span><strong data-account-summary>GUEST MODE</strong><i>+</i></button>
+          <div id="mobile-account-panel" class="menu-panel-content hidden">
+            <div class="account-panel" data-account-panel>
+              <p class="account-description">Sign in to sync your level and XP across devices.</p>
+              <div class="account-identity hidden" data-account-identity><strong data-account-identity-name>PLAYER</strong><span data-account-identity-email></span><button type="button" class="secondary-button" data-account-signout>SIGN OUT</button></div>
+              <form class="account-form" data-account-form data-account-mode="signup">
+                <label>PLAYER NAME<input type="text" name="username" minlength="3" maxlength="18" autocomplete="nickname" placeholder="Your player name" required></label>
+                <label>EMAIL<input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
+                <label>PASSWORD<input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required></label>
+                <button class="primary-button" type="submit" data-account-submit>CREATE ACCOUNT</button>
+              </form>
+              <div class="account-switch"><span data-account-switch-label>Already registered?</span><button type="button" data-account-mode-switch>LOG IN</button></div>
+              <p class="account-message" data-account-message role="status" aria-live="polite">Cloud accounts require Supabase setup.</p>
+            </div>
+          </div>
+<button class="menu-panel-toggle" type="button" data-panel-toggle="mobile-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
           <div id="mobile-daily-challenge-panel" class="menu-panel-content hidden">
             <div class="daily-challenge-card">
               <div class="daily-challenge-topline"><span>DAILY OBJECTIVE</span><small data-daily-date>REFRESHES DAILY</small></div>
@@ -138,6 +158,11 @@
         <div class="cinema-layout">
           <section class="cinema-hero">
             <div class="cinema-kicker"><i></i> THE ARENA IS WAITING</div>
+            <div class="menu-player-card desktop-player-card" data-player-card>
+              <div class="menu-player-avatar">K</div>
+              <div class="menu-player-copy"><span data-player-name>GUEST PLAYER</span><strong>LEVEL <b data-menu-level>0</b> <i data-menu-xp>0 XP</i></strong></div>
+              <span class="menu-player-status" data-player-status>LOCAL</span>
+            </div>
             <h1>DODGE<br><span>CORE</span></h1>
             <p class="description">One arena. One relentless red ball.<br>Every second is a new chance to survive.</p>
             <div class="cinema-meta"><span>FIRST-PERSON SURVIVAL</span><b></b><span>ENDLESS RUN</span><b></b><span>3D EXPERIENCE</span></div>
@@ -211,7 +236,22 @@
               </div>
             </div>
             
-          <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
+                    <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-account-panel" aria-expanded="false"><span><b>05</b> PLAYER ACCOUNT</span><strong data-account-summary>GUEST MODE</strong><i>+</i></button>
+            <div id="desktop-account-panel" class="menu-panel-content hidden">
+              <div class="account-panel" data-account-panel>
+                <p class="account-description">Sign in to sync your level and XP across devices.</p>
+                <div class="account-identity hidden" data-account-identity><strong data-account-identity-name>PLAYER</strong><span data-account-identity-email></span><button type="button" class="secondary-button" data-account-signout>SIGN OUT</button></div>
+                <form class="account-form" data-account-form data-account-mode="signup">
+                  <label>PLAYER NAME<input type="text" name="username" minlength="3" maxlength="18" autocomplete="nickname" placeholder="Your player name" required></label>
+                  <label>EMAIL<input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
+                  <label>PASSWORD<input type="password" name="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required></label>
+                  <button class="primary-button" type="submit" data-account-submit>CREATE ACCOUNT</button>
+                </form>
+                <div class="account-switch"><span data-account-switch-label>Already registered?</span><button type="button" data-account-mode-switch>LOG IN</button></div>
+                <p class="account-message" data-account-message role="status" aria-live="polite">Cloud accounts require Supabase setup.</p>
+              </div>
+            </div>
+<button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
           <div id="desktop-daily-challenge-panel" class="menu-panel-content hidden">
             <div class="daily-challenge-card">
               <div class="daily-challenge-topline"><span>DAILY OBJECTIVE</span><small data-daily-date>REFRESHES DAILY</small></div>
@@ -299,6 +339,13 @@
           <div><span>PERSONAL BEST</span><strong id="run-best-value">0000</strong></div>
           <div><span>DIFFICULTY</span><strong id="run-difficulty-value">MEDIUM</strong></div>
         </div>
+        <section class="xp-reward-panel" id="xp-reward-panel" aria-live="polite">
+          <div class="xp-reward-heading"><span>RUN REWARDS</span><strong id="xp-reward-amount">+0 XP</strong></div>
+          <div class="xp-reward-level-row"><span>LEVEL <b id="xp-reward-level">0</b></span><strong id="xp-reward-total">0 / 100 XP</strong></div>
+          <div class="xp-reward-track"><i id="xp-reward-fill"></i></div>
+          <div class="xp-reward-levelup hidden" id="xp-levelup-banner">✦ LEVEL UP ✦ <b id="xp-levelup-value">1</b></div>
+          <div class="xp-reward-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </section>
         <button id="restart-button" class="primary-button" type="button">PLAY AGAIN <b>↗</b></button>
         <button id="over-menu-button" class="secondary-button" type="button">MAIN MENU</button>
       </div>

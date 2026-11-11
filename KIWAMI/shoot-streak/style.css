@@ -2856,3 +2856,37 @@ body.auth-check-pending #auth-gate{
     animation:none!important;
   }
 }
+
+
+/* GLOBAL LEADERBOARD — KIWAMI competitive network */
+.leaderboard-panel{width:100%;max-width:980px;margin:0 auto}
+.leaderboard-heading-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.leaderboard-kicker{display:block;margin-bottom:7px;color:#ff8295;font:700 8px var(--display);letter-spacing:2px}
+.leaderboard-heading-row h3{margin:0;color:#fff;font:900 clamp(20px,3vw,30px) var(--display);letter-spacing:1px}
+.leaderboard-refresh{min-height:36px;padding:8px 12px;border:1px solid rgba(255,24,61,.35);border-radius:7px;color:#ffb4c0;background:rgba(255,24,61,.07);font:700 8px var(--display);letter-spacing:.8px;cursor:pointer}
+.leaderboard-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:17px}
+.leaderboard-summary>div{min-width:0;padding:13px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025)}
+.leaderboard-summary span{display:block;margin-bottom:7px;color:#8f909a;font:700 7px var(--display);letter-spacing:1px}
+.leaderboard-summary strong{display:block;overflow:hidden;color:#fff;font:800 clamp(15px,2.2vw,22px) var(--display);text-overflow:ellipsis;white-space:nowrap}
+.leaderboard-tabs{display:flex;gap:6px;margin-bottom:12px;padding:5px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.25)}
+.leaderboard-tabs button{flex:1;min-height:36px;padding:8px 6px;border:1px solid transparent;border-radius:6px;color:#9697a1;background:transparent;font:700 8px var(--display);letter-spacing:.6px;cursor:pointer}
+.leaderboard-tabs button.selected{border-color:rgba(255,24,61,.4);color:#fff;background:rgba(255,24,61,.13);box-shadow:0 0 16px rgba(255,24,61,.07)}
+.leaderboard-table-wrap{overflow:hidden;border:1px solid var(--line);border-radius:10px;background:rgba(3,4,7,.35)}
+.leaderboard-table-head{display:flex;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);color:#858691;font:700 7px var(--display);letter-spacing:1px}
+.leaderboard-rows{display:grid;gap:1px;max-height:min(42vh,430px);overflow:auto}
+.leaderboard-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:61px;padding:10px 14px;background:rgba(255,255,255,.018)}
+.leaderboard-row.is-you{background:linear-gradient(90deg,rgba(255,24,61,.14),rgba(255,24,61,.035))}
+.leaderboard-row.is-podium .leaderboard-rank{color:#ffd27a}
+.leaderboard-player{display:flex;align-items:center;gap:13px;min-width:0}
+.leaderboard-rank{min-width:43px;color:#a6a7b0;font:800 12px var(--display)}
+.leaderboard-player-copy{display:grid;gap:4px;min-width:0}
+.leaderboard-player-copy b{overflow:hidden;color:#f2f2f5;font:700 11px var(--display);letter-spacing:.5px;text-overflow:ellipsis;white-space:nowrap}
+.leaderboard-player-copy small{color:#888a95;font-size:9px;letter-spacing:.5px}
+.leaderboard-value{color:#fff;font:800 12px var(--display);white-space:nowrap}
+.leaderboard-state{padding:28px 14px;color:#a0a1ab;text-align:center;font:700 9px var(--display);letter-spacing:1px}
+.leaderboard-status{margin:12px 0 0;color:#ff9aaa;font-size:10px;line-height:1.5}
+.leaderboard-footnote{margin:14px 0 0;color:#737580;font:600 7px var(--display);letter-spacing:1px;text-align:center}
+.kiwami-menu-nav{gap:5px}
+.kiwami-nav-button{padding-left:10px;padding-right:10px}
+@media(max-width:900px){.mobile-menu-nav{gap:5px}.mobile-nav-button{padding-left:8px;padding-right:8px;font-size:7px}}
+@media(max-width:560px){.leaderboard-heading-row{align-items:flex-start}.leaderboard-summary{gap:5px}.leaderboard-summary>div{padding:9px}.leaderboard-summary span{font-size:6px}.leaderboard-summary strong{font-size:13px}.leaderboard-tabs button{font-size:6px;letter-spacing:0}.leaderboard-row{min-height:55px;padding:9px}.leaderboard-rank{min-width:35px;font-size:10px}.leaderboard-player-copy b{font-size:9px}.leaderboard-value{font-size:10px}}

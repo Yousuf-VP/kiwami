@@ -12,17 +12,15 @@ create table if not exists public.player_profiles (
 
 alter table public.player_profiles enable row level security;
 
+-- Grant only the browser operations the game actually needs.
+revoke all on table public.player_profiles from anon, authenticated;
+grant select, update on table public.player_profiles to authenticated;
+
 drop policy if exists "Players can read their own profile" on public.player_profiles;
 create policy "Players can read their own profile"
 on public.player_profiles for select
 to authenticated
 using (auth.uid() = id);
-
-drop policy if exists "Players can create their own profile" on public.player_profiles;
-create policy "Players can create their own profile"
-on public.player_profiles for insert
-to authenticated
-with check (auth.uid() = id);
 
 drop policy if exists "Players can update their own profile" on public.player_profiles;
 create policy "Players can update their own profile"

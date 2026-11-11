@@ -763,17 +763,109 @@ difficultyButtons.forEach((button) => {
   button.addEventListener("click", () => selectDifficulty(button.dataset.difficulty));
 });
 
-document.querySelectorAll("[data-panel-toggle]").forEach(button=>{
-  button.addEventListener("click",()=>{
-    const panel=document.getElementById(button.dataset.panelToggle);
-    if(!panel)return;
-    const opening=panel.classList.contains("hidden");
-    panel.classList.toggle("hidden",!opening);
-    button.setAttribute("aria-expanded",String(opening));
-    const icon=button.querySelector("i");
-    if(icon)icon.textContent=opening?"−":"+";
-  });
+/* COD-style dedicated menu sections: panels leave the button list and
+   occupy one shared full-screen section. Original DOM position is restored on Back. */
+const detailScreen = document.getElementById("menu-detail-screen");
+const detailContent = document.getElementById("menu-detail-content");
+const detailTitle = document.getElementById("menu-detail-title");
+const detailBack = document.getElementById("menu-detail-back");
+let activeDetailPanel = null;
+let activeDetailTrigger = null;
+let activeDetailPlaceholder = null;
+
+const detailTitles = {
+  difficulty: "SELECT DIFFICULTY",
+  settings: "GAME SETTINGS",
+  career: "CAREER RECORD",
+  daily: "DAILY CHALLENGE"
+};
+
+function closeMenuDetail() {
+  if (!activeDetailPanel || !detailScreen) return;
+  activeDetailPanel.classList.add("hidden");
+  if (activeDetailPlaceholder?.parentNode) {
+    activeDetailPlaceholder.parentNode.insertBefore(activeDetailPanel, activeDetailPlaceholder);
+    activeDetailPlaceholder.remove();
+  }
+  if (activeDetailTrigger) {
+    activeDetailTrigger.setAttribute("aria-expanded", "false");
+    activeDetailTrigger.focus({ preventScroll: true });
+  }
+  activeDetailPanel = null;
+  activeDetailTrigger = null;
+  activeDetailPlaceholder = null;
+  detailScreen.classList.add("hidden");
+  detailScreen.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("menu-detail-open");
+}
+
+function openMenuDetail(button) {
+  const panel = document.getElementById(button.dataset.panelToggle);
+  if (!panel || !detailScreen || !detailContent) return;
+  closeMenuDetail();
+  activeDetailTrigger = button;
+  activeDetailPanel = panel;
+  activeDetailPlaceholder = document.createComment("menu-panel-position");
+  panel.parentNode.insertBefore(activeDetailPlaceholder, panel);
+  const kind = button.dataset.panelToggle
+    .replace(/^(mobile|desktop|pause)-/, "")
+    .replace(/-panel$/, "");
+  detailTitle.textContent = detailTitles[kind] || "ARENA OPTIONS";
+  detailContent.replaceChildren(panel);
+  panel.classList.remove("hidden");
+  detailScreen.classList.remove("hidden");
+  detailScreen.setAttribute("aria-hidden", "false");
+  document.body.classList.add("menu-detail-open");
+  detailBack.focus({ preventScroll: true });
+}
+
+document.querySelectorAll("[data-panel-toggle]").forEach(button => {
+  button.setAttribute("aria-haspopup", "dialog");
+  button.addEventListener("click", () => openMenuDetail(button));
 });
+detailBack?.addEventListener("click", closeMenuDetail);
+detailScreen?.querySelectorAll("[data-detail-close]").forEach(node => {
+  node.addEventListener("click", closeMenuDetail);
+});
+document.addEventListener("keydown", event => {
+  if (!detailScreen || detailScreen.classList.contains("hidden")) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMenuDetail();
+  }
+});
+detailContent?.addEventListener("click", event => {
+  if (event.target.closest("[data-difficulty]")) closeMenuDetail();
+});
+
+/* Layered arena atmosphere. Generated once; CSS handles all animation. */
+function installArenaAtmosphere(screen) {
+  if (!screen || screen.querySelector(":scope > .arena-cinematic-fx")) return;
+  const fx = document.createElement("div");
+  fx.className = "arena-cinematic-fx";
+  fx.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 14; i++) {
+    const beam = document.createElement("span");
+    beam.className = "arena-energy-beam";
+    beam.style.setProperty("--beam-x", (i * 17 + 4) % 100 + "%");
+    beam.style.setProperty("--beam-delay", -(i * 0.83) + "s");
+    beam.style.setProperty("--beam-duration", (5.5 + (i % 5) * 1.35) + "s");
+    beam.style.setProperty("--beam-angle", (-22 + (i % 7) * 7) + "deg");
+    fx.append(beam);
+  }
+  for (let i = 0; i < 26; i++) {
+    const spark = document.createElement("span");
+    spark.className = "arena-spark";
+    spark.style.setProperty("--spark-x", (i * 37 + 9) % 100 + "%");
+    spark.style.setProperty("--spark-y", (i * 23 + 13) % 100 + "%");
+    spark.style.setProperty("--spark-delay", -(i * 0.47) + "s");
+    spark.style.setProperty("--spark-duration", (3.2 + (i % 6) * 1.1) + "s");
+    fx.append(spark);
+  }
+  screen.prepend(fx);
+}
+installArenaAtmosphere(startScreen);
+installArenaAtmosphere(pauseScreen);
 
 
 /* Mobile fullscreen: Chrome/Android supports immersive fullscreen after a user gesture.

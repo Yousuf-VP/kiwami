@@ -40,11 +40,11 @@ const joystickBase = document.getElementById("move-joystick");
 const joystickThumb = document.getElementById("joystick-thumb");
 
 const DIFFICULTIES = {
-  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45, aim: 0.18 },
-  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 0.98, chaos: 0.7, aim: 0.34 },
-  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.02, chaos: 1.0, aim: 0.52 },
-  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.06, chaos: 1.35, aim: 0.72 },
-  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.1, chaos: 1.75, aim: 1.0 }
+  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45, aim: 0.18, xpMultiplier: 0.75 },
+  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 0.98, chaos: 0.7, aim: 0.34, xpMultiplier: 1 },
+  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.02, chaos: 1.0, aim: 0.52, xpMultiplier: 1.5 },
+  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.06, chaos: 1.35, aim: 0.72, xpMultiplier: 2 },
+  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.1, chaos: 1.75, aim: 1.0, xpMultiplier: 2.5 }
 };
 let selectedDifficulty = "medium";
 
@@ -84,7 +84,8 @@ const emptyCareerStats = () => ({
 let careerStats = emptyCareerStats();
 
 /* INFINITE XP + LEVEL PROGRESSION
-   Every 100 score grants 10 XP. Level N begins at 100 * N^2 total XP.
+   Every 100 score grants 10 base XP, multiplied by the selected difficulty.
+   Level N begins at 100 * N^2 total XP; level progress is XP within that band.
 */
 const PROGRESSION_KEY = "dodgeCoreProgression";
 const PROGRESSION_OWNER_KEY = "dodgeCoreProgressionOwner";
@@ -132,6 +133,10 @@ function renderAccountUI() {
   updateKiwamiPlayerBadge();
   const signedIn = Boolean(currentUser);
   document.querySelectorAll("[data-player-name]").forEach(node => node.textContent = signedIn ? currentUsername : "GUEST PLAYER");
+  document.querySelectorAll("[data-account-logout]").forEach(node => {
+    node.textContent = signedIn ? "LOG OUT" : "EXIT GUEST";
+    node.setAttribute("aria-label", signedIn ? "Log out of player account" : "Exit guest session");
+  });
   document.querySelectorAll("[data-player-status]").forEach(node => node.textContent = signedIn ? "CLOUD SYNC" : "LOCAL");
   document.querySelectorAll("[data-account-summary]").forEach(node => node.textContent = signedIn ? "SIGNED IN" : "GUEST MODE");
   document.querySelectorAll("[data-account-identity]").forEach(node => node.classList.toggle("hidden", !signedIn));
@@ -299,19 +304,33 @@ document.getElementById("auth-offline-button")?.addEventListener("click", () => 
   setAccountMessage("Offline session. Progress stays on this device until cloud accounts are configured.");
 });
 
-document.querySelectorAll("[data-account-signout]").forEach(button => {
+document.querySelectorAll("[data-account-logout]").forEach(button => {
   button.addEventListener("click", async () => {
-    if (!supabase) return;
+    if (button.disabled) return;
     button.disabled = true;
-    const { error } = await supabase.auth.signOut();
-    button.disabled = false;
-    if (error) setAccountMessage(error.message, true);
-    else {
-      currentUser = null;
-      currentUsername = "GUEST PLAYER";
+    const wasSignedIn = Boolean(currentUser);
+    try {
+      if (wasSignedIn) {
+        if (!supabase) throw new Error("Account service is unavailable. Refresh and try again.");
+        const { error } = await supabase.auth.signOut({ scope: "local" });
+        if (error) throw error;
+        currentUser = null;
+        currentUsername = "GUEST PLAYER";
+        totalXP = 0;
+        try {
+          localStorage.removeItem(PROGRESSION_KEY);
+          localStorage.removeItem(PROGRESSION_OWNER_KEY);
+        } catch {}
+        setAccountMessage("Signed out. Your cloud progression remains saved to your account.");
+      } else {
+        setAccountMessage("Guest session ended. Sign in or create an account to continue.");
+      }
       document.getElementById("auth-gate")?.classList.remove("hidden");
-      setAccountMessage("Signed out. Sign in again to restore your cloud progression.");
       renderAccountUI();
+    } catch (error) {
+      setAccountMessage(error.message || "Could not end this session.", true);
+    } finally {
+      button.disabled = false;
     }
   });
 });
@@ -328,16 +347,17 @@ function renderProgression() {
   const xpNode = document.getElementById("xp-value");
   const fillNode = document.getElementById("xp-fill");
   if (levelNode) levelNode.textContent = String(progress.level);
-  if (xpNode) xpNode.textContent = totalXP.toLocaleString() + " / " + progress.nextLevelXP.toLocaleString() + " XP";
+  if (xpNode) xpNode.textContent = Math.floor(progress.currentLevelXP).toLocaleString() + " / " + progress.requiredLevelXP.toLocaleString() + " XP";
   if (fillNode) fillNode.style.width = progress.percent + "%";
   syncMenuProgression();
 }
 function awardXPForScore(currentScore) {
   const reachedMilestone = Math.floor(currentScore / 100);
   if (reachedMilestone <= lastXpMilestone) return;
-  const gainedXP = (reachedMilestone - lastXpMilestone) * 10;
+  const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
+  const gainedXP = (reachedMilestone - lastXpMilestone) * 10 * difficultyMultiplier;
   lastXpMilestone = reachedMilestone;
-  totalXP += gainedXP;
+  totalXP = Math.round((totalXP + gainedXP) * 100) / 100;
   saveProgression();
   renderProgression();
   renderCareerStats();
@@ -1291,10 +1311,12 @@ function renderRewardProgress(xp) {
   const hudXP = document.getElementById("xp-value");
   const hudFill = document.getElementById("xp-fill");
   if (levelNode) levelNode.textContent = String(level);
-  if (totalNode) totalNode.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  const currentLevelXP = Math.max(0, xp - start);
+  const requiredLevelXP = next - start;
+  if (totalNode) totalNode.textContent = Math.floor(currentLevelXP).toLocaleString() + " / " + requiredLevelXP.toLocaleString() + " XP";
   if (fill) fill.style.width = percent + "%";
   if (hudLevel) hudLevel.textContent = String(level);
-  if (hudXP) hudXP.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  if (hudXP) hudXP.textContent = Math.floor(currentLevelXP).toLocaleString() + " / " + requiredLevelXP.toLocaleString() + " XP";
   if (hudFill) hudFill.style.width = percent + "%";
   document.querySelectorAll("[data-menu-level]").forEach(node => node.textContent = String(level));
   document.querySelectorAll("[data-menu-xp]").forEach(node => node.textContent = Math.floor(xp).toLocaleString() + " XP");

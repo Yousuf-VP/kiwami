@@ -1630,6 +1630,120 @@ function endRun() {
   setScreen(state);
 }
 
+
+/* ORIGINAL DODGE CORE AMBIENT SCORE — synthesized with Web Audio API */
+const MUSIC_PREF_KEY = "dodgeCoreMusicEnabled";
+let musicEnabled = true;
+let musicContext = null;
+let musicMaster = null;
+let musicPadOscillators = [];
+let musicBassOscillator = null;
+let musicNoteTimer = 0;
+let musicChordTimer = 0;
+let musicNoteIndex = 0;
+let musicChordIndex = 0;
+const MUSIC_CHORDS = [
+  [146.83, 174.61, 220.00, 261.63],
+  [116.54, 146.83, 174.61, 220.00],
+  [87.31, 110.00, 130.81, 174.61],
+  [130.81, 164.81, 196.00, 261.63]
+];
+const MUSIC_ARPEGGIO = [293.66, 349.23, 440.00, 523.25, 440.00, 349.23, 261.63, 349.23];
+try { musicEnabled = localStorage.getItem(MUSIC_PREF_KEY) !== "0"; } catch {}
+function updateMusicControls(){
+  document.querySelectorAll("[data-music-toggle]").forEach(button=>{
+    button.textContent = musicEnabled ? "ON" : "OFF";
+    button.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
+    button.classList.toggle("is-on", musicEnabled);
+  });
+}
+function setMusicEnabled(enabled){
+  musicEnabled = Boolean(enabled);
+  try { localStorage.setItem(MUSIC_PREF_KEY, musicEnabled ? "1" : "0"); } catch {}
+  updateMusicControls();
+  if (musicEnabled) startAmbientMusic();
+  else if (musicMaster && musicContext) {
+    musicMaster.gain.cancelScheduledValues(musicContext.currentTime);
+    musicMaster.gain.setTargetAtTime(0, musicContext.currentTime, 0.22);
+  }
+}
+function playMusicPluck(frequency){
+  if (!musicContext || !musicMaster || !musicEnabled) return;
+  const now = musicContext.currentTime;
+  const oscillator = musicContext.createOscillator();
+  const envelope = musicContext.createGain();
+  const filter = musicContext.createBiquadFilter();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequency, now);
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1450, now);
+  envelope.gain.setValueAtTime(0.0001, now);
+  envelope.gain.exponentialRampToValueAtTime(0.035, now + 0.035);
+  envelope.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
+  oscillator.connect(filter); filter.connect(envelope); envelope.connect(musicMaster);
+  oscillator.start(now); oscillator.stop(now + 1.2);
+  oscillator.onended = () => { oscillator.disconnect(); filter.disconnect(); envelope.disconnect(); };
+}
+function setMusicChord(index){
+  if (!musicContext || !musicEnabled) return;
+  const chord = MUSIC_CHORDS[index % MUSIC_CHORDS.length];
+  const now = musicContext.currentTime;
+  musicPadOscillators.forEach((oscillator,i)=>oscillator.frequency.setTargetAtTime(chord[i], now, 1.1));
+  if (musicBassOscillator) musicBassOscillator.frequency.setTargetAtTime(chord[0] / 2, now, 0.9);
+}
+function startAmbientMusic(){
+  if (!musicEnabled) return;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  if (!musicContext) {
+    musicContext = new AudioContextClass();
+    musicMaster = musicContext.createGain();
+    musicMaster.gain.value = 0;
+    musicMaster.connect(musicContext.destination);
+    const padFilter = musicContext.createBiquadFilter();
+    padFilter.type = "lowpass"; padFilter.frequency.value = 780; padFilter.Q.value = 0.35;
+    const padBus = musicContext.createGain(); padBus.gain.value = 0.62;
+    padFilter.connect(padBus); padBus.connect(musicMaster);
+    MUSIC_CHORDS[0].forEach((frequency,index)=>{
+      const oscillator = musicContext.createOscillator();
+      const gain = musicContext.createGain();
+      oscillator.type = index === 1 ? "triangle" : "sine";
+      oscillator.frequency.value = frequency;
+      gain.gain.value = index === 0 ? 0.035 : 0.022;
+      oscillator.connect(gain); gain.connect(padFilter); oscillator.start();
+      musicPadOscillators.push(oscillator);
+    });
+    musicBassOscillator = musicContext.createOscillator();
+    const bassGain = musicContext.createGain();
+    musicBassOscillator.type = "sine";
+    musicBassOscillator.frequency.value = MUSIC_CHORDS[0][0] / 2;
+    bassGain.gain.value = 0.055;
+    musicBassOscillator.connect(bassGain); bassGain.connect(musicMaster); musicBassOscillator.start();
+    musicChordIndex = 0; setMusicChord(0);
+    musicChordTimer = window.setInterval(()=>{
+      musicChordIndex = (musicChordIndex + 1) % MUSIC_CHORDS.length;
+      setMusicChord(musicChordIndex);
+    }, 5200);
+    musicNoteTimer = window.setInterval(()=>{
+      playMusicPluck(MUSIC_ARPEGGIO[musicNoteIndex % MUSIC_ARPEGGIO.length]);
+      musicNoteIndex++;
+    }, 780);
+  }
+  if (musicContext.state === "suspended") musicContext.resume().catch(()=>{});
+  const now = musicContext.currentTime;
+  musicMaster.gain.cancelScheduledValues(now);
+  musicMaster.gain.setTargetAtTime(0.72, now, 1.4);
+}
+document.querySelectorAll("[data-music-toggle]").forEach(button=>button.addEventListener("click",()=>setMusicEnabled(!musicEnabled)));
+document.addEventListener("click",()=>{ if (musicEnabled) startAmbientMusic(); });
+document.addEventListener("keydown",()=>{ if (musicEnabled) startAmbientMusic(); },{once:true});
+document.addEventListener("visibilitychange",()=>{
+  if (!musicContext) return;
+  if (document.hidden) musicContext.suspend().catch(()=>{});
+  else if (musicEnabled) musicContext.resume().catch(()=>{});
+});
+updateMusicControls();
+
 startButton.addEventListener("click", startRun);
 document.getElementById("mobile-start-button")?.addEventListener("click", startRun);
 restartButton.addEventListener("click", startRun);
@@ -1972,15 +2086,23 @@ requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(() => 
 
 /* Give each player a bold initial badge and sync the level progress strip. */
 function updateKiwamiPlayerBadge(){
-  const name = currentUsername || "GUEST PLAYER";
-  const initial = String(name).trim().charAt(0).toUpperCase() || "G";
+  const displayedName = document.querySelector("[data-player-name]")?.textContent?.trim();
+  const metadataName = currentUser?.user_metadata?.username;
+  const emailName = currentUser?.email?.split("@")[0];
+  const name = String(currentUsername || metadataName || displayedName || emailName || "PLAYER").trim() || "PLAYER";
+  const initial = Array.from(name)[0]?.toLocaleUpperCase() || "P";
   const palette = ["#b51f35","#8d263f","#7c3021","#315c78","#5b3b87","#286b5d","#8a5a1e"];
   let hash = 0;
   for(let i=0;i<name.length;i++) hash = (hash*31 + name.charCodeAt(i)) >>> 0;
   const color = palette[hash % palette.length];
   document.querySelectorAll("[data-player-avatar]").forEach(node=>{
     node.textContent = initial;
+    node.setAttribute("aria-label", name + " avatar");
+    node.setAttribute("data-initial", initial);
     node.style.background = "linear-gradient(145deg, "+color+", #101116)";
+    node.style.display = "grid";
+    node.style.visibility = "visible";
+    node.style.opacity = "1";
   });
   const progress = getLevelProgress();
   document.querySelectorAll("[data-menu-level-bar]").forEach(node=>node.style.width = progress.percent + "%");

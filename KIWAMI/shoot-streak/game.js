@@ -1095,8 +1095,130 @@ const detailTitles = {
   difficulty: "SELECT DIFFICULTY",
   settings: "GAME SETTINGS",
   career: "CAREER RECORD",
+  leaderboard: "GLOBAL LEADERBOARD",
   daily: "DAILY CHALLENGE"
 };
+
+let leaderboardMetric = "score";
+let leaderboardRequest = 0;
+
+function formatLeaderboardValue(row, metric) {
+  if (metric === "level") return "LVL " + Number(row.player_level || 0).toLocaleString();
+  if (metric === "xp") return Number(row.total_xp || 0).toLocaleString() + " XP";
+  return Number(row.best_score || 0).toLocaleString();
+}
+
+function renderLeaderboardRows(rows, metric) {
+  const host = document.querySelector("[data-leaderboard-rows]");
+  if (!host) return;
+  host.replaceChildren();
+  if (!rows?.length) {
+    const empty = document.createElement("div");
+    empty.className = "leaderboard-state";
+    empty.textContent = "NO GLOBAL RECORDS YET. BE THE FIRST.";
+    host.append(empty);
+    return;
+  }
+  rows.forEach(row => {
+    const item = document.createElement("article");
+    item.className = "leaderboard-row" + (row.is_current_player ? " is-you" : "") + (Number(row.rank_position) <= 3 ? " is-podium podium-" + row.rank_position : "");
+    const identity = document.createElement("div");
+    identity.className = "leaderboard-player";
+    const rank = document.createElement("strong");
+    rank.className = "leaderboard-rank";
+    rank.textContent = "#" + Number(row.rank_position).toLocaleString();
+    const details = document.createElement("span");
+    details.className = "leaderboard-player-copy";
+    const name = document.createElement("b");
+    name.textContent = row.username || "PLAYER";
+    const meta = document.createElement("small");
+    meta.textContent = "LEVEL " + Number(row.player_level || 0).toLocaleString() + (row.is_current_player ? " · YOU" : "");
+    details.append(name, meta);
+    identity.append(rank, details);
+    const value = document.createElement("strong");
+    value.className = "leaderboard-value";
+    value.textContent = formatLeaderboardValue(row, metric);
+    item.append(identity, value);
+    host.append(item);
+  });
+}
+
+async function loadGlobalLeaderboard() {
+  const host = document.querySelector("[data-leaderboard-rows]");
+  const status = document.querySelector("[data-leaderboard-status]");
+  const rankNode = document.querySelector("[data-leaderboard-player-rank]");
+  const bestNode = document.querySelector("[data-leaderboard-player-best]");
+  const countNode = document.querySelector("[data-leaderboard-player-count]");
+  const valueHeading = document.querySelector("[data-leaderboard-value-heading]");
+  if (!host) return;
+  const requestId = ++leaderboardRequest;
+  const headings = { score: "BEST SCORE", level: "PLAYER LEVEL", xp: "TOTAL XP" };
+  if (valueHeading) valueHeading.textContent = headings[leaderboardMetric];
+  if (!supabase) {
+    host.innerHTML = '<div class="leaderboard-state">CLOUD LEADERBOARD IS NOT CONFIGURED.</div>';
+    if (status) status.textContent = "Add the Supabase configuration and apply leaderboard-schema.sql in your project.";
+    return;
+  }
+  host.innerHTML = '<div class="leaderboard-state">SYNCING GLOBAL RANKINGS…</div>';
+  if (status) status.textContent = currentUser ? "Loading your global position…" : "Viewing public rankings. Sign in to submit a score.";
+  try {
+    const { data, error } = await supabase.rpc("get_dodge_core_leaderboard", {
+      p_metric: leaderboardMetric,
+      p_limit: 100
+    });
+    if (error) throw error;
+    if (requestId !== leaderboardRequest) return;
+    const rows = Array.isArray(data) ? data : [];
+    renderLeaderboardRows(rows, leaderboardMetric);
+    const mine = rows.find(row => row.is_current_player);
+    if (rankNode) rankNode.textContent = mine ? "#" + Number(mine.rank_position).toLocaleString() : (currentUser ? "UNRANKED" : "SIGN IN");
+    if (bestNode) bestNode.textContent = mine ? Number(mine.best_score || 0).toLocaleString() : String(best || 0).toLocaleString();
+    if (countNode) countNode.textContent = rows.filter(row => !row.is_current_player || Number(row.rank_position) <= 100).length.toLocaleString() + (rows.length >= 100 ? "+" : "");
+    if (status) status.textContent = currentUser
+      ? (mine ? "YOUR VERIFIED PROFILE IS INCLUDED IN THE GLOBAL RANKINGS." : "Your account has no published score yet. Finish a run to set your first record.")
+      : "Public rankings are read-only while signed out. Sign in to publish your personal best.";
+  } catch (error) {
+    if (requestId !== leaderboardRequest) return;
+    host.innerHTML = '<div class="leaderboard-state">RANKINGS COULD NOT BE LOADED.</div>';
+    if (status) status.textContent = error.message || "Check the leaderboard database setup and try again.";
+    if (rankNode) rankNode.textContent = "—";
+    if (bestNode) bestNode.textContent = "—";
+    if (countNode) countNode.textContent = "—";
+  }
+}
+
+async function submitGlobalBestScore(finalScoreValue, survivalSeconds) {
+  if (!supabase || !currentUser) return;
+  const scoreValue = Math.max(0, Math.floor(Number(finalScoreValue) || 0));
+  const survivalMs = Math.max(0, Math.round(Number(survivalSeconds) * 1000));
+  try {
+    const { error } = await supabase.rpc("submit_dodge_core_score", {
+      p_score: scoreValue,
+      p_survival_ms: survivalMs,
+      p_difficulty: selectedDifficulty
+    });
+    if (error) throw error;
+    const status = document.querySelector("[data-leaderboard-status]");
+    if (status) status.textContent = "RUN RECORD SUBMITTED. GLOBAL POSITION UPDATED WHEN VERIFIED.";
+    if (!document.getElementById("leaderboard-panel")?.classList.contains("hidden")) await loadGlobalLeaderboard();
+  } catch (error) {
+    const status = document.querySelector("[data-leaderboard-status]");
+    if (status) status.textContent = "GLOBAL RECORD NOT SUBMITTED: " + (error.message || "Please try again later.");
+  }
+}
+
+document.querySelectorAll("[data-leaderboard-metric]").forEach(button => {
+  button.addEventListener("click", () => {
+    leaderboardMetric = button.dataset.leaderboardMetric || "score";
+    document.querySelectorAll("[data-leaderboard-metric]").forEach(tab => {
+      const active = tab === button;
+      tab.classList.toggle("selected", active);
+      tab.setAttribute("aria-pressed", String(active));
+    });
+    loadGlobalLeaderboard();
+  });
+});
+document.querySelector("[data-leaderboard-refresh]")?.addEventListener("click", loadGlobalLeaderboard);
 
 function closeMenuDetail() {
   if (!activeDetailPanel || !detailScreen) return;
@@ -1139,6 +1261,7 @@ function openMenuDetail(button) {
   detailScreen.setAttribute("aria-hidden", "false");
   document.body.classList.add("menu-detail-open");
   detailBack.focus({ preventScroll: true });
+  if (kind === "leaderboard") loadGlobalLeaderboard();
 }
 
 document.querySelectorAll("[data-panel-toggle]").forEach(button => {
@@ -1441,6 +1564,8 @@ function endRun() {
   saveCareerStats();
   renderCareerStats();
   syncArenaThemeControls();
+  // Publish only the signed-in player's best run through the database RPC.
+  submitGlobalBestScore(final, survived);
 
   const runBest = document.getElementById("run-best-value");
   const runTime = document.getElementById("run-time-value");

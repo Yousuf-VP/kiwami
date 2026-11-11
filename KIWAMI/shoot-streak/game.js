@@ -69,7 +69,7 @@ try {
     if (typeof savedGraphics.shadows === "boolean") graphicsSettings.shadows = savedGraphics.shadows;
     if (typeof savedGraphics.motionEffects === "boolean") graphicsSettings.motionEffects = savedGraphics.motionEffects;
     if (typeof savedGraphics.performanceMonitor === "boolean") graphicsSettings.performanceMonitor = savedGraphics.performanceMonitor;
-    if (typeof savedGraphics.forceLandscape === "boolean") graphicsSettings.forceLandscape = savedGraphics.forceLandscape;
+    // Forced landscape is a per-session opt-in. Never restore it from localStorage.
   }
 } catch {}
 let elapsed = 0;

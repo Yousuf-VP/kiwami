@@ -428,7 +428,7 @@ function renderCareerStats() {
 }
 renderCareerStats();
 renderProgression();
-initializeCloudAccount();
+
 
 /* DAILY CHALLENGES — one rotating objective per local calendar day */
 const DAILY_CHALLENGE_KEY = "dodgeCoreDailyChallenge";
@@ -1767,13 +1767,34 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-initializeCloudAccount();
+
 setScreen("ready");
 animate();
-requestAnimationFrame(()=>requestAnimationFrame(()=>window.setTimeout(()=>{
+
+// Startup order: studio ident -> resolve the saved cloud session -> login gate (if needed).
+// Keep the authentication UI hidden until the studio intro has completely faded out.
+let startupSequenceFinished = false;
+async function finishStudioStartup() {
+  if (startupSequenceFinished) return;
+  startupSequenceFinished = true;
+  introScreen?.remove();
+  document.body.classList.remove("startup-pending");
+  document.body.classList.add("auth-check-pending");
+  try {
+    await initializeCloudAccount();
+  } finally {
+    document.body.classList.remove("auth-check-pending");
+  }
+}
+requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(() => {
+  if (!introScreen) {
+    finishStudioStartup();
+    return;
+  }
   introScreen.classList.add("intro-exit");
-  introScreen.addEventListener("transitionend",()=>introScreen.remove(),{once:true});
-},3200)));
+  // Wait for the full 900ms fade, not merely the start of the transition.
+  window.setTimeout(finishStudioStartup, 950);
+}, 3200)));
 
 /* Give each player a bold initial badge and sync the level progress strip. */
 function updateKiwamiPlayerBadge(){

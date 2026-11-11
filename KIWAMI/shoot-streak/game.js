@@ -347,7 +347,7 @@ function renderProgression() {
   const xpNode = document.getElementById("xp-value");
   const fillNode = document.getElementById("xp-fill");
   if (levelNode) levelNode.textContent = String(progress.level);
-  if (xpNode) xpNode.textContent = totalXP.toLocaleString() + " / " + progress.nextLevelXP.toLocaleString() + " XP";
+  if (xpNode) xpNode.textContent = Math.floor(progress.currentLevelXP).toLocaleString() + " / " + progress.requiredLevelXP.toLocaleString() + " XP";
   if (fillNode) fillNode.style.width = progress.percent + "%";
   syncMenuProgression();
 }
@@ -1311,10 +1311,12 @@ function renderRewardProgress(xp) {
   const hudXP = document.getElementById("xp-value");
   const hudFill = document.getElementById("xp-fill");
   if (levelNode) levelNode.textContent = String(level);
-  if (totalNode) totalNode.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  const currentLevelXP = Math.max(0, xp - start);
+  const requiredLevelXP = next - start;
+  if (totalNode) totalNode.textContent = Math.floor(currentLevelXP).toLocaleString() + " / " + requiredLevelXP.toLocaleString() + " XP";
   if (fill) fill.style.width = percent + "%";
   if (hudLevel) hudLevel.textContent = String(level);
-  if (hudXP) hudXP.textContent = Math.floor(xp).toLocaleString() + " / " + next.toLocaleString() + " XP";
+  if (hudXP) hudXP.textContent = Math.floor(currentLevelXP).toLocaleString() + " / " + requiredLevelXP.toLocaleString() + " XP";
   if (hudFill) hudFill.style.width = percent + "%";
   document.querySelectorAll("[data-menu-level]").forEach(node => node.textContent = String(level));
   document.querySelectorAll("[data-menu-xp]").forEach(node => node.textContent = Math.floor(xp).toLocaleString() + " XP");

@@ -199,14 +199,19 @@ async function initializeCloudAccount() {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     currentUser = data.session?.user || null;
-    if (currentUser) await loadCloudProgression(currentUser);
+    if (currentUser) {
+      await loadCloudProgression(currentUser);
+      document.getElementById("auth-gate")?.classList.add("hidden");
+    }
     renderAccountUI();
     supabase.auth.onAuthStateChange((_event, session) => {
       currentUser = session?.user || null;
       if (currentUser) {
+        document.getElementById("auth-gate")?.classList.add("hidden");
         queueMicrotask(() => loadCloudProgression(currentUser).then(renderAccountUI));
       } else {
         currentUsername = "GUEST PLAYER";
+        document.getElementById("auth-gate")?.classList.remove("hidden");
         renderAccountUI();
       }
     });
@@ -262,6 +267,7 @@ document.querySelectorAll("[data-account-form]").forEach(form => {
           currentUsername = username;
           await loadCloudProgression(currentUser);
           renderAccountUI();
+          document.getElementById("auth-gate")?.classList.add("hidden");
           setAccountMessage("Account created. Cloud progression is ready.");
         } else {
           setAccountMessage("Check your email to confirm your account, then log in.");
@@ -272,6 +278,7 @@ document.querySelectorAll("[data-account-form]").forEach(form => {
         currentUser = data.user;
         await loadCloudProgression(currentUser);
         renderAccountUI();
+        document.getElementById("auth-gate")?.classList.add("hidden");
         setAccountMessage("Welcome back. Your cloud progress is loaded.");
       }
     } catch (error) {
@@ -281,6 +288,11 @@ document.querySelectorAll("[data-account-form]").forEach(form => {
     }
   });
 });
+document.getElementById("auth-offline-button")?.addEventListener("click", () => {
+  document.getElementById("auth-gate")?.classList.add("hidden");
+  setAccountMessage("Offline session. Progress stays on this device until cloud accounts are configured.");
+});
+
 document.querySelectorAll("[data-account-signout]").forEach(button => {
   button.addEventListener("click", async () => {
     if (!supabase) return;
@@ -291,7 +303,8 @@ document.querySelectorAll("[data-account-signout]").forEach(button => {
     else {
       currentUser = null;
       currentUsername = "GUEST PLAYER";
-      setAccountMessage("Signed out. Your local progress remains on this device.");
+      document.getElementById("auth-gate")?.classList.remove("hidden");
+      setAccountMessage("Signed out. Sign in again or continue offline.");
       renderAccountUI();
     }
   });
@@ -1365,6 +1378,14 @@ pauseMenuButton.addEventListener("click", showMainMenu);
 overMenuButton.addEventListener("click", showMainMenu);
 
 window.addEventListener("keydown", (event) => {
+  const target = event.target;
+  const isTypingTarget = target instanceof HTMLElement && (
+    target.isContentEditable ||
+    target.matches("input, textarea, select, [contenteditable='true']")
+  );
+  // Never capture movement keys while the player is entering account details or using menus.
+  if (isTypingTarget) return;
+
   const key = event.key.toLowerCase();
   if (rebindingAction) {
     event.preventDefault();
@@ -1379,9 +1400,14 @@ window.addEventListener("keydown", (event) => {
     syncKeybindButtons();
     return;
   }
+  // Outside gameplay, ordinary keyboard input belongs to the menu/browser.
+  if (state !== "playing") {
+    if (key === "escape" && state === "paused") resumeRun();
+    return;
+  }
   if ([...Object.values(keybinds), "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) || key === " ") event.preventDefault();
   keys.add(key);
-  if (key === keybinds.jump && state === "playing" && !event.repeat) jumpPlayer();
+  if (key === keybinds.jump && !event.repeat) jumpPlayer();
   if (key === "escape" && state === "playing") pauseRun();
   else if (key === "escape" && state === "paused") resumeRun();
 });
@@ -1637,6 +1663,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+initializeCloudAccount();
 setScreen("ready");
 animate();
 requestAnimationFrame(()=>requestAnimationFrame(()=>window.setTimeout(()=>{

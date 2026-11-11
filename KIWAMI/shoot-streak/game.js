@@ -87,6 +87,7 @@ let careerStats = emptyCareerStats();
    Every 100 score grants 10 XP. Level N begins at 100 * N^2 total XP.
 */
 const PROGRESSION_KEY = "dodgeCoreProgression";
+const PROGRESSION_OWNER_KEY = "dodgeCoreProgressionOwner";
 let totalXP = 0;
 let lastXpMilestone = 0;
 let runStartingXP = 0;
@@ -164,24 +165,29 @@ async function syncCloudProgression() {
 }
 async function loadCloudProgression(user) {
   if (!supabase || !user) return;
+  let localOwner = null;
+  try { localOwner = localStorage.getItem(PROGRESSION_OWNER_KEY); } catch {}
   const { data, error } = await supabase.from("player_profiles")
     .select("username,total_xp").eq("id", user.id).maybeSingle();
   if (error) {
     setAccountMessage("Could not load cloud profile: " + error.message, true);
     return;
   }
-  if (data) {
-    currentUsername = data.username || user.user_metadata?.username || "PLAYER";
-    totalXP = Math.max(totalXP, Math.max(0, Number(data.total_xp) || 0));
-    saveProgression();
-    renderCareerStats();
-    renderProgression();
-    syncMenuProgression();
-    if (totalXP > (Number(data.total_xp) || 0)) await syncCloudProgression();
+  const cloudXP = Math.max(0, Number(data?.total_xp) || 0);
+  if (localOwner && localOwner !== user.id) {
+    // Never carry one signed-in player's local progress into another account.
+    totalXP = cloudXP;
   } else {
-    currentUsername = user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
-    await syncCloudProgression();
+    // Import guest progress once, or merge this account's local progress with cloud.
+    totalXP = Math.max(totalXP, cloudXP);
   }
+  try { localStorage.setItem(PROGRESSION_OWNER_KEY, user.id); } catch {}
+  currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
+  saveProgression();
+  renderCareerStats();
+  renderProgression();
+  syncMenuProgression();
+  if (!data || totalXP > cloudXP) await syncCloudProgression();
 }
 async function initializeCloudAccount() {
   if (!supabase) {

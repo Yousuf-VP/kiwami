@@ -48,7 +48,7 @@ let selectedDifficulty = "medium";
 
 const CONFIG = {
   room: { halfWidth: 7.5, halfDepth: 10, height: 5.5 },
-  player: { speed: 7.2, radius: 0.42, startX: 0, startZ: 5.8, jumpSpeed: 7.1, jumpGravity: 18 },
+  player: { speed: 7.2, radius: 0.42, startX: 0, startZ: 5.8, jumpSpeed: 9.4, jumpGravity: 19 },
   ball: { radius: 0.62, speed: 8.2, gravity: 12.5, bounce: 0.92, maxSpeed: 25 }
 };
 

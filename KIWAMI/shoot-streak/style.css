@@ -2004,3 +2004,72 @@ button:focus-visible{outline:2px solid #ff7188;outline-offset:3px}
   .game-over-cinematic .cinematic-title,.game-over-cinematic .cinematic-subtitle { animation:none; opacity:1; filter:none; transform:translate(-50%,-50%); }
   .game-over-results { transition:none; }
 }
+
+
+/* DODGE CORE — forced landscape viewport geometry correction
+   The rotated shell must use the device's PORTRAIT dimensions before rotation:
+   portrait width x portrait height. Rotating that rectangle produces an exact
+   landscape viewport. The previous swapped dimensions kept the shell portrait-
+   tall after rotation and clipped the lower menu controls (including PLAY). */
+@media (max-width: 900px) and (orientation: portrait) {
+  body.force-landscape #game-shell {
+    top: 0 !important;
+    left: 100dvh !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    transform: rotate(90deg) !important;
+    transform-origin: top left !important;
+    overflow: hidden !important;
+  }
+
+  body.force-landscape #game-shell .overlay {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.force-landscape #game-shell #start-screen.cinematic-menu {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.force-landscape #game-shell #start-screen .mobile-main-menu {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.force-landscape #game-shell #touch-controls {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+/* Use the dynamic viewport on mobile browsers with retracting browser chrome. */
+@supports (height: 100dvh) {
+  @media (max-width: 900px) and (orientation: portrait) {
+    body.force-landscape #game-shell {
+      left: 100dvh !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+    }
+  }
+}

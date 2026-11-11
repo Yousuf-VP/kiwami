@@ -55,6 +55,7 @@ const CONFIG = {
 };
 
 let state = "ready";
+let gameOverRevealTimer = 0;
 const GRAPHICS_PRESETS = {
   performance: { label: "PERFORMANCE", scale: 0.78, maxPixelRatio: 1.0, shadowMapSize: 512 },
   balanced: { label: "BALANCED", scale: 1.0, maxPixelRatio: 1.5, shadowMapSize: 512 },
@@ -1232,6 +1233,32 @@ function setScreen(active) {
   gameOverScreen.classList.toggle("hidden", active !== "over");
   pauseButton.textContent = active === "paused" ? "PAUSED" : "PAUSE";
   pauseButton.disabled = active === "ready" || active === "over";
+
+  const cinematic = document.getElementById("game-over-cinematic");
+  const results = gameOverScreen.querySelector(".game-over-results");
+  if (gameOverRevealTimer) {
+    window.clearTimeout(gameOverRevealTimer);
+    gameOverRevealTimer = 0;
+  }
+  if (active === "over") {
+    cinematic?.classList.remove("is-playing", "is-finished");
+    results?.classList.remove("is-visible");
+    if (cinematic) {
+      void cinematic.offsetWidth;
+      cinematic.classList.add("is-playing");
+    }
+    const revealDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2550;
+    gameOverRevealTimer = window.setTimeout(() => {
+      gameOverRevealTimer = 0;
+      if (state !== "over") return;
+      cinematic?.classList.add("is-finished");
+      results?.classList.add("is-visible");
+      animateRunXPReward(runStartingXP, totalXP);
+    }, revealDelay);
+  } else {
+    cinematic?.classList.remove("is-playing", "is-finished");
+    results?.classList.remove("is-visible");
+  }
 }
 
 function resetRun() {
@@ -1395,7 +1422,6 @@ function endRun() {
   if (runDifficulty) runDifficulty.textContent = DIFFICULTIES[selectedDifficulty].label;
   if (recordBadge) recordBadge.classList.toggle("hidden", !newRecord);
   if (recordStatus) recordStatus.textContent = newRecord ? "NEW PERSONAL BEST" : "PERSONAL BEST  /  " + String(best).padStart(4, "0");
-  animateRunXPReward(runStartingXP, totalXP);
   if (earnedThisRun > 0) syncCloudProgression();
   setScreen(state);
 }

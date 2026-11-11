@@ -22,6 +22,7 @@ const graphicsShadowInputs = [...document.querySelectorAll("[data-graphics-shado
 const graphicsMotionInputs = [...document.querySelectorAll("[data-graphics-motion]")];
 const graphicsStatusOutputs = [...document.querySelectorAll("[data-graphics-status]")];
 const graphicsMonitorInputs = [...document.querySelectorAll("[data-graphics-monitor]")];
+const landscapeLayoutInputs = [...document.querySelectorAll("[data-force-landscape]")];
 const menuButton = document.getElementById("menu-button");
 const pauseMenuButton = document.getElementById("pause-menu-button");
 const overMenuButton = document.getElementById("over-menu-button");
@@ -61,7 +62,7 @@ const GRAPHICS_PRESETS = {
   balanced: { label: "BALANCED", scale: 1.0, maxPixelRatio: 1.5, shadowMapSize: 512 },
   high: { label: "HIGH", scale: 1.08, maxPixelRatio: 2.0, shadowMapSize: 1024 }
 };
-const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true, performanceMonitor: false };
+const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true, performanceMonitor: false, forceLandscape: false };
 try {
   const savedGraphics = JSON.parse(localStorage.getItem("dodgeCoreGraphics") || "null");
   if (savedGraphics && typeof savedGraphics === "object") {
@@ -69,6 +70,7 @@ try {
     if (typeof savedGraphics.shadows === "boolean") graphicsSettings.shadows = savedGraphics.shadows;
     if (typeof savedGraphics.motionEffects === "boolean") graphicsSettings.motionEffects = savedGraphics.motionEffects;
     if (typeof savedGraphics.performanceMonitor === "boolean") graphicsSettings.performanceMonitor = savedGraphics.performanceMonitor;
+    if (typeof savedGraphics.forceLandscape === "boolean") graphicsSettings.forceLandscape = savedGraphics.forceLandscape;
   }
 } catch {}
 let elapsed = 0;
@@ -983,6 +985,8 @@ function applyGraphicsSettings(persist = false) {
   graphicsShadowInputs.forEach(input => { input.checked = graphicsSettings.shadows; });
   graphicsMotionInputs.forEach(input => { input.checked = graphicsSettings.motionEffects; });
   graphicsMonitorInputs.forEach(input => { input.checked = graphicsSettings.performanceMonitor; });
+  landscapeLayoutInputs.forEach(input => { input.checked = graphicsSettings.forceLandscape; });
+  document.body.classList.toggle("force-landscape", graphicsSettings.forceLandscape);
   const monitor = document.getElementById("performance-monitor");
   if (monitor) monitor.hidden = !graphicsSettings.performanceMonitor;
   graphicsStatusOutputs.forEach(output => {
@@ -1013,6 +1017,10 @@ graphicsMotionInputs.forEach(input => input.addEventListener("change", () => {
 }));
 graphicsMonitorInputs.forEach(input => input.addEventListener("change", () => {
   graphicsSettings.performanceMonitor = input.checked;
+  applyGraphicsSettings(true);
+}));
+landscapeLayoutInputs.forEach(input => input.addEventListener("change", () => {
+  graphicsSettings.forceLandscape = input.checked;
   applyGraphicsSettings(true);
 }));
 applyGraphicsSettings();
@@ -1242,19 +1250,17 @@ function setScreen(active) {
   }
   if (active === "over") {
     cinematic?.classList.remove("is-playing", "is-finished");
-    results?.classList.remove("is-visible");
+    results?.classList.add("is-visible");
     if (cinematic) {
       void cinematic.offsetWidth;
       cinematic.classList.add("is-playing");
     }
-    const revealDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2550;
+    const rewardDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2550;
     gameOverRevealTimer = window.setTimeout(() => {
       gameOverRevealTimer = 0;
       if (state !== "over") return;
-      cinematic?.classList.add("is-finished");
-      results?.classList.add("is-visible");
       animateRunXPReward(runStartingXP, totalXP);
-    }, revealDelay);
+    }, rewardDelay);
   } else {
     cinematic?.classList.remove("is-playing", "is-finished");
     results?.classList.remove("is-visible");
@@ -1541,7 +1547,7 @@ function turnBallRandomly(maxAngle) {
   ballVelocity.z = horizontal.y;
 }
 
-// Aim is applied only at a bounce; the ball never continuously homes in.
+// The ball continuously tracks the player position so its approach stays deliberate.
 function aimBallAtPlayer(difficulty) {
   const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
@@ -1566,6 +1572,21 @@ function updateBall(delta) {
     nextCourseChange = 0.85 + Math.random() * 1.8;
     turnBallRandomly(0.18 + difficulty.chaos * 0.16);
     ballVerticalVelocity += (Math.random() - 0.5) * difficulty.chaos * 2.4;
+  }
+
+  // Smooth pursuit: steer toward the player's current arena position every frame.
+  const targetDirection = new THREE.Vector2(
+    player.position.x - ball.position.x,
+    player.position.z - ball.position.z
+  );
+  const horizontalSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
+  if (targetDirection.lengthSq() > 0.001 && horizontalSpeed > 0.001) {
+    targetDirection.normalize();
+    const currentDirection = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
+    const trackingStrength = 1 - Math.exp(-delta * (1.35 + difficulty.aim * 2.8));
+    currentDirection.lerp(targetDirection, trackingStrength).normalize();
+    ballVelocity.x = currentDirection.x * horizontalSpeed;
+    ballVelocity.z = currentDirection.y * horizontalSpeed;
   }
 
   ball.position.x += ballVelocity.x * delta;

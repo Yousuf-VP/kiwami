@@ -176,18 +176,29 @@
         <div class="mobile-menu-footer">© 2026 KIWAMI STUDIOS <span>NO SECOND CHANCES</span></div>
       </section>
       <div class="menu-card main-menu-card">
-        <div class="cinema-topline">
+        <div class="kiwami-topbar">
           <div class="cinema-studio"><span class="cinema-k">K<span>.</span></span><span>KIWAMI STUDIOS</span></div>
+          <nav class="kiwami-menu-nav" aria-label="Game menu">
+            <button class="kiwami-nav-button active" type="button" data-panel-toggle="desktop-difficulty-panel" aria-expanded="false">PLAY</button>
+            <button class="kiwami-nav-button" type="button" data-panel-toggle="desktop-settings-panel" aria-expanded="false">SETTINGS</button>
+            <button class="kiwami-nav-button" type="button" data-panel-toggle="desktop-career-panel" aria-expanded="false">CAREER</button>
+          </nav>
+          <div class="menu-player-card desktop-player-card kiwami-account-chip" data-player-card>
+            <div class="menu-player-avatar" data-player-avatar>K</div>
+            <div class="menu-player-copy">
+              <span data-player-name>GUEST PLAYER</span>
+              <strong><b>LVL <i data-menu-level>0</i></b><em data-menu-xp>0 XP</em></strong>
+              <span class="kiwami-level-track"><i data-menu-level-bar></i></span>
+            </div>
+            <span class="menu-player-status" data-player-status>LOCAL</span>
+          </div>
+        </div>
           <span class="cinema-edition">KIWAMI ARCADE <i></i> SURVIVAL SERIES</span>
         </div>
         <div class="cinema-layout">
           <section class="cinema-hero">
             <div class="cinema-kicker"><i></i> THE ARENA IS WAITING</div>
-            <div class="menu-player-card desktop-player-card" data-player-card>
-              <div class="menu-player-avatar">K</div>
-              <div class="menu-player-copy"><span data-player-name>GUEST PLAYER</span><strong>LEVEL <b data-menu-level>0</b> <i data-menu-xp>0 XP</i></strong></div>
-              <span class="menu-player-status" data-player-status>LOCAL</span>
-            </div>
+            
             <h1>DODGE<br><span>CORE</span></h1>
             <p class="description">One arena. One relentless red ball.<br>Every second is a new chance to survive.</p>
             <div class="cinema-meta"><span>FIRST-PERSON SURVIVAL</span><b></b><span>ENDLESS RUN</span><b></b><span>3D EXPERIENCE</span></div>
@@ -195,13 +206,13 @@
             <p class="control-note">WASD to move · Mouse to look · Space to jump<br><span class="mobile-control-note">Mobile: left joystick to move · drag right side to look · JUMP</span></p>
           </section>
           <aside class="cinema-console">
-            <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-difficulty-panel" aria-expanded="false"><span><b>01</b> DIFFICULTY</span><strong data-panel-summary="difficulty">MEDIUM</strong><i>+</i></button>
+
             <div id="desktop-difficulty-panel" class="menu-panel-content hidden">
               <div class="difficulty-grid" role="group" aria-label="Select difficulty">
                 <button class="difficulty-option" type="button" data-difficulty="easy" aria-pressed="false"><strong>EASY</strong><small>Warm up</small></button><button class="difficulty-option selected" type="button" data-difficulty="medium" aria-pressed="true"><strong>MEDIUM</strong><small>Balanced</small></button><button class="difficulty-option" type="button" data-difficulty="hard" aria-pressed="false"><strong>HARD</strong><small>Quick reflexes</small></button><button class="difficulty-option" type="button" data-difficulty="extreme" aria-pressed="false"><strong>EXTREME</strong><small>No room to relax</small></button><button class="difficulty-option master-option" type="button" data-difficulty="master" aria-pressed="false"><strong>MASTER</strong><small>For the fearless</small></button>
               </div>
             </div>
-            <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-settings-panel" aria-expanded="false"><span><b>02</b> SETTINGS</span><strong>LOOK / FOV</strong><i>+</i></button>
+
             <div id="desktop-settings-panel" class="menu-panel-content hidden">
               <div class="cinema-settings">
                 <label class="setting-row" for="menu-sensitivity"><span>LOOK SENSITIVITY <output id="menu-sensitivity-value">0.0035</output></span><input id="menu-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
@@ -249,7 +260,7 @@
           </div>
               </div>
             </div>
-            <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-career-panel" aria-expanded="false"><span><b>03</b> CAREER STATS</span><strong>YOUR RECORD</strong><i>+</i></button>
+
             <div id="desktop-career-panel" class="menu-panel-content hidden">
               <div class="career-grid">
                 <div class="career-stat"><span>GAMES PLAYED</span><strong id="career-games">0</strong></div>
@@ -261,7 +272,7 @@
               </div>
             </div>
 <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
-          <div id="desktop-daily-challenge-panel" class="menu-panel-content hidden">
+          <div id="desktop-daily-challenge-panel" class="menu-panel-content kiwami-task-panel">
             <div class="daily-challenge-card">
               <div class="daily-challenge-topline"><span>DAILY OBJECTIVE</span><small data-daily-date>REFRESHES DAILY</small></div>
               <strong class="daily-challenge-title" data-daily-title>STAY SHARP</strong>

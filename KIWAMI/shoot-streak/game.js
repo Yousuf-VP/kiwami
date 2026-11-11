@@ -80,6 +80,58 @@ const emptyCareerStats = () => ({
   difficultyCounts: { easy: 0, medium: 0, hard: 0, extreme: 0, master: 0 }
 });
 let careerStats = emptyCareerStats();
+
+/* INFINITE XP + LEVEL PROGRESSION
+   Every 100 score grants 10 XP. Level N begins at 100 * N^2 total XP.
+*/
+const PROGRESSION_KEY = "dodgeCoreProgression";
+let totalXP = 0;
+let lastXpMilestone = 0;
+try {
+  const savedProgression = JSON.parse(localStorage.getItem(PROGRESSION_KEY) || "null");
+  if (savedProgression && typeof savedProgression === "object") {
+    totalXP = Math.max(0, Math.floor(Number(savedProgression.totalXP) || 0));
+  }
+} catch {}
+
+function getLevelProgress() {
+  const level = Math.floor(Math.sqrt(totalXP / 100) + 1e-9);
+  const levelStartXP = 100 * level * level;
+  const nextLevelXP = 100 * (level + 1) * (level + 1);
+  return {
+    level,
+    levelStartXP,
+    nextLevelXP,
+    currentLevelXP: totalXP - levelStartXP,
+    requiredLevelXP: nextLevelXP - levelStartXP,
+    percent: Math.min(100, Math.max(0, ((totalXP - levelStartXP) / (nextLevelXP - levelStartXP)) * 100))
+  };
+}
+function saveProgression() {
+  try {
+    localStorage.setItem(PROGRESSION_KEY, JSON.stringify({ totalXP }));
+  } catch {}
+}
+function renderProgression() {
+  const progress = getLevelProgress();
+  const levelNode = document.getElementById("level-value");
+  const xpNode = document.getElementById("xp-value");
+  const fillNode = document.getElementById("xp-fill");
+  if (levelNode) levelNode.textContent = String(progress.level);
+  if (xpNode) xpNode.textContent = totalXP.toLocaleString() + " / " + progress.nextLevelXP.toLocaleString() + " XP";
+  if (fillNode) fillNode.style.width = progress.percent + "%";
+}
+function awardXPForScore(currentScore) {
+  const reachedMilestone = Math.floor(currentScore / 100);
+  if (reachedMilestone <= lastXpMilestone) return;
+  const gainedXP = (reachedMilestone - lastXpMilestone) * 10;
+  lastXpMilestone = reachedMilestone;
+  totalXP += gainedXP;
+  saveProgression();
+  renderProgression();
+  renderCareerStats();
+}
+
 const keys = new Set();
 const touchDirections = new Set();
 let touchMoveX = 0, touchMoveY = 0, joystickPointerId = null;
@@ -126,10 +178,14 @@ function renderCareerStats() {
     "career-time": formatCareerTime(careerStats.totalSurvivalSeconds),
     "career-best": String(careerStats.bestScore).padStart(4, "0"),
     "career-favourite": getFavouriteDifficulty(),
+    "career-level": String(getLevelProgress().level),
+    "career-xp": totalXP.toLocaleString() + " XP",
     "career-games-mobile": String(careerStats.totalGamesPlayed),
     "career-time-mobile": formatCareerTime(careerStats.totalSurvivalSeconds),
     "career-best-mobile": String(careerStats.bestScore).padStart(4, "0"),
-    "career-favourite-mobile": getFavouriteDifficulty()
+    "career-favourite-mobile": getFavouriteDifficulty(),
+    "career-level-mobile": String(getLevelProgress().level),
+    "career-xp-mobile": totalXP.toLocaleString() + " XP"
   };
   for (const [id, value] of Object.entries(values)) {
     const node = document.getElementById(id);
@@ -944,6 +1000,8 @@ function resetRun() {
   resetArenaEvents();
   elapsed = 0;
   score = 0;
+  lastXpMilestone = 0;
+  renderProgression();
   player.position.set(CONFIG.player.startX, 0, CONFIG.player.startZ);
   jumpHeight = 0;
   jumpVelocity = 0;
@@ -1295,6 +1353,7 @@ function animate() {
     updateArenaEvents(delta);
     updateCamera(delta);
     score = elapsed * 10;
+    awardXPForScore(score);
     tickDailyChallenge(delta);
     const reachedMilestone = Math.floor(score / 100);
     if (reachedMilestone > lastThemeMilestone) {

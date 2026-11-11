@@ -723,3 +723,148 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
   .cinematic-menu .main-menu-card *,
   .cinematic-menu .mobile-main-menu * { transition:none !important; }
 }
+
+
+/* ==========================================================
+   DODGE CORE — OPAQUE CINEMATIC MENU + MOBILE PAUSE LAYOUT
+   ========================================================== */
+
+/* The menu is its own scene: no transparent gameplay bleed-through. */
+#start-screen.cinematic-menu {
+  isolation:isolate;
+  overflow:hidden;
+  background:#030407;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+#start-screen.cinematic-menu::before {
+  content:"";
+  position:absolute;
+  inset:-28%;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 48%,rgba(95,8,24,.34),transparent 34%),
+    radial-gradient(ellipse at 12% 78%,rgba(45,9,19,.42),transparent 36%),
+    radial-gradient(ellipse at 88% 20%,rgba(38,8,17,.38),transparent 32%),
+    linear-gradient(112deg,transparent 34%,rgba(255,24,61,.025) 43%,rgba(255,24,61,.18) 50%,rgba(255,24,61,.035) 57%,transparent 68%);
+  transform:translate3d(-5%,0,0) scale(1.04);
+  animation:opaqueArenaDrift 14s ease-in-out infinite alternate;
+}
+#start-screen.cinematic-menu::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.42),transparent 25%,transparent 75%,rgba(0,0,0,.42)),
+    radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,.76) 100%);
+  box-shadow:inset 0 0 130px rgba(0,0,0,.65);
+}
+#start-screen.cinematic-menu > * { position:relative; z-index:1; }
+@keyframes opaqueArenaDrift {
+  0% { transform:translate3d(-5%,0,0) scale(1.04); filter:brightness(.82); }
+  50% { filter:brightness(1.08); }
+  100% { transform:translate3d(5%,-1.5%,0) scale(1.1); filter:brightness(.9); }
+}
+
+/* Pause screen: keep every action reachable on short and narrow displays. */
+#pause-screen {
+  background:
+    radial-gradient(ellipse at 50% 24%,rgba(105,8,28,.2),transparent 48%),
+    rgba(2,3,6,.94);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+#pause-screen .menu-card {
+  width:min(460px,100%);
+  max-height:calc(100vh - 48px);
+  max-height:calc(100dvh - 48px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,24,61,.45) rgba(255,255,255,.05);
+}
+#pause-screen .menu-card > button,
+#pause-screen .menu-card .menu-panel-toggle {
+  min-height:48px;
+}
+#pause-screen .pause-settings {
+  max-height:none;
+}
+@media (max-width:760px) {
+  #pause-screen {
+    display:grid;
+    place-items:center;
+    align-items:center;
+    padding:
+      max(12px,env(safe-area-inset-top))
+      max(12px,env(safe-area-inset-right))
+      max(12px,env(safe-area-inset-bottom))
+      max(12px,env(safe-area-inset-left));
+  }
+  #pause-screen .menu-card {
+    width:min(100%,480px);
+    max-height:calc(100vh - 24px);
+    max-height:calc(100dvh - max(24px,env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    margin:auto;
+    padding:clamp(18px,4vw,26px);
+    border-radius:14px;
+  }
+  #pause-screen .menu-card h2 {
+    font-size:clamp(24px,7vw,32px);
+  }
+  #pause-screen .menu-card .description {
+    margin:10px 0 14px;
+    font-size:12px;
+  }
+  #pause-screen .pause-panel-toggle {
+    min-height:50px;
+    margin-top:8px;
+    padding:0 12px;
+    font-size:8px;
+  }
+  #pause-screen .menu-panel-content {
+    padding:10px;
+  }
+  #pause-screen .pause-difficulty-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  #pause-screen .pause-difficulty-grid .master-option {
+    grid-column:1/-1;
+  }
+  #pause-screen .settings-panel,
+  #pause-screen .pause-settings {
+    margin:0;
+    padding:10px;
+  }
+  #pause-screen .setting-row {
+    margin-top:12px;
+  }
+  #pause-screen .setting-row input {
+    min-height:24px;
+  }
+  #pause-screen .secondary-button,
+  #pause-screen .primary-button {
+    min-height:48px;
+    margin-top:9px;
+  }
+}
+@media (max-height:620px) and (orientation:landscape) {
+  #pause-screen { padding:8px 14px; }
+  #pause-screen .menu-card {
+    max-height:calc(100dvh - 16px);
+    padding:14px 18px;
+  }
+  #pause-screen .menu-card .eyebrow { margin-bottom:9px; }
+  #pause-screen .menu-card .description { margin:7px 0 9px; }
+  #pause-screen .pause-panel-toggle { min-height:42px; margin-top:6px; }
+  #pause-screen .menu-card > button { min-height:42px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  #start-screen.cinematic-menu::before { animation:none; }
+}

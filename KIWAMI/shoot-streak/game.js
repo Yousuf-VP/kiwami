@@ -154,6 +154,7 @@ function renderAccountUI() {
   document.querySelectorAll("[data-account-identity-name]").forEach(node => node.textContent = currentUsername);
   document.querySelectorAll("[data-account-identity-email]").forEach(node => node.textContent = currentUser?.email || "");
   renderProgression();
+  renderCash();
 }
 function syncMenuProgression() {
   const progress = getLevelProgress();

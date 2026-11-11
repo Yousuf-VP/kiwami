@@ -868,3 +868,231 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 @media (prefers-reduced-motion:reduce) {
   #start-screen.cinematic-menu::before { animation:none; }
 }
+
+
+/* ==========================================================
+   DODGE CORE — DEDICATED MENU SECTIONS + HIGH-ENERGY ARENA FX
+   ========================================================== */
+
+/* A single COD-style detail view is used by desktop, mobile and pause menus. */
+.menu-detail-screen {
+  position:fixed;
+  inset:0;
+  z-index:80;
+  display:grid;
+  place-items:stretch;
+  overflow:hidden;
+  isolation:isolate;
+  background:#030407;
+  color:#f5f5f7;
+}
+.menu-detail-screen.hidden { display:none !important; }
+.menu-detail-backdrop {
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(ellipse at 50% 42%,rgba(105,7,27,.24),transparent 48%),
+    linear-gradient(135deg,#050609 0%,#09060b 52%,#030407 100%);
+}
+.menu-detail-shell {
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  width:min(100%,1100px);
+  height:100%;
+  min-height:0;
+  margin:auto;
+  padding:clamp(18px,3vw,38px) clamp(18px,5vw,64px);
+  animation:detailScreenIn .38s cubic-bezier(.16,1,.3,1) both;
+}
+.menu-detail-header,.menu-detail-footer {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.menu-detail-brand { display:flex; align-items:center; gap:12px; }
+.menu-detail-brand>span {
+  color:#fff;
+  font:900 30px/1 Orbitron,sans-serif;
+  text-shadow:0 0 22px rgba(255,30,60,.55);
+}
+.menu-detail-brand>span span { color:#ff304e; }
+.menu-detail-brand small,.menu-detail-footer {
+  color:#777984;
+  font:700 8px Orbitron,sans-serif;
+  letter-spacing:1.3px;
+}
+.menu-detail-back {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  min-width:104px;
+  min-height:44px;
+  padding:0 16px;
+  border:1px solid rgba(255,255,255,.17);
+  border-radius:4px;
+  color:#f4f4f6;
+  background:rgba(255,255,255,.045);
+  font:800 9px Orbitron,sans-serif;
+  letter-spacing:1.2px;
+  cursor:pointer;
+  transition:border-color .2s,background .2s,transform .2s;
+}
+.menu-detail-back:hover { border-color:rgba(255,48,78,.65);background:rgba(255,35,65,.1);transform:translateX(-2px); }
+.menu-detail-back>span { color:#ff526b;font-size:17px; }
+.menu-detail-content-wrap {
+  width:min(100%,760px);
+  margin:auto;
+  padding:clamp(20px,5vh,54px) 0;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,45,75,.5) rgba(255,255,255,.04);
+}
+.menu-detail-eyebrow {
+  margin-bottom:12px;
+  color:#ff7186;
+  font:800 8px Orbitron,sans-serif;
+  letter-spacing:2.2px;
+}
+.menu-detail-content-wrap h2 {
+  margin:0 0 clamp(20px,4vh,38px);
+  color:#fff;
+  font:900 clamp(30px,5vw,58px)/1.08 Orbitron,sans-serif;
+  letter-spacing:-1.8px;
+  text-shadow:0 0 35px rgba(255,24,61,.18);
+}
+.menu-detail-content {
+  width:100%;
+  padding:clamp(16px,3vw,28px);
+  border:1px solid rgba(255,255,255,.13);
+  border-left:2px solid rgba(255,48,78,.8);
+  border-radius:5px;
+  background:linear-gradient(135deg,rgba(17,17,23,.97),rgba(7,8,12,.97));
+  box-shadow:0 22px 90px rgba(0,0,0,.52),0 0 50px rgba(255,20,55,.07);
+}
+.menu-detail-content .menu-panel-content {
+  display:block !important;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  animation:detailContentIn .34s .06s both;
+}
+.menu-detail-content .menu-panel-content.hidden { display:none !important; }
+.menu-detail-content .difficulty-grid,
+.menu-detail-content .mobile-difficulty-row { margin:0; }
+.menu-detail-content .daily-challenge-card { width:100%; }
+.menu-detail-content .settings-panel,
+.menu-detail-content .cinema-settings { width:100%; }
+.menu-detail-footer { padding-top:18px;border-top:1px solid rgba(255,255,255,.08); }
+body.menu-detail-open { overflow:hidden; }
+@keyframes detailScreenIn {
+  from { opacity:0;transform:translateY(12px) scale(1.012); }
+  to { opacity:1;transform:translateY(0) scale(1); }
+}
+@keyframes detailContentIn {
+  from { opacity:0;transform:translateY(12px);filter:blur(4px); }
+  to { opacity:1;transform:translateY(0);filter:blur(0); }
+}
+
+/* Animated background layers: fast light sweeps, ember particles and a moving scan field. */
+.arena-cinematic-fx {
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  contain:layout paint;
+  background:
+    radial-gradient(ellipse at 50% 54%,rgba(120,7,28,.2),transparent 43%),
+    radial-gradient(ellipse at 10% 15%,rgba(255,20,52,.11),transparent 34%),
+    radial-gradient(ellipse at 92% 82%,rgba(255,35,55,.09),transparent 32%);
+}
+#start-screen.cinematic-menu > .arena-cinematic-fx,
+#pause-screen > .arena-cinematic-fx { position:absolute;z-index:0; }
+#start-screen.cinematic-menu > *:not(.arena-cinematic-fx),
+#pause-screen > .menu-card { position:relative;z-index:2; }
+.arena-cinematic-fx::before {
+  content:"";
+  position:absolute;
+  inset:-60%;
+  background:conic-gradient(from 0deg at 50% 50%,transparent 0 18%,rgba(255,28,60,.045) 21%,transparent 25% 48%,rgba(255,255,255,.035) 51%,transparent 56% 76%,rgba(255,20,55,.07) 80%,transparent 85%);
+  animation:arenaCoreRotation 22s linear infinite;
+}
+.arena-cinematic-fx::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  opacity:.48;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.018) 4px,transparent 5px 8px);
+  transform:translateY(-12%);
+  animation:arenaScan 7s linear infinite;
+}
+.arena-energy-beam {
+  position:absolute;
+  top:-35%;
+  left:var(--beam-x);
+  width:clamp(2px,.5vw,7px);
+  height:170%;
+  opacity:0;
+  transform:rotate(var(--beam-angle)) scaleY(.72);
+  transform-origin:center;
+  background:linear-gradient(180deg,transparent,rgba(255,30,58,.03) 22%,rgba(255,30,58,.55) 48%,rgba(255,130,145,.12) 52%,transparent 76%);
+  filter:blur(1px);
+  animation:arenaBeamRun var(--beam-duration) var(--beam-delay) ease-in-out infinite;
+}
+.arena-energy-beam:nth-child(3n) { width:2px;filter:blur(0); }
+.arena-energy-beam:nth-child(4n) { background:linear-gradient(180deg,transparent,rgba(255,255,255,.04),rgba(255,65,88,.42),transparent); }
+.arena-spark {
+  position:absolute;
+  left:var(--spark-x);
+  top:var(--spark-y);
+  width:2px;
+  height:2px;
+  border-radius:50%;
+  opacity:0;
+  background:#ff526b;
+  box-shadow:0 0 7px 2px rgba(255,32,64,.55),0 0 18px rgba(255,32,64,.32);
+  animation:arenaSparkFloat var(--spark-duration) var(--spark-delay) ease-in-out infinite;
+}
+.arena-spark:nth-child(3n) { width:3px;height:3px;background:#ffc0c8;box-shadow:0 0 10px 3px rgba(255,80,105,.7); }
+@keyframes arenaCoreRotation { to { transform:rotate(360deg); } }
+@keyframes arenaScan { 0% { transform:translateY(-22%); } 100% { transform:translateY(22%); } }
+@keyframes arenaBeamRun {
+  0%,12% { opacity:0;transform:rotate(var(--beam-angle)) translateY(-12%) scaleY(.55); }
+  32% { opacity:.78; }
+  55% { opacity:.16;transform:rotate(var(--beam-angle)) translateY(9%) scaleY(1.12); }
+  78%,100% { opacity:0;transform:rotate(var(--beam-angle)) translateY(18%) scaleY(.65); }
+}
+@keyframes arenaSparkFloat {
+  0%,100% { opacity:0;transform:translate3d(0,18px,0) scale(.4); }
+  28% { opacity:.75; }
+  58% { opacity:.3;transform:translate3d(12px,-22px,0) scale(1.4); }
+  82% { opacity:.65; }
+}
+#start-screen.cinematic-menu { background:#030407; }
+#pause-screen { background:rgba(2,3,6,.97); }
+@media(max-width:760px) {
+  .menu-detail-shell { padding:calc(env(safe-area-inset-top,0px) + 12px) max(14px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom,0px) + 12px) max(14px,env(safe-area-inset-left)); }
+  .menu-detail-brand small { max-width:130px;font-size:6px;line-height:1.5; }
+  .menu-detail-content-wrap { width:100%;padding:22px 0; }
+  .menu-detail-content-wrap h2 { margin-bottom:18px;font-size:clamp(27px,8vw,42px); }
+  .menu-detail-content { padding:14px; }
+  .menu-detail-footer { font-size:6px;letter-spacing:.8px; }
+  .menu-detail-back { min-width:86px;min-height:42px;font-size:8px; }
+}
+@media(max-height:620px) and (orientation:landscape) {
+  .menu-detail-shell { padding:10px 24px; }
+  .menu-detail-content-wrap { padding:12px 0; }
+  .menu-detail-content-wrap h2 { margin-bottom:12px;font-size:30px; }
+  .menu-detail-content { padding:12px 18px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .arena-cinematic-fx::before,.arena-cinematic-fx::after,
+  .arena-energy-beam,.arena-spark,.menu-detail-shell,
+  .menu-detail-content .menu-panel-content { animation:none !important; }
+}

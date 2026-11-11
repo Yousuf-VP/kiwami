@@ -2900,3 +2900,11 @@ body.auth-check-pending #auth-gate{
 .cash-reward-line strong{color:#ffd18a;font:900 15px var(--display);text-shadow:0 0 16px rgba(255,184,78,.25)}
 .cash-reward-line small{grid-column:1/-1;color:#8e8b87;font:600 7px var(--display);letter-spacing:.8px}
 @media(max-width:560px){.menu-player-cash{font-size:7px}.cash-reward-line{padding:9px 10px}.cash-reward-line strong{font-size:13px}}
+
+
+/* PLAYER INITIAL BADGE — keep the username glyph visible in both menu layouts */
+.kiwami-account-chip .menu-player-avatar{display:grid!important;place-items:center!important;flex:0 0 40px!important;width:40px!important;height:40px!important;min-width:40px;color:#fff!important;line-height:1!important;visibility:visible!important;opacity:1!important;position:relative;z-index:2;text-align:center;text-indent:0;font-family:Impact,'Arial Black',var(--display)!important}
+.music-setting-row{margin:10px 0 14px}
+.music-toggle-button{min-width:54px;min-height:30px;padding:6px 12px;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#c6c6ce;background:rgba(255,255,255,.06);font:800 9px var(--display);letter-spacing:1px;cursor:pointer;transition:all .2s}
+.music-toggle-button.is-on{border-color:rgba(255,73,99,.55);color:#fff;background:rgba(255,45,76,.18);box-shadow:0 0 15px rgba(255,45,76,.12)}
+.music-toggle-button:focus-visible{outline:2px solid #ff7185;outline-offset:3px}

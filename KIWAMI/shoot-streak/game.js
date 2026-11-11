@@ -1270,8 +1270,9 @@ function setScreen(active) {
     gameOverRevealTimer = 0;
   }
   if (active === "over") {
+    // Keep the results window fully hidden while the GAME OVER sequence runs.
+    results?.classList.remove("is-visible");
     cinematic?.classList.remove("is-playing", "is-finished");
-    results?.classList.add("is-visible");
     if (cinematic) {
       void cinematic.offsetWidth;
       cinematic.classList.add("is-playing");
@@ -1280,6 +1281,8 @@ function setScreen(active) {
     gameOverRevealTimer = window.setTimeout(() => {
       gameOverRevealTimer = 0;
       if (state !== "over") return;
+      cinematic?.classList.add("is-finished");
+      results?.classList.add("is-visible");
       animateRunXPReward(runStartingXP, totalXP);
     }, rewardDelay);
   } else {

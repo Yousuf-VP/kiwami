@@ -91,6 +91,13 @@ let careerStats = emptyCareerStats();
 */
 const PROGRESSION_KEY = "dodgeCoreProgression";
 const PROGRESSION_OWNER_KEY = "dodgeCoreProgressionOwner";
+const CASH_KEY = "dodgeCoreCash";
+const CASH_OWNER_KEY = "dodgeCoreCashOwner";
+let cashBalance = 0;
+let cashEarnedThisRun = 0;
+try {
+  cashBalance = Math.max(0, Math.floor(Number(localStorage.getItem(CASH_KEY)) || 0));
+} catch {}
 let totalXP = 0;
 let lastXpMilestone = 0;
 let runStartingXP = 0;
@@ -147,6 +154,7 @@ function renderAccountUI() {
   document.querySelectorAll("[data-account-identity-name]").forEach(node => node.textContent = currentUsername);
   document.querySelectorAll("[data-account-identity-email]").forEach(node => node.textContent = currentUser?.email || "");
   renderProgression();
+  renderCash();
 }
 function syncMenuProgression() {
   const progress = getLevelProgress();
@@ -157,10 +165,11 @@ async function syncCloudProgression() {
   if (!supabase || !currentUser) return;
   const userId = currentUser.id;
   const xpSnapshot = totalXP;
+  const cashSnapshot = cashBalance;
   cloudSaveInFlight = cloudSaveInFlight.catch(() => {}).then(async () => {
     if (!currentUser || currentUser.id !== userId) return;
     const { error } = await supabase.from("player_profiles")
-      .update({ total_xp: xpSnapshot, username: currentUsername })
+      .update({ total_xp: xpSnapshot, cash_balance: cashSnapshot, username: currentUsername })
       .eq("id", userId);
     if (error) throw error;
   });
@@ -176,26 +185,34 @@ async function loadCloudProgression(user) {
   let localOwner = null;
   try { localOwner = localStorage.getItem(PROGRESSION_OWNER_KEY); } catch {}
   const { data, error } = await supabase.from("player_profiles")
-    .select("username,total_xp").eq("id", user.id).maybeSingle();
+    .select("username,total_xp,cash_balance").eq("id", user.id).maybeSingle();
   if (error) {
     setAccountMessage("Could not load cloud profile: " + error.message, true);
     return;
   }
   const cloudXP = Math.max(0, Number(data?.total_xp) || 0);
+  const cloudCash = Math.max(0, Math.floor(Number(data?.cash_balance) || 0));
   if (localOwner && localOwner !== user.id) {
-    // Never carry one signed-in player's local progress into another account.
+    // Never carry one signed-in player's local progress or wallet into another account.
     totalXP = cloudXP;
+    cashBalance = cloudCash;
   } else {
     // Import guest progress once, or merge this account's local progress with cloud.
     totalXP = Math.max(totalXP, cloudXP);
+    cashBalance = Math.max(cashBalance, cloudCash);
   }
-  try { localStorage.setItem(PROGRESSION_OWNER_KEY, user.id); } catch {}
+  try {
+    localStorage.setItem(PROGRESSION_OWNER_KEY, user.id);
+    localStorage.setItem(CASH_OWNER_KEY, user.id);
+  } catch {}
+  saveCash();
+  renderCash();
   currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
   saveProgression();
   renderCareerStats();
   renderProgression();
   syncMenuProgression();
-  if (!data || totalXP > cloudXP) await syncCloudProgression();
+  if (!data || totalXP > cloudXP || cashBalance > cloudCash) await syncCloudProgression();
 }
 async function initializeCloudAccount() {
   if (!supabase) {
@@ -319,10 +336,14 @@ document.querySelectorAll("[data-account-logout]").forEach(button => {
         currentUser = null;
         currentUsername = "GUEST PLAYER";
         totalXP = 0;
+        cashBalance = 0;
         try {
           localStorage.removeItem(PROGRESSION_KEY);
           localStorage.removeItem(PROGRESSION_OWNER_KEY);
+          localStorage.removeItem(CASH_KEY);
+          localStorage.removeItem(CASH_OWNER_KEY);
         } catch {}
+        renderCash();
         setAccountMessage("Signed out. Your cloud progression remains saved to your account.");
       } else {
         setAccountMessage("Guest session ended. Sign in or create an account to continue.");
@@ -341,6 +362,30 @@ function saveProgression() {
   try {
     localStorage.setItem(PROGRESSION_KEY, JSON.stringify({ totalXP }));
   } catch {}
+}
+function saveCash() {
+  try { localStorage.setItem(CASH_KEY, String(Math.max(0, Math.floor(cashBalance)))); } catch {}
+}
+function renderCash() {
+  document.querySelectorAll("[data-menu-cash]").forEach(node => {
+    node.textContent = Math.floor(cashBalance).toLocaleString();
+  });
+  const reward = document.getElementById("cash-reward-amount");
+  if (reward) reward.textContent = "+" + Math.floor(cashEarnedThisRun).toLocaleString() + " CASH";
+  const total = document.getElementById("cash-reward-total");
+  if (total) total.textContent = Math.floor(cashBalance).toLocaleString() + " CASH AVAILABLE";
+}
+function awardCashForRun(survivalSeconds) {
+  const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
+  const earned = survivalSeconds > 0
+    ? Math.max(1, Math.floor((survivalSeconds / 5) * difficultyMultiplier))
+    : 0;
+  cashEarnedThisRun = earned;
+  cashBalance += earned;
+  saveCash();
+  renderCash();
+  if (earned > 0 && currentUser) syncCloudProgression();
+  return earned;
 }
 function renderProgression() {
   updateKiwamiPlayerBadge();
@@ -1446,6 +1491,8 @@ function resetRun() {
 }
 
 function startRun() {
+  cashEarnedThisRun = 0;
+  renderCash();
   refreshDailyChallengeIfNeeded();
   resetRun();
   careerStats.totalGamesPlayed += 1;
@@ -1551,6 +1598,7 @@ function endRun() {
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
   const earnedThisRun = Math.max(0, totalXP - runStartingXP);
+  const cashEarned = awardCashForRun(survived);
   updateDailyChallenge(true);
   const newRecord = final > best;
   finalScore.textContent = String(final).padStart(4, "0");
@@ -1577,6 +1625,7 @@ function endRun() {
   if (runDifficulty) runDifficulty.textContent = DIFFICULTIES[selectedDifficulty].label;
   if (recordBadge) recordBadge.classList.toggle("hidden", !newRecord);
   if (recordStatus) recordStatus.textContent = newRecord ? "NEW PERSONAL BEST" : "PERSONAL BEST  /  " + String(best).padStart(4, "0");
+  renderCash();
   if (earnedThisRun > 0) syncCloudProgression();
   setScreen(state);
 }

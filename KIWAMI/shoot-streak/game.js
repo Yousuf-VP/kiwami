@@ -56,7 +56,6 @@ const CONFIG = {
 };
 
 let state = "ready";
-let gameOverRevealTimer = 0;
 const GRAPHICS_PRESETS = {
   performance: { label: "PERFORMANCE", scale: 0.78, maxPixelRatio: 1.0, shadowMapSize: 512 },
   balanced: { label: "BALANCED", scale: 1.0, maxPixelRatio: 1.5, shadowMapSize: 512 },
@@ -974,11 +973,31 @@ function resize() {
   renderer.setSize(width, height);
 }
 window.addEventListener("resize", resize);
+window.visualViewport?.addEventListener("resize", resize);
+if ("ResizeObserver" in window) new ResizeObserver(resize).observe(shell);
 resize();
 
 function saveGraphicsSettings() {
   try { localStorage.setItem("dodgeCoreGraphics", JSON.stringify(graphicsSettings)); } catch {}
 }
+function syncForceLandscapeMode() {
+  const enabled = graphicsSettings.forceLandscape;
+  document.body.classList.toggle("force-landscape", enabled);
+
+  // Native orientation lock is used when the browser permits it (usually
+  // fullscreen or an installed app). The CSS rotation remains the fallback.
+  if (enabled && screen.orientation && typeof screen.orientation.lock === "function") {
+    try {
+      const lockResult = screen.orientation.lock("landscape");
+      if (lockResult && typeof lockResult.catch === "function") lockResult.catch(() => {});
+    } catch {}
+  } else if (!enabled && screen.orientation && typeof screen.orientation.unlock === "function") {
+    try { screen.orientation.unlock(); } catch {}
+  }
+
+  requestAnimationFrame(() => requestAnimationFrame(resize));
+}
+
 function applyGraphicsSettings(persist = false) {
   const preset = GRAPHICS_PRESETS[graphicsSettings.quality] || GRAPHICS_PRESETS.balanced;
   graphicsQualityInputs.forEach(input => { input.value = graphicsSettings.quality; });
@@ -986,7 +1005,7 @@ function applyGraphicsSettings(persist = false) {
   graphicsMotionInputs.forEach(input => { input.checked = graphicsSettings.motionEffects; });
   graphicsMonitorInputs.forEach(input => { input.checked = graphicsSettings.performanceMonitor; });
   landscapeLayoutInputs.forEach(input => { input.checked = graphicsSettings.forceLandscape; });
-  document.body.classList.toggle("force-landscape", graphicsSettings.forceLandscape);
+  syncForceLandscapeMode();
   const monitor = document.getElementById("performance-monitor");
   if (monitor) monitor.hidden = !graphicsSettings.performanceMonitor;
   graphicsStatusOutputs.forEach(output => {
@@ -1241,30 +1260,6 @@ function setScreen(active) {
   gameOverScreen.classList.toggle("hidden", active !== "over");
   pauseButton.textContent = active === "paused" ? "PAUSED" : "PAUSE";
   pauseButton.disabled = active === "ready" || active === "over";
-
-  const cinematic = document.getElementById("game-over-cinematic");
-  const results = gameOverScreen.querySelector(".game-over-results");
-  if (gameOverRevealTimer) {
-    window.clearTimeout(gameOverRevealTimer);
-    gameOverRevealTimer = 0;
-  }
-  if (active === "over") {
-    cinematic?.classList.remove("is-playing", "is-finished");
-    results?.classList.add("is-visible");
-    if (cinematic) {
-      void cinematic.offsetWidth;
-      cinematic.classList.add("is-playing");
-    }
-    const rewardDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2550;
-    gameOverRevealTimer = window.setTimeout(() => {
-      gameOverRevealTimer = 0;
-      if (state !== "over") return;
-      animateRunXPReward(runStartingXP, totalXP);
-    }, rewardDelay);
-  } else {
-    cinematic?.classList.remove("is-playing", "is-finished");
-    results?.classList.remove("is-visible");
-  }
 }
 
 function resetRun() {

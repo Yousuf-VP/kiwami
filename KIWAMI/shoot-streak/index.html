@@ -100,6 +100,7 @@
           <button class="mobile-nav-button active" type="button" data-panel-toggle="mobile-difficulty-panel" aria-expanded="false">PLAY</button>
           <button class="mobile-nav-button" type="button" data-panel-toggle="mobile-settings-panel" aria-expanded="false">SETTINGS</button>
           <button class="mobile-nav-button" type="button" data-panel-toggle="mobile-career-panel" aria-expanded="false">CAREER</button>
+          <button class="mobile-nav-button" type="button" data-panel-toggle="leaderboard-panel" aria-expanded="false">GLOBAL</button>
         </nav>
         <div class="mobile-menu-hero">
           <div class="mobile-menu-kicker"><i></i> THE ARENA IS WAITING</div>
@@ -193,6 +194,7 @@
             <button class="kiwami-nav-button active" type="button" data-panel-toggle="desktop-difficulty-panel" aria-expanded="false">PLAY</button>
             <button class="kiwami-nav-button" type="button" data-panel-toggle="desktop-settings-panel" aria-expanded="false">SETTINGS</button>
             <button class="kiwami-nav-button" type="button" data-panel-toggle="desktop-career-panel" aria-expanded="false">CAREER</button>
+            <button class="kiwami-nav-button" type="button" data-panel-toggle="leaderboard-panel" aria-expanded="false">GLOBAL</button>
           </nav>
           <div class="menu-player-card desktop-player-card kiwami-account-chip" data-player-card>
             <div class="menu-player-avatar" data-player-avatar>K</div>
@@ -286,6 +288,30 @@
                 <div class="career-stat"><span>TOTAL XP</span><strong id="career-xp">0 XP</strong></div>
               </div>
             </div>
+            <section id="leaderboard-panel" class="menu-panel-content hidden leaderboard-panel" aria-label="Global leaderboard">
+              <div class="leaderboard-heading-row">
+                <div><span class="leaderboard-kicker">KIWAMI COMPETITIVE NETWORK</span><h3>WORLDWIDE RANKINGS</h3></div>
+                <button type="button" class="leaderboard-refresh" data-leaderboard-refresh>↻ REFRESH</button>
+              </div>
+              <div class="leaderboard-summary">
+                <div><span>YOUR POSITION</span><strong data-leaderboard-player-rank>—</strong></div>
+                <div><span>PERSONAL BEST</span><strong data-leaderboard-player-best>—</strong></div>
+                <div><span>NETWORK</span><strong data-leaderboard-player-count>—</strong></div>
+              </div>
+              <div class="leaderboard-tabs" role="group" aria-label="Leaderboard category">
+                <button type="button" class="selected" data-leaderboard-metric="score" aria-pressed="true">HIGHEST SCORE</button>
+                <button type="button" data-leaderboard-metric="level" aria-pressed="false">LEVEL</button>
+                <button type="button" data-leaderboard-metric="xp" aria-pressed="false">TOTAL XP</button>
+              </div>
+              <div class="leaderboard-table-wrap">
+                <div class="leaderboard-table-head"><span>RANK / PLAYER</span><span data-leaderboard-value-heading>BEST SCORE</span></div>
+                <div class="leaderboard-rows" data-leaderboard-rows aria-live="polite">
+                  <div class="leaderboard-state">CONNECTING TO THE GLOBAL NETWORK…</div>
+                </div>
+              </div>
+              <p class="leaderboard-status" data-leaderboard-status role="status" aria-live="polite">Sign in to submit a verified personal record. Global rankings are public.</p>
+              <p class="leaderboard-footnote">ALL-TIME RANKINGS · NO WEEKLY RESET · COSMETIC ACHIEVEMENTS ONLY</p>
+            </section>
 <button class="menu-panel-toggle" type="button" data-panel-toggle="desktop-daily-challenge-panel" aria-expanded="false"><span><b>04</b> DAILY CHALLENGE</span><strong data-daily-summary>NEW TODAY</strong><i>+</i></button>
           <div id="desktop-daily-challenge-panel" class="menu-panel-content kiwami-task-panel">
             <div class="daily-challenge-card">

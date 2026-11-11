@@ -1253,6 +1253,8 @@ document.addEventListener("webkitfullscreenchange", syncFullscreenUI);
 window.addEventListener("orientationchange", () => window.setTimeout(resize, 180));
 syncFullscreenUI();
 
+let gameOverRevealTimer = 0;
+
 function setScreen(active) {
   shell.classList.toggle("is-playing", active === "playing");
   startScreen.classList.toggle("hidden", active !== "ready");
@@ -1260,6 +1262,30 @@ function setScreen(active) {
   gameOverScreen.classList.toggle("hidden", active !== "over");
   pauseButton.textContent = active === "paused" ? "PAUSED" : "PAUSE";
   pauseButton.disabled = active === "ready" || active === "over";
+
+  const cinematic = document.getElementById("game-over-cinematic");
+  const results = gameOverScreen.querySelector(".game-over-results");
+  if (gameOverRevealTimer) {
+    window.clearTimeout(gameOverRevealTimer);
+    gameOverRevealTimer = 0;
+  }
+  if (active === "over") {
+    cinematic?.classList.remove("is-playing", "is-finished");
+    results?.classList.add("is-visible");
+    if (cinematic) {
+      void cinematic.offsetWidth;
+      cinematic.classList.add("is-playing");
+    }
+    const rewardDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 2550;
+    gameOverRevealTimer = window.setTimeout(() => {
+      gameOverRevealTimer = 0;
+      if (state !== "over") return;
+      animateRunXPReward(runStartingXP, totalXP);
+    }, rewardDelay);
+  } else {
+    cinematic?.classList.remove("is-playing", "is-finished");
+    results?.classList.remove("is-visible");
+  }
 }
 
 function resetRun() {

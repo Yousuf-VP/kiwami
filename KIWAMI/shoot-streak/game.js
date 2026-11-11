@@ -48,7 +48,7 @@ let selectedDifficulty = "medium";
 
 const CONFIG = {
   room: { halfWidth: 7.5, halfDepth: 10, height: 5.5 },
-  player: { speed: 7.2, radius: 0.42, startX: 0, startZ: 5.8, jumpSpeed: 9.4, jumpGravity: 19 },
+  player: { speed: 9.2, radius: 0.42, startX: 0, startZ: 5.8, jumpSpeed: 9.4, jumpGravity: 19 },
   ball: { radius: 0.62, speed: 8.2, gravity: 12.5, bounce: 0.92, maxSpeed: 25 }
 };
 
@@ -844,7 +844,19 @@ function installArenaAtmosphere(screen) {
   const fx = document.createElement("div");
   fx.className = "arena-cinematic-fx";
   fx.setAttribute("aria-hidden", "true");
-  for (let i = 0; i < 14; i++) {
+  // Extra arena instrumentation: layered orbital rings and a central energy pulse.
+  for (let i = 0; i < 3; i++) {
+    const ring = document.createElement("span");
+    ring.className = "arena-orbit-ring ring-" + (i + 1);
+    fx.append(ring);
+  }
+  const corePulse = document.createElement("span");
+  corePulse.className = "arena-core-pulse";
+  fx.append(corePulse);
+  const lightSweep = document.createElement("span");
+  lightSweep.className = "arena-horizontal-sweep";
+  fx.append(lightSweep);
+  for (let i = 0; i < 20; i++) {
     const beam = document.createElement("span");
     beam.className = "arena-energy-beam";
     beam.style.setProperty("--beam-x", (i * 17 + 4) % 100 + "%");
@@ -853,7 +865,7 @@ function installArenaAtmosphere(screen) {
     beam.style.setProperty("--beam-angle", (-22 + (i % 7) * 7) + "deg");
     fx.append(beam);
   }
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 42; i++) {
     const spark = document.createElement("span");
     spark.className = "arena-spark";
     spark.style.setProperty("--spark-x", (i * 37 + 9) % 100 + "%");

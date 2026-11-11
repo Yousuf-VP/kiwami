@@ -2073,3 +2073,60 @@ button:focus-visible{outline:2px solid #ff7188;outline-offset:3px}
     }
   }
 }
+
+
+/* DODGE CORE — final forced-landscape positioning correction.
+   Translate the portrait-sized shell upward by its own height before rotating.
+   This places the complete rotated rectangle at x=0..viewport-height and
+   y=0..viewport-width, without relying on a left offset. */
+@media (max-width: 900px) and (orientation: portrait) {
+  html:has(body.force-landscape),
+  body.force-landscape {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  body.force-landscape #game-shell {
+    position: fixed !important;
+    inset: 0 auto auto 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    transform: rotate(90deg) translateY(-100%) !important;
+    transform-origin: top left !important;
+    overflow: hidden !important;
+  }
+
+  body.force-landscape #game-shell .overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  body.force-landscape #game-shell #start-screen.cinematic-menu {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.force-landscape #game-shell #mobile-main-menu {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}

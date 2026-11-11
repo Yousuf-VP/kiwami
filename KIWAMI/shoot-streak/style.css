@@ -1462,3 +1462,69 @@ body.menu-detail-open { overflow:hidden; }
 @media(prefers-reduced-motion:reduce) {
   .auth-world-glow,.auth-orbit,.auth-core,.auth-card-wrap { animation:none!important; }
 }
+
+
+/* AUTH + MENU POLISH — confirmation-first flow and compact mobile layout */
+@media (min-width:801px) {
+  #start-screen .main-menu-card {
+    transform:translateY(-22px);
+  }
+}
+@media (max-width:800px) {
+  .auth-gate {
+    display:block;
+    overflow-x:hidden;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .auth-gate-shell {
+    width:min(100% - 28px,520px);
+    min-height:100%;
+    height:auto;
+    margin:0 auto;
+    padding:calc(env(safe-area-inset-top,0px) + 12px) 0 calc(env(safe-area-inset-bottom,0px) + 16px);
+    justify-content:flex-start;
+    gap:14px;
+  }
+  .auth-gate-brand { min-height:38px; }
+  .auth-gate-brand>i { font-size:6px;letter-spacing:.8px; }
+  .auth-gate-layout {
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+    padding:8px 0 14px;
+  }
+  .auth-gate-intro { max-width:none; }
+  .auth-gate-kicker { font-size:7px;letter-spacing:1.4px; }
+  .auth-gate-intro h1 {
+    margin:8px 0 5px;
+    font-size:clamp(30px,8vw,43px);
+    line-height:.98;
+    letter-spacing:-1.5px;
+  }
+  .auth-gate-intro>p { margin:5px 0 0;max-width:360px;font-size:10px;line-height:1.45; }
+  .auth-card-wrap { width:100%;min-width:0; }
+  .auth-card { padding:clamp(16px,4.5vw,22px); }
+  .auth-card-heading { margin:13px 0 14px; }
+  .auth-card-heading h2 { font-size:clamp(22px,6vw,29px); }
+  .auth-account-form { gap:9px; }
+  .auth-account-form label { gap:5px;font-size:7px; }
+  .auth-account-form input { min-height:44px;padding:10px 12px;font-size:16px; }
+  .auth-submit { min-height:48px;margin-top:3px; }
+  .auth-account-switch { flex-wrap:wrap;margin-top:11px; }
+  .auth-account-message { min-height:0;margin-top:9px;font-size:10px;line-height:1.55;overflow-wrap:anywhere; }
+  .auth-card-divider { margin:8px 0; }
+  .auth-offline-button { min-height:36px; }
+  .auth-gate-footer { gap:8px;padding-top:12px;line-height:1.5; }
+  .auth-gate-footer span:last-child { max-width:48%; }
+}
+@media (max-width:380px) {
+  .auth-gate-shell { width:calc(100% - 22px); }
+  .auth-gate-brand b { font-size:7px; }
+  .auth-gate-brand small { font-size:6px; }
+  .auth-gate-brand>i { display:none; }
+  .auth-card { padding:15px; }
+  .auth-gate-footer { font-size:5px; }
+}

@@ -1528,3 +1528,298 @@ body.menu-detail-open { overflow:hidden; }
   .auth-card { padding:15px; }
   .auth-gate-footer { font-size:5px; }
 }
+
+
+/* REFERENCE-INSPIRED UI ALIGNMENT — sharp panels, aligned actions, compact player identity */
+.auth-gate-shell {
+  width:min(1280px,calc(100% - 64px));
+  max-width:1280px;
+}
+.auth-gate-brand {
+  min-height:58px;
+  padding:0 18px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(5,7,12,.78);
+  display:flex;
+  align-items:center;
+  gap:13px;
+}
+.auth-gate-brand>span:nth-child(2) { margin-right:auto; }
+.auth-gate-brand>i {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:#f4f4f4;
+  color:#08090d;
+  font-style:normal;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:1.2px;
+}
+.auth-gate-layout {
+  grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr);
+  align-items:center;
+  gap:clamp(28px,5vw,76px);
+  padding:clamp(24px,4vh,48px) 0;
+}
+.auth-gate-intro h1 { letter-spacing:-.055em; }
+.auth-card-wrap { width:100%;max-width:510px;justify-self:end; }
+.auth-card {
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:2px;
+  background:linear-gradient(145deg,rgba(15,18,25,.98),rgba(5,6,10,.98));
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+  padding:clamp(22px,2.8vw,36px);
+}
+.auth-card-topline {
+  min-height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.15);
+  padding-bottom:12px;
+  letter-spacing:1.5px;
+}
+.auth-card-heading { margin:22px 0 24px; }
+.auth-card-heading h2 {
+  font-size:clamp(30px,3vw,42px);
+  line-height:.98;
+  letter-spacing:-1.5px;
+}
+.auth-account-form {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:13px 12px;
+  align-items:end;
+}
+.auth-account-form label {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.auth-account-form label:first-child,
+.auth-account-form label:nth-child(2),
+.auth-account-form label:nth-child(3),
+.auth-account-form .auth-submit { grid-column:1/-1; }
+.auth-account-form input {
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:0;
+  background:#090b10;
+  color:#fff;
+  padding:0 14px;
+  font-size:14px;
+  box-sizing:border-box;
+}
+.auth-account-form input:focus {
+  outline:2px solid #fff;
+  outline-offset:1px;
+  border-color:#fff;
+}
+.auth-submit,
+.auth-offline-button {
+  min-height:58px;
+  border-radius:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  letter-spacing:1.2px;
+  font-weight:950;
+}
+.auth-submit {
+  margin-top:7px;
+  background:#f5f5f5;
+  color:#08090d;
+  border:1px solid #fff;
+  box-shadow:none;
+}
+.auth-submit:hover { background:#fff;transform:translateY(-1px); }
+.auth-submit b { color:#08090d; }
+.auth-account-switch {
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.auth-account-switch button {
+  min-height:34px;
+  min-width:92px;
+  padding:0 13px;
+  border:1px solid rgba(255,255,255,.65);
+  border-radius:0;
+  color:#fff;
+  background:transparent;
+  font-weight:900;
+  letter-spacing:.8px;
+}
+.auth-account-message {
+  min-height:28px;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+.auth-offline-button {
+  width:100%;
+  min-height:46px;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:0;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+}
+.auth-gate-footer {
+  border-top:1px solid rgba(255,255,255,.14);
+  padding-top:14px;
+}
+
+/* Main menu: consistent rectangular controls and a clear primary action */
+.main-menu-card { border-radius:2px; }
+.cinema-topline {
+  min-height:54px;
+  align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.13);
+  padding-bottom:12px;
+}
+.menu-player-card {
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:2px;
+  background:rgba(5,7,12,.82);
+}
+.menu-player-status {
+  padding:7px 10px;
+  border-radius:0;
+  border:1px solid rgba(255,255,255,.2);
+  letter-spacing:1px;
+}
+.menu-panel-toggle {
+  min-height:52px;
+  border-radius:0;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.045);
+  margin-bottom:7px;
+  padding:0 15px;
+}
+.menu-panel-toggle:hover,
+.menu-panel-toggle[aria-expanded="true"] {
+  border-color:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.09);
+}
+.menu-panel-toggle>i {
+  width:24px;height:24px;
+  display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:0;
+}
+.cinema-start,
+.mobile-play-button {
+  min-height:68px;
+  border-radius:0;
+  background:#f5f5f5;
+  color:#08090d;
+  border:1px solid #fff;
+  box-shadow:none;
+  letter-spacing:1.5px;
+}
+.cinema-start:hover,
+.mobile-play-button:hover {
+  background:#fff;
+  color:#05060a;
+  transform:translateY(-2px);
+}
+.cinema-start b,
+.mobile-play-button b { color:#08090d; }
+
+@media (max-width:800px) {
+  .auth-gate-shell {
+    width:min(100% - 28px,560px);
+  }
+  .auth-gate-brand {
+    min-height:48px;
+    padding:0 10px;
+    gap:9px;
+  }
+  .auth-gate-brand>i {
+    min-height:26px;
+    padding:0 8px;
+    font-size:7px;
+  }
+  .auth-gate-layout {
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    padding:12px 0 16px;
+  }
+  .auth-card-wrap { max-width:none; }
+  .auth-card { padding:clamp(16px,4vw,22px); }
+  .auth-card-heading { margin:14px 0 16px; }
+  .auth-account-form { display:flex;flex-direction:column;gap:10px; }
+  .auth-account-form label { width:100%; }
+  .auth-account-form input { min-height:48px;font-size:16px; }
+  .auth-submit { width:100%;min-height:54px;margin-top:2px; }
+  .auth-account-switch { width:100%; }
+  .auth-offline-button { min-height:44px; }
+  .cinema-start,.mobile-play-button { min-height:58px; }
+}
+@media (max-width:380px) {
+  .auth-gate-brand>i { font-size:6px;letter-spacing:.5px; }
+  .auth-card-topline { font-size:7px; }
+  .auth-account-switch { align-items:flex-start;flex-direction:column;padding:9px 0; }
+  .auth-account-switch button { width:100%; }
+}
+
+
+/* KIWAMI TOP COMMAND BAR + RIGHT TASK RAIL */
+.kiwami-topbar{display:grid;grid-template-columns:auto minmax(260px,1fr) minmax(230px,300px);align-items:center;gap:22px;padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(3,4,8,.88)}
+.kiwami-topbar .cinema-studio{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.kiwami-menu-nav{display:flex;align-items:center;gap:4px;min-width:0}
+.kiwami-nav-button{min-height:38px;padding:0 19px;border:1px solid transparent;border-radius:0;background:transparent;color:#c5c4cc;font:800 9px var(--display);letter-spacing:1px;cursor:pointer;transition:background .18s,color .18s,border-color .18s}
+.kiwami-nav-button:hover,.kiwami-nav-button[aria-expanded="true"],.kiwami-nav-button.active{background:#f4f4f6;color:#090a0e;border-color:#fff}
+.kiwami-account-chip{margin:0;min-width:0;display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px;padding:7px 10px;border:1px solid rgba(255,255,255,.15);background:rgba(18,19,25,.94)}
+.kiwami-account-chip .menu-player-avatar{width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.25);border-radius:2px;color:#fff;font:900 27px/1 Impact,'Arial Black',var(--display);font-style:italic;text-shadow:2px 2px 0 rgba(0,0,0,.55);box-shadow:inset 0 0 18px rgba(0,0,0,.22)}
+.kiwami-account-chip .menu-player-copy{min-width:0;display:grid;gap:4px}
+.kiwami-account-chip .menu-player-copy>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font:800 9px var(--display);letter-spacing:.7px}
+.kiwami-account-chip .menu-player-copy>strong{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#fff;font:800 8px var(--display)}
+.kiwami-account-chip .menu-player-copy>strong b{font-style:normal}
+.kiwami-account-chip .menu-player-copy>strong b i{font-style:normal;color:#ff526b}
+.kiwami-account-chip .menu-player-copy>strong em{color:#b9bac3;font-style:normal}
+.kiwami-level-track{height:4px;width:100%;overflow:hidden;background:rgba(255,255,255,.15)}
+.kiwami-level-track i{display:block;width:0;height:100%;background:#ff304f;box-shadow:0 0 10px rgba(255,48,79,.8);transition:width .35s}
+.kiwami-account-chip .menu-player-status{font-size:7px}
+.cinema-layout{grid-template-columns:minmax(0,1fr) minmax(290px,370px);gap:clamp(22px,3vw,44px)}
+.cinema-console{display:flex;flex-direction:column;gap:10px;align-self:stretch}
+.cinema-console>.menu-panel-content:not(.kiwami-task-panel){order:2}
+.cinema-console>.kiwami-task-panel{order:0!important;display:block!important;margin:0 0 8px;padding:15px;border:1px solid rgba(255,255,255,.12);background:rgba(12,13,19,.94)}
+.cinema-console>[data-panel-toggle="desktop-daily-challenge-panel"]{order:1}
+.cinema-console>.menu-panel-content:not(.kiwami-task-panel).hidden{display:none!important}
+.cinema-console>.menu-panel-content:not(.kiwami-task-panel){padding:12px;border:1px solid rgba(255,255,255,.1);background:rgba(10,11,16,.94)}
+.cinema-hero>.menu-player-card{display:none}
+.cinema-hero .cinema-kicker{margin-top:10px}
+@media(max-width:900px){
+ .kiwami-topbar{grid-template-columns:1fr auto;gap:10px;padding:12px}
+ .kiwami-menu-nav{grid-column:1/-1;grid-row:2;overflow-x:auto;justify-content:flex-start}
+ .kiwami-nav-button{flex:0 0 auto;padding:0 16px}
+ .kiwami-account-chip{grid-column:2;grid-row:1;width:min(260px,48vw)}
+ .kiwami-account-chip .menu-player-status{display:none}
+ .cinema-layout{grid-template-columns:1fr}
+ .cinema-console{display:grid;grid-template-columns:1fr}
+ .cinema-console>.kiwami-task-panel{order:0}
+}
+@media(max-width:520px){
+ .kiwami-topbar{padding:9px;grid-template-columns:minmax(0,1fr) auto}
+ .kiwami-topbar .cinema-studio>span:last-child{font-size:7px}
+ .kiwami-topbar .cinema-k{font-size:25px}
+ .kiwami-account-chip{width:min(205px,53vw);grid-template-columns:34px minmax(0,1fr);gap:7px;padding:6px}
+ .kiwami-account-chip .menu-player-avatar{width:34px;height:34px;font-size:23px}
+ .kiwami-account-chip .menu-player-copy>span:first-child{font-size:7px}
+ .kiwami-account-chip .menu-player-copy>strong{font-size:7px}
+ .kiwami-menu-nav{gap:2px}
+ .kiwami-nav-button{min-height:34px;padding:0 12px;font-size:8px}
+ .cinema-console>.kiwami-task-panel{padding:12px}
+}

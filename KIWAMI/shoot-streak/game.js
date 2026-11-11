@@ -129,6 +129,7 @@ function setAccountMessage(message, isError = false) {
   });
 }
 function renderAccountUI() {
+  updateKiwamiPlayerBadge();
   const signedIn = Boolean(currentUser);
   document.querySelectorAll("[data-player-name]").forEach(node => node.textContent = signedIn ? currentUsername : "GUEST PLAYER");
   document.querySelectorAll("[data-player-status]").forEach(node => node.textContent = signedIn ? "CLOUD SYNC" : "LOCAL");
@@ -321,6 +322,7 @@ function saveProgression() {
   } catch {}
 }
 function renderProgression() {
+  updateKiwamiPlayerBadge();
   const progress = getLevelProgress();
   const levelNode = document.getElementById("level-value");
   const xpNode = document.getElementById("xp-value");
@@ -1675,3 +1677,19 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>window.setTimeout(()=>{
   introScreen.classList.add("intro-exit");
   introScreen.addEventListener("transitionend",()=>introScreen.remove(),{once:true});
 },3200)));
+
+/* Give each player a bold initial badge and sync the level progress strip. */
+function updateKiwamiPlayerBadge(){
+  const name = currentUsername || "GUEST PLAYER";
+  const initial = String(name).trim().charAt(0).toUpperCase() || "G";
+  const palette = ["#b51f35","#8d263f","#7c3021","#315c78","#5b3b87","#286b5d","#8a5a1e"];
+  let hash = 0;
+  for(let i=0;i<name.length;i++) hash = (hash*31 + name.charCodeAt(i)) >>> 0;
+  const color = palette[hash % palette.length];
+  document.querySelectorAll("[data-player-avatar]").forEach(node=>{
+    node.textContent = initial;
+    node.style.background = "linear-gradient(145deg, "+color+", #101116)";
+  });
+  const progress = getLevelProgress();
+  document.querySelectorAll("[data-menu-level-bar]").forEach(node=>node.style.width = progress.percent + "%");
+}

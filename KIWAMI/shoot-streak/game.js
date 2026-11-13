@@ -41,11 +41,11 @@ const joystickBase = document.getElementById("move-joystick");
 const joystickThumb = document.getElementById("joystick-thumb");
 
 const DIFFICULTIES = {
-  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45, aim: 0.18, xpMultiplier: 0.75 },
-  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 0.98, chaos: 0.7, aim: 0.34, xpMultiplier: 1 },
-  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.02, chaos: 1.0, aim: 0.52, xpMultiplier: 1.5 },
-  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.06, chaos: 1.35, aim: 0.72, xpMultiplier: 2 },
-  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.1, chaos: 1.75, aim: 1.0, xpMultiplier: 2.5 }
+  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.98, chaos: 0.45, aim: 0.18, xpMultiplier: 0.75 },
+  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 1.05, chaos: 0.7, aim: 0.34, xpMultiplier: 1 },
+  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.12, chaos: 1.0, aim: 0.52, xpMultiplier: 1.5 },
+  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.2, chaos: 1.35, aim: 0.72, xpMultiplier: 2 },
+  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.28, chaos: 1.75, aim: 1.0, xpMultiplier: 2.5 }
 };
 let selectedDifficulty = "medium";
 
@@ -1890,7 +1890,7 @@ function updateBall(delta) {
   ball.position.y += ballVerticalVelocity * delta;
 
   // Wall impacts preserve more energy at higher difficulties and add a random deflection.
-  const wallBounce = CONFIG.ball.bounce * difficulty.bounce;
+  const wallBounce = Math.min(1.18, CONFIG.ball.bounce * difficulty.bounce);
   if (ball.position.x > roomBounds.x) {
     ball.position.x = roomBounds.x;
     ballVelocity.x = -Math.abs(ballVelocity.x) * wallBounce;
@@ -1917,13 +1917,18 @@ function updateBall(delta) {
   // Floor and ceiling bounces vary slightly each time, changing the next arc.
   if (ball.position.y < CONFIG.ball.radius) {
     ball.position.y = CONFIG.ball.radius;
-    ballVerticalVelocity = Math.abs(ballVerticalVelocity) * (0.86 + difficulty.chaos * 0.035) + 2.0 + Math.random() * (1.1 + difficulty.chaos);
+    const floorRestitution = Math.min(1.24, 0.88 * difficulty.bounce);
+    ballVerticalVelocity = Math.min(
+      18,
+      Math.abs(ballVerticalVelocity) * floorRestitution + 2.0 + Math.random() * (1.1 + difficulty.chaos)
+    );
     turnBallRandomly(0.08 + difficulty.chaos * 0.12);
     aimBallAtPlayer(difficulty);
   }
   if (ball.position.y > CONFIG.room.height - CONFIG.ball.radius) {
     ball.position.y = CONFIG.room.height - CONFIG.ball.radius;
-    ballVerticalVelocity = -Math.abs(ballVerticalVelocity) * (0.88 + difficulty.chaos * 0.025);
+    const ceilingRestitution = Math.min(1.18, 0.86 * difficulty.bounce);
+    ballVerticalVelocity = -Math.min(18, Math.abs(ballVerticalVelocity) * ceilingRestitution);
     turnBallRandomly(0.1 + difficulty.chaos * 0.12);
     aimBallAtPlayer(difficulty);
   }

@@ -41,11 +41,11 @@ const joystickBase = document.getElementById("move-joystick");
 const joystickThumb = document.getElementById("joystick-thumb");
 
 const DIFFICULTIES = {
-  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.94, chaos: 0.45, aim: 0.18, xpMultiplier: 0.75 },
-  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 0.98, chaos: 0.7, aim: 0.34, xpMultiplier: 1 },
-  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.02, chaos: 1.0, aim: 0.52, xpMultiplier: 1.5 },
-  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.06, chaos: 1.35, aim: 0.72, xpMultiplier: 2 },
-  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.1, chaos: 1.75, aim: 1.0, xpMultiplier: 2.5 }
+  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 0.98, chaos: 0.45, aim: 0.18, xpMultiplier: 0.75 },
+  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 1.05, chaos: 0.7, aim: 0.34, xpMultiplier: 1 },
+  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.12, chaos: 1.0, aim: 0.52, xpMultiplier: 1.5 },
+  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.2, chaos: 1.35, aim: 0.72, xpMultiplier: 2 },
+  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.28, chaos: 1.75, aim: 1.0, xpMultiplier: 2.5 }
 };
 let selectedDifficulty = "medium";
 
@@ -91,6 +91,13 @@ let careerStats = emptyCareerStats();
 */
 const PROGRESSION_KEY = "dodgeCoreProgression";
 const PROGRESSION_OWNER_KEY = "dodgeCoreProgressionOwner";
+const CASH_KEY = "dodgeCoreCash";
+const CASH_OWNER_KEY = "dodgeCoreCashOwner";
+let cashBalance = 0;
+let cashEarnedThisRun = 0;
+try {
+  cashBalance = Math.max(0, Math.floor(Number(localStorage.getItem(CASH_KEY)) || 0));
+} catch {}
 let totalXP = 0;
 let lastXpMilestone = 0;
 let runStartingXP = 0;
@@ -147,6 +154,7 @@ function renderAccountUI() {
   document.querySelectorAll("[data-account-identity-name]").forEach(node => node.textContent = currentUsername);
   document.querySelectorAll("[data-account-identity-email]").forEach(node => node.textContent = currentUser?.email || "");
   renderProgression();
+  renderCash();
 }
 function syncMenuProgression() {
   const progress = getLevelProgress();
@@ -157,10 +165,11 @@ async function syncCloudProgression() {
   if (!supabase || !currentUser) return;
   const userId = currentUser.id;
   const xpSnapshot = totalXP;
+  const cashSnapshot = cashBalance;
   cloudSaveInFlight = cloudSaveInFlight.catch(() => {}).then(async () => {
     if (!currentUser || currentUser.id !== userId) return;
     const { error } = await supabase.from("player_profiles")
-      .update({ total_xp: xpSnapshot, username: currentUsername })
+      .update({ total_xp: xpSnapshot, cash_balance: cashSnapshot, username: currentUsername })
       .eq("id", userId);
     if (error) throw error;
   });
@@ -176,26 +185,34 @@ async function loadCloudProgression(user) {
   let localOwner = null;
   try { localOwner = localStorage.getItem(PROGRESSION_OWNER_KEY); } catch {}
   const { data, error } = await supabase.from("player_profiles")
-    .select("username,total_xp").eq("id", user.id).maybeSingle();
+    .select("username,total_xp,cash_balance").eq("id", user.id).maybeSingle();
   if (error) {
     setAccountMessage("Could not load cloud profile: " + error.message, true);
     return;
   }
   const cloudXP = Math.max(0, Number(data?.total_xp) || 0);
+  const cloudCash = Math.max(0, Math.floor(Number(data?.cash_balance) || 0));
   if (localOwner && localOwner !== user.id) {
-    // Never carry one signed-in player's local progress into another account.
+    // Never carry one signed-in player's local progress or wallet into another account.
     totalXP = cloudXP;
+    cashBalance = cloudCash;
   } else {
     // Import guest progress once, or merge this account's local progress with cloud.
     totalXP = Math.max(totalXP, cloudXP);
+    cashBalance = Math.max(cashBalance, cloudCash);
   }
-  try { localStorage.setItem(PROGRESSION_OWNER_KEY, user.id); } catch {}
+  try {
+    localStorage.setItem(PROGRESSION_OWNER_KEY, user.id);
+    localStorage.setItem(CASH_OWNER_KEY, user.id);
+  } catch {}
+  saveCash();
+  renderCash();
   currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
   saveProgression();
   renderCareerStats();
   renderProgression();
   syncMenuProgression();
-  if (!data || totalXP > cloudXP) await syncCloudProgression();
+  if (!data || totalXP > cloudXP || cashBalance > cloudCash) await syncCloudProgression();
 }
 async function initializeCloudAccount() {
   if (!supabase) {
@@ -319,10 +336,14 @@ document.querySelectorAll("[data-account-logout]").forEach(button => {
         currentUser = null;
         currentUsername = "GUEST PLAYER";
         totalXP = 0;
+        cashBalance = 0;
         try {
           localStorage.removeItem(PROGRESSION_KEY);
           localStorage.removeItem(PROGRESSION_OWNER_KEY);
+          localStorage.removeItem(CASH_KEY);
+          localStorage.removeItem(CASH_OWNER_KEY);
         } catch {}
+        renderCash();
         setAccountMessage("Signed out. Your cloud progression remains saved to your account.");
       } else {
         setAccountMessage("Guest session ended. Sign in or create an account to continue.");
@@ -341,6 +362,30 @@ function saveProgression() {
   try {
     localStorage.setItem(PROGRESSION_KEY, JSON.stringify({ totalXP }));
   } catch {}
+}
+function saveCash() {
+  try { localStorage.setItem(CASH_KEY, String(Math.max(0, Math.floor(cashBalance)))); } catch {}
+}
+function renderCash() {
+  document.querySelectorAll("[data-menu-cash]").forEach(node => {
+    node.textContent = Math.floor(cashBalance).toLocaleString();
+  });
+  const reward = document.getElementById("cash-reward-amount");
+  if (reward) reward.textContent = "+" + Math.floor(cashEarnedThisRun).toLocaleString() + " CASH";
+  const total = document.getElementById("cash-reward-total");
+  if (total) total.textContent = Math.floor(cashBalance).toLocaleString() + " CASH AVAILABLE";
+}
+function awardCashForRun(survivalSeconds) {
+  const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
+  const earned = survivalSeconds > 0
+    ? Math.max(1, Math.floor((survivalSeconds / 5) * difficultyMultiplier))
+    : 0;
+  cashEarnedThisRun = earned;
+  cashBalance += earned;
+  saveCash();
+  renderCash();
+  if (earned > 0 && currentUser) syncCloudProgression();
+  return earned;
 }
 function renderProgression() {
   updateKiwamiPlayerBadge();
@@ -1446,12 +1491,17 @@ function resetRun() {
 }
 
 function startRun() {
+  cashEarnedThisRun = 0;
+  renderCash();
   refreshDailyChallengeIfNeeded();
   resetRun();
   careerStats.totalGamesPlayed += 1;
   saveCareerStats();
   renderCareerStats();
   state = "playing";
+  gameOverTrack.pause();
+  gameOverTrack.currentTime = 0;
+  if (musicEnabled) startBackgroundMusic();
   setScreen(state);
   clock.getDelta();
 }
@@ -1471,6 +1521,8 @@ function resumeRun() {
 
 function showMainMenu() {
   state = "ready";
+  gameOverTrack.pause();
+  if (musicEnabled) startBackgroundMusic();
   keys.clear();
   touchDirections.clear();
   resetJoystick();
@@ -1548,9 +1600,11 @@ function animateRunXPReward(startXP, endXP) {
 function endRun() {
   if (state !== "playing") return;
   state = "over";
+  playGameOverSound();
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
   const earnedThisRun = Math.max(0, totalXP - runStartingXP);
+  const cashEarned = awardCashForRun(survived);
   updateDailyChallenge(true);
   const newRecord = final > best;
   finalScore.textContent = String(final).padStart(4, "0");
@@ -1577,9 +1631,101 @@ function endRun() {
   if (runDifficulty) runDifficulty.textContent = DIFFICULTIES[selectedDifficulty].label;
   if (recordBadge) recordBadge.classList.toggle("hidden", !newRecord);
   if (recordStatus) recordStatus.textContent = newRecord ? "NEW PERSONAL BEST" : "PERSONAL BEST  /  " + String(best).padStart(4, "0");
+  renderCash();
   if (earnedThisRun > 0) syncCloudProgression();
   setScreen(state);
 }
+
+
+/* DODGE CORE AUDIO — user-provided MP3 assets */
+const MUSIC_PREF_KEY = "dodgeCoreMusicEnabled";
+let musicEnabled = true;
+const backgroundTrack = new Audio(new URL("./bg.mp3", import.meta.url).href);
+backgroundTrack.loop = true;
+backgroundTrack.preload = "auto";
+backgroundTrack.volume = 0.42;
+
+const gameOverTrack = new Audio(new URL("./gameover.mp3", import.meta.url).href);
+gameOverTrack.preload = "auto";
+gameOverTrack.volume = 0.82;
+
+const buttonSoundUrl = new URL("./Button.mp3", import.meta.url).href;
+try { musicEnabled = localStorage.getItem(MUSIC_PREF_KEY) !== "0"; } catch {}
+
+function updateMusicControls() {
+  document.querySelectorAll("[data-music-toggle]").forEach(button => {
+    button.textContent = musicEnabled ? "ON" : "OFF";
+    button.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
+    button.classList.toggle("is-on", musicEnabled);
+  });
+}
+
+function startBackgroundMusic() {
+  if (!musicEnabled || document.hidden) return;
+  gameOverTrack.pause();
+  backgroundTrack.play().catch(() => {
+    // Browsers may block playback until the next user interaction.
+  });
+}
+
+function stopBackgroundMusic() {
+  backgroundTrack.pause();
+}
+
+function setMusicEnabled(enabled) {
+  musicEnabled = Boolean(enabled);
+  try { localStorage.setItem(MUSIC_PREF_KEY, musicEnabled ? "1" : "0"); } catch {}
+  updateMusicControls();
+  if (musicEnabled) startBackgroundMusic();
+  else stopBackgroundMusic();
+}
+
+function playButtonSound() {
+  const sound = new Audio(buttonSoundUrl);
+  sound.preload = "auto";
+  sound.volume = 0.48;
+  sound.play().catch(() => {
+    // Missing assets or browser playback restrictions fail silently.
+  });
+}
+
+function playGameOverSound() {
+  stopBackgroundMusic();
+  gameOverTrack.currentTime = 0;
+  gameOverTrack.play().catch(() => {
+    // The game remains playable if the optional audio file is not present.
+  });
+}
+
+gameOverTrack.addEventListener("ended", () => {
+  if (musicEnabled && state === "over") startBackgroundMusic();
+});
+
+document.querySelectorAll("[data-music-toggle]").forEach(button => {
+  button.addEventListener("click", () => setMusicEnabled(!musicEnabled));
+});
+
+document.addEventListener("click", event => {
+  if (event.target instanceof Element && event.target.closest("button")) {
+    playButtonSound();
+  }
+  if (musicEnabled) startBackgroundMusic();
+});
+
+document.addEventListener("keydown", () => {
+  if (musicEnabled) startBackgroundMusic();
+}, { once: true });
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    backgroundTrack.pause();
+    gameOverTrack.pause();
+  } else if (musicEnabled && state !== "over") {
+    startBackgroundMusic();
+  }
+});
+
+updateMusicControls();
 
 startButton.addEventListener("click", startRun);
 document.getElementById("mobile-start-button")?.addEventListener("click", startRun);
@@ -1744,7 +1890,7 @@ function updateBall(delta) {
   ball.position.y += ballVerticalVelocity * delta;
 
   // Wall impacts preserve more energy at higher difficulties and add a random deflection.
-  const wallBounce = CONFIG.ball.bounce * difficulty.bounce;
+  const wallBounce = Math.min(1.18, CONFIG.ball.bounce * difficulty.bounce);
   if (ball.position.x > roomBounds.x) {
     ball.position.x = roomBounds.x;
     ballVelocity.x = -Math.abs(ballVelocity.x) * wallBounce;
@@ -1771,13 +1917,18 @@ function updateBall(delta) {
   // Floor and ceiling bounces vary slightly each time, changing the next arc.
   if (ball.position.y < CONFIG.ball.radius) {
     ball.position.y = CONFIG.ball.radius;
-    ballVerticalVelocity = Math.abs(ballVerticalVelocity) * (0.86 + difficulty.chaos * 0.035) + 2.0 + Math.random() * (1.1 + difficulty.chaos);
+    const floorRestitution = Math.min(1.24, 0.88 * difficulty.bounce);
+    ballVerticalVelocity = Math.min(
+      18,
+      Math.abs(ballVerticalVelocity) * floorRestitution + 2.0 + Math.random() * (1.1 + difficulty.chaos)
+    );
     turnBallRandomly(0.08 + difficulty.chaos * 0.12);
     aimBallAtPlayer(difficulty);
   }
   if (ball.position.y > CONFIG.room.height - CONFIG.ball.radius) {
     ball.position.y = CONFIG.room.height - CONFIG.ball.radius;
-    ballVerticalVelocity = -Math.abs(ballVerticalVelocity) * (0.88 + difficulty.chaos * 0.025);
+    const ceilingRestitution = Math.min(1.18, 0.86 * difficulty.bounce);
+    ballVerticalVelocity = -Math.min(18, Math.abs(ballVerticalVelocity) * ceilingRestitution);
     turnBallRandomly(0.1 + difficulty.chaos * 0.12);
     aimBallAtPlayer(difficulty);
   }
@@ -1923,15 +2074,23 @@ requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(() => 
 
 /* Give each player a bold initial badge and sync the level progress strip. */
 function updateKiwamiPlayerBadge(){
-  const name = currentUsername || "GUEST PLAYER";
-  const initial = String(name).trim().charAt(0).toUpperCase() || "G";
+  const displayedName = document.querySelector("[data-player-name]")?.textContent?.trim();
+  const metadataName = currentUser?.user_metadata?.username;
+  const emailName = currentUser?.email?.split("@")[0];
+  const name = String(currentUsername || metadataName || displayedName || emailName || "PLAYER").trim() || "PLAYER";
+  const initial = Array.from(name)[0]?.toLocaleUpperCase() || "P";
   const palette = ["#b51f35","#8d263f","#7c3021","#315c78","#5b3b87","#286b5d","#8a5a1e"];
   let hash = 0;
   for(let i=0;i<name.length;i++) hash = (hash*31 + name.charCodeAt(i)) >>> 0;
   const color = palette[hash % palette.length];
   document.querySelectorAll("[data-player-avatar]").forEach(node=>{
     node.textContent = initial;
+    node.setAttribute("aria-label", name + " avatar");
+    node.setAttribute("data-initial", initial);
     node.style.background = "linear-gradient(145deg, "+color+", #101116)";
+    node.style.display = "grid";
+    node.style.visibility = "visible";
+    node.style.opacity = "1";
   });
   const progress = getLevelProgress();
   document.querySelectorAll("[data-menu-level-bar]").forEach(node=>node.style.width = progress.percent + "%");

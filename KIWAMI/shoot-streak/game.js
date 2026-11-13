@@ -417,6 +417,7 @@ function loadShopInventory() {
   } catch {
     shopInventory = { owned:["crimson-core","default-frame"], equipped:"crimson-core", equippedFrame:"default-frame" };
   }
+  applyEquippedPlayerFrame();
 }
 function saveShopInventory() {
   try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}

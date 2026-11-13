@@ -390,10 +390,14 @@ const SHOP_ITEMS = [
   { id:"violet-core", name:"VIOLET CORE", category:"skin", description:"A deep violet energy shell.", price:320, color:"#b18aff", glow:"#813cff", rarity:"EPIC" },
   { id:"phantom-core", name:"PHANTOM CORE", category:"skin", description:"A pale core with a sharp glow.", price:460, color:"#e8efff", glow:"#a9c5ff", rarity:"EPIC" },
   { id:"void-core", name:"VOID CORE", category:"effect", description:"A dark shell wrapped in purple light.", price:620, color:"#77718f", glow:"#8c5cff", rarity:"ELITE" },
-  { id:"pulse-core", name:"PULSE CORE", category:"effect", description:"A bright red core with an amplified aura.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" }
+  { id:"pulse-core", name:"PULSE CORE", category:"effect", description:"A bright red core with an amplified aura.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" },
+  { id:"default-frame", name:"STANDARD FRAME", category:"frame", description:"A clean profile frame for your player badge.", price:0, color:"#8b929f", glow:"#667080", rarity:"STANDARD" },
+  { id:"ember-frame", name:"EMBER FRAME", category:"frame", description:"A sharp red outline with a warm glow.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
+  { id:"arctic-frame", name:"ARCTIC FRAME", category:"frame", description:"A cool, bright edge for your player identity.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
+  { id:"void-frame", name:"VOID FRAME", category:"frame", description:"A dark violet frame with a subtle pulse.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
-let shopInventory = { owned:["crimson-core"], equipped:"crimson-core" };
+let shopInventory = { owned:["crimson-core","default-frame"], equipped:"crimson-core", equippedFrame:"default-frame" };
 let activeShopFilter = "all";
 
 function shopStorageKey() {
@@ -405,23 +409,33 @@ function loadShopInventory() {
     const validOwned = Array.isArray(saved?.owned)
       ? saved.owned.filter(id => SHOP_ITEMS.some(item => item.id === id))
       : [];
-    const equipped = SHOP_ITEMS.some(item => item.id === saved?.equipped && validOwned.includes(saved.equipped))
+    const equipped = SHOP_ITEMS.some(item => item.id === saved?.equipped && item.category !== "frame" && validOwned.includes(saved.equipped))
       ? saved.equipped : "crimson-core";
-    shopInventory = { owned:[...new Set(["crimson-core", ...validOwned])], equipped };
+    const equippedFrame = SHOP_ITEMS.some(item => item.id === saved?.equippedFrame && item.category === "frame" && validOwned.includes(saved.equippedFrame))
+      ? saved.equippedFrame : "default-frame";
+    shopInventory = { owned:[...new Set(["crimson-core","default-frame", ...validOwned])], equipped, equippedFrame };
   } catch {
-    shopInventory = { owned:["crimson-core"], equipped:"crimson-core" };
+    shopInventory = { owned:["crimson-core","default-frame"], equipped:"crimson-core", equippedFrame:"default-frame" };
   }
 }
 function saveShopInventory() {
   try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}
 }
 function applyEquippedBallSkin() {
-  const item = SHOP_ITEMS.find(entry => entry.id === shopInventory.equipped) || SHOP_ITEMS[0];
+  const item = SHOP_ITEMS.find(entry => entry.id === shopInventory.equipped && entry.category !== "frame") || SHOP_ITEMS[0];
   if (typeof THREE === "undefined" || !mats?.ball || !ballAura || !ballLight) return;
   mats.ball.color.set(item.color);
   mats.ball.emissive.set(item.glow);
   ballAura.material.color.set(item.glow);
   ballLight.color.set(item.glow);
+}
+function applyEquippedPlayerFrame() {
+  const frame = SHOP_ITEMS.find(entry => entry.id === shopInventory.equippedFrame && entry.category === "frame") || SHOP_ITEMS.find(entry => entry.id === "default-frame");
+  if (!frame) return;
+  document.querySelectorAll("[data-player-avatar]").forEach(node => {
+    node.style.border = "1px solid " + frame.color;
+    node.style.boxShadow = frame.id === "default-frame" ? "none" : "0 0 14px " + frame.glow + "55";
+  });
 }
 function renderShop() {
   const grid = document.querySelector("[data-shop-grid]");
@@ -433,11 +447,11 @@ function renderShop() {
   const visibleItems = SHOP_ITEMS.filter(item => activeShopFilter === "all" || item.category === activeShopFilter);
   visibleItems.forEach(item => {
     const owned = shopInventory.owned.includes(item.id);
-    const equipped = shopInventory.equipped === item.id;
+    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : shopInventory.equipped === item.id;
     const card = document.createElement("article");
     card.className = "shop-item-card" + (equipped ? " is-equipped" : "");
     const preview = document.createElement("div");
-    preview.className = "shop-item-preview";
+    preview.className = "shop-item-preview" + (item.category === "frame" ? " is-frame" : "");
     preview.style.setProperty("--item-color", item.color);
     preview.style.setProperty("--item-glow", item.glow);
     preview.innerHTML = '<span class="shop-preview-orb"></span><span class="shop-preview-ring"></span>';
@@ -447,7 +461,7 @@ function renderShop() {
     rarity.className = "shop-item-rarity";
     rarity.textContent = item.rarity;
     const category = document.createElement("span");
-    category.textContent = item.category === "skin" ? "CORE SKIN" : "AURA EFFECT";
+    category.textContent = item.category === "skin" ? "CORE SKIN" : item.category === "frame" ? "PLAYER FRAME" : "AURA EFFECT";
     meta.append(rarity, category);
     const title = document.createElement("h4");
     title.textContent = item.name;
@@ -492,9 +506,11 @@ function purchaseOrEquipShopItem(itemId) {
   } else {
     setShopStatus(item.name + " EQUIPPED.");
   }
-  shopInventory.equipped = item.id;
+  if (item.category === "frame") shopInventory.equippedFrame = item.id;
+  else shopInventory.equipped = item.id;
   saveShopInventory();
   applyEquippedBallSkin();
+  applyEquippedPlayerFrame();
   renderCash();
   renderShop();
 }
@@ -515,6 +531,7 @@ document.querySelector("[data-shop-grid]")?.addEventListener("click", event => {
 });
 loadShopInventory();
 renderShop();
+applyEquippedPlayerFrame();
 
 function awardCashForRun(survivalSeconds) {
   const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;

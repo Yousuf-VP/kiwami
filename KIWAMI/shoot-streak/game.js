@@ -207,6 +207,8 @@ async function loadCloudProgression(user) {
   } catch {}
   saveCash();
   renderCash();
+  loadShopInventory();
+  renderShop();
   currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
   saveProgression();
   renderCareerStats();
@@ -320,6 +322,8 @@ document.querySelectorAll("[data-account-form]").forEach(form => {
 });
 document.getElementById("auth-offline-button")?.addEventListener("click", () => {
   document.getElementById("auth-gate")?.classList.add("hidden");
+  loadShopInventory();
+  renderShop();
   setAccountMessage("Offline session. Progress stays on this device until cloud accounts are configured.");
 });
 
@@ -375,6 +379,139 @@ function renderCash() {
   const total = document.getElementById("cash-reward-total");
   if (total) total.textContent = Math.floor(cashBalance).toLocaleString() + " CASH AVAILABLE";
 }
+/* CARD-BASED COSMETIC SHOP — purchases use the existing CASH wallet. */
+const SHOP_ITEMS = [
+  { id:"crimson-core", name:"CRIMSON CORE", category:"skin", description:"The original arena signature.", price:0, color:"#ff2447", glow:"#ff123c", rarity:"STANDARD" },
+  { id:"arctic-core", name:"ARCTIC CORE", category:"skin", description:"A cold, high-voltage finish.", price:180, color:"#75dfff", glow:"#21bfff", rarity:"RARE" },
+  { id:"violet-core", name:"VIOLET CORE", category:"skin", description:"A deep violet energy shell.", price:320, color:"#b18aff", glow:"#813cff", rarity:"EPIC" },
+  { id:"phantom-core", name:"PHANTOM CORE", category:"skin", description:"A pale core with a sharp glow.", price:460, color:"#e8efff", glow:"#a9c5ff", rarity:"EPIC" },
+  { id:"void-core", name:"VOID CORE", category:"effect", description:"A dark shell wrapped in purple light.", price:620, color:"#77718f", glow:"#8c5cff", rarity:"ELITE" },
+  { id:"pulse-core", name:"PULSE CORE", category:"effect", description:"A bright red core with an amplified aura.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" }
+];
+const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
+let shopInventory = { owned:["crimson-core"], equipped:"crimson-core" };
+let activeShopFilter = "all";
+
+function shopStorageKey() {
+  return SHOP_INVENTORY_PREFIX + (currentUser?.id || "guest");
+}
+function loadShopInventory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(shopStorageKey()) || "null");
+    const validOwned = Array.isArray(saved?.owned)
+      ? saved.owned.filter(id => SHOP_ITEMS.some(item => item.id === id))
+      : [];
+    const equipped = SHOP_ITEMS.some(item => item.id === saved?.equipped && validOwned.includes(saved.equipped))
+      ? saved.equipped : "crimson-core";
+    shopInventory = { owned:[...new Set(["crimson-core", ...validOwned])], equipped };
+  } catch {
+    shopInventory = { owned:["crimson-core"], equipped:"crimson-core" };
+  }
+}
+function saveShopInventory() {
+  try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}
+}
+function applyEquippedBallSkin() {
+  const item = SHOP_ITEMS.find(entry => entry.id === shopInventory.equipped) || SHOP_ITEMS[0];
+  if (typeof THREE === "undefined" || !mats?.ball || !ballAura || !ballLight) return;
+  mats.ball.color.set(item.color);
+  mats.ball.emissive.set(item.glow);
+  ballAura.material.color.set(item.glow);
+  ballLight.color.set(item.glow);
+}
+function renderShop() {
+  const grid = document.querySelector("[data-shop-grid]");
+  if (!grid) return;
+  document.querySelectorAll("[data-shop-cash]").forEach(node => {
+    node.textContent = Math.floor(cashBalance).toLocaleString();
+  });
+  grid.replaceChildren();
+  const visibleItems = SHOP_ITEMS.filter(item => activeShopFilter === "all" || item.category === activeShopFilter);
+  visibleItems.forEach(item => {
+    const owned = shopInventory.owned.includes(item.id);
+    const equipped = shopInventory.equipped === item.id;
+    const card = document.createElement("article");
+    card.className = "shop-item-card" + (equipped ? " is-equipped" : "");
+    const preview = document.createElement("div");
+    preview.className = "shop-item-preview";
+    preview.style.setProperty("--item-color", item.color);
+    preview.style.setProperty("--item-glow", item.glow);
+    preview.innerHTML = '<span class="shop-preview-orb"></span><span class="shop-preview-ring"></span>';
+    const meta = document.createElement("div");
+    meta.className = "shop-item-meta";
+    const rarity = document.createElement("span");
+    rarity.className = "shop-item-rarity";
+    rarity.textContent = item.rarity;
+    const category = document.createElement("span");
+    category.textContent = item.category === "skin" ? "CORE SKIN" : "AURA EFFECT";
+    meta.append(rarity, category);
+    const title = document.createElement("h4");
+    title.textContent = item.name;
+    const description = document.createElement("p");
+    description.textContent = item.description;
+    const footer = document.createElement("div");
+    footer.className = "shop-item-footer";
+    const price = document.createElement("strong");
+    price.className = "shop-item-price";
+    price.textContent = item.price === 0 ? "FREE" : "◈ " + item.price.toLocaleString();
+    const action = document.createElement("button");
+    action.type = "button";
+    action.className = "shop-item-action";
+    action.dataset.shopAction = item.id;
+    action.textContent = equipped ? "EQUIPPED" : owned ? "EQUIP" : "BUY";
+    action.disabled = equipped;
+    footer.append(price, action);
+    card.append(preview, meta, title, description, footer);
+    grid.append(card);
+  });
+}
+function setShopStatus(message, isError = false) {
+  const status = document.querySelector("[data-shop-status]");
+  if (!status) return;
+  status.textContent = message;
+  status.classList.toggle("is-error", isError);
+}
+function purchaseOrEquipShopItem(itemId) {
+  const item = SHOP_ITEMS.find(entry => entry.id === itemId);
+  if (!item) return;
+  const owned = shopInventory.owned.includes(item.id);
+  if (!owned) {
+    if (cashBalance < item.price) {
+      setShopStatus("NOT ENOUGH CASH — COMPLETE MORE RUNS TO EARN CASH.", true);
+      return;
+    }
+    cashBalance -= item.price;
+    saveCash();
+    shopInventory.owned.push(item.id);
+    if (currentUser) syncCloudProgression();
+    setShopStatus(item.name + " UNLOCKED. EQUIPPED.");
+  } else {
+    setShopStatus(item.name + " EQUIPPED.");
+  }
+  shopInventory.equipped = item.id;
+  saveShopInventory();
+  applyEquippedBallSkin();
+  renderCash();
+  renderShop();
+}
+document.querySelectorAll("[data-shop-filter]").forEach(button => {
+  button.addEventListener("click", () => {
+    activeShopFilter = button.dataset.shopFilter;
+    document.querySelectorAll("[data-shop-filter]").forEach(tab => {
+      const selected = tab === button;
+      tab.classList.toggle("selected", selected);
+      tab.setAttribute("aria-pressed", String(selected));
+    });
+    renderShop();
+  });
+});
+document.querySelector("[data-shop-grid]")?.addEventListener("click", event => {
+  const action = event.target.closest("[data-shop-action]");
+  if (action) purchaseOrEquipShopItem(action.dataset.shopAction);
+});
+loadShopInventory();
+renderShop();
+
 function awardCashForRun(survivalSeconds) {
   const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
   const earned = survivalSeconds > 0
@@ -384,6 +521,7 @@ function awardCashForRun(survivalSeconds) {
   cashBalance += earned;
   saveCash();
   renderCash();
+  renderShop();
   if (earned > 0 && currentUser) syncCloudProgression();
   return earned;
 }
@@ -1140,6 +1278,7 @@ const detailTitles = {
   difficulty: "SELECT DIFFICULTY",
   settings: "GAME SETTINGS",
   career: "CAREER RECORD",
+  shop: "CORE SHOP",
   leaderboard: "GLOBAL LEADERBOARD",
   daily: "DAILY CHALLENGE"
 };
@@ -2030,6 +2169,7 @@ function animate() {
       triggerArenaTheme(reachedMilestone);
     }
     updateArenaTheme(delta);
+    applyEquippedBallSkin();
     scoreValue.textContent = String(Math.floor(score)).padStart(4, "0");
     timeValue.textContent = elapsed.toFixed(1) + "s";
     ball.rotation.x += delta * 0.8;
@@ -2037,6 +2177,7 @@ function animate() {
     ballAura.rotation.y -= delta * 0.4;
   } else {
     updateArenaTheme(delta);
+    applyEquippedBallSkin();
     ball.rotation.x += delta * 0.25;
     ball.rotation.z += delta * 0.32;
   }

@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="career-stats.css">
+  <link rel="stylesheet" href="shop.css">
 </head>
 <body class="startup-pending">
   <main id="game-shell">
@@ -101,6 +102,7 @@
           <button class="mobile-nav-button active" type="button" data-panel-toggle="mobile-difficulty-panel" aria-expanded="false">PLAY</button>
           <button class="mobile-nav-button" type="button" data-panel-toggle="mobile-settings-panel" aria-expanded="false">SETTINGS</button>
           <button class="mobile-nav-button" type="button" data-panel-toggle="mobile-career-panel" aria-expanded="false">CAREER</button>
+          <button class="mobile-nav-button" type="button" data-panel-toggle="shop-panel" aria-expanded="false">SHOP</button>
           <button class="mobile-nav-button" type="button" data-panel-toggle="leaderboard-panel" aria-expanded="false">GLOBAL</button>
         </nav>
         <div class="mobile-menu-hero">
@@ -196,6 +198,7 @@
             <button class="kiwami-nav-button active" type="button" data-panel-toggle="desktop-difficulty-panel" aria-expanded="false">PLAY</button>
             <button class="kiwami-nav-button" type="button" data-panel-toggle="desktop-settings-panel" aria-expanded="false">SETTINGS</button>
             <button class="kiwami-nav-button" type="button" data-panel-toggle="desktop-career-panel" aria-expanded="false">CAREER</button>
+            <button class="kiwami-nav-button" type="button" data-panel-toggle="shop-panel" aria-expanded="false">SHOP</button>
             <button class="kiwami-nav-button" type="button" data-panel-toggle="leaderboard-panel" aria-expanded="false">GLOBAL</button>
           </nav>
           <div class="menu-player-card desktop-player-card kiwami-account-chip" data-player-card>
@@ -292,6 +295,20 @@
                 <div class="career-stat"><span>TOTAL XP</span><strong id="career-xp">0 XP</strong></div>
               </div>
             </div>
+            <section id="shop-panel" class="menu-panel-content hidden shop-panel" aria-label="DODGE CORE shop">
+              <div class="shop-heading-row">
+                <div><span class="shop-kicker">KIWAMI EXCHANGE</span><h3>THE CORE SHOP</h3><p>Make your next run look different. Every item is cosmetic.</p></div>
+                <div class="shop-wallet"><small>YOUR BALANCE</small><strong>◈ <b data-shop-cash>0</b> CASH</strong></div>
+              </div>
+              <div class="shop-category-row" role="group" aria-label="Shop category">
+                <button type="button" class="selected" data-shop-filter="all" aria-pressed="true">ALL ITEMS</button>
+                <button type="button" data-shop-filter="skin" aria-pressed="false">CORE SKINS</button>
+                <button type="button" data-shop-filter="effect" aria-pressed="false">AURA EFFECTS</button>
+              </div>
+              <div class="shop-grid" data-shop-grid aria-live="polite"></div>
+              <p class="shop-footnote">CASH is earned by completing runs. Shop purchases never change movement, difficulty, or survival physics.</p>
+              <p class="shop-status" data-shop-status role="status" aria-live="polite">SELECT AN ITEM TO VIEW ITS STATUS.</p>
+            </section>
             <section id="leaderboard-panel" class="menu-panel-content hidden leaderboard-panel" aria-label="Global leaderboard">
               <div class="leaderboard-heading-row">
                 <div><span class="leaderboard-kicker">GLOBAL COMPETITIVE NETWORK</span><h3>WORLDWIDE RANKINGS</h3></div>

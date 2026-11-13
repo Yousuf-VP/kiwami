@@ -238,6 +238,8 @@ async function initializeCloudAccount() {
         queueMicrotask(() => loadCloudProgression(currentUser).then(renderAccountUI));
       } else {
         currentUsername = "GUEST PLAYER";
+        loadShopInventory();
+        renderShop();
         document.getElementById("auth-gate")?.classList.remove("hidden");
         renderAccountUI();
       }
@@ -348,6 +350,8 @@ document.querySelectorAll("[data-account-logout]").forEach(button => {
           localStorage.removeItem(CASH_OWNER_KEY);
         } catch {}
         renderCash();
+        loadShopInventory();
+        renderShop();
         setAccountMessage("Signed out. Your cloud progression remains saved to your account.");
       } else {
         setAccountMessage("Guest session ended. Sign in or create an account to continue.");

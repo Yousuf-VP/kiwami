@@ -3262,3 +3262,15 @@ a:focus-visible {
 @media(max-width:520px){#touch-controls #beta-fire-button{right:92px;bottom:38px;width:58px;height:58px}}
 @media(orientation:landscape) and (pointer:coarse) and (hover:none){#touch-controls #beta-fire-button{right:108px;bottom:22px;width:58px;height:58px}}
 body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22px + 74px);bottom:22px}
+
+
+/* DODGE CORE — camera-mounted Pulse Blaster reticle */
+.pulse-crosshair{position:absolute;z-index:4;left:50%;top:50%;width:30px;height:30px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 0 5px rgba(255,34,70,.65));}
+.pulse-crosshair[hidden]{display:none!important}
+.pulse-crosshair span{position:absolute;display:block;background:rgba(255,245,247,.94);border-radius:2px;box-shadow:0 0 5px rgba(255,35,70,.8)}
+.pulse-crosshair span:nth-child(1){left:14px;top:1px;width:2px;height:7px}
+.pulse-crosshair span:nth-child(2){left:14px;bottom:1px;width:2px;height:7px}
+.pulse-crosshair span:nth-child(3){left:1px;top:14px;width:7px;height:2px}
+.pulse-crosshair span:nth-child(4){right:1px;top:14px;width:7px;height:2px}
+.pulse-crosshair i{position:absolute;left:13px;top:13px;width:4px;height:4px;border:1px solid #ff526d;border-radius:50%;background:rgba(255,55,83,.3)}
+@media(max-width:800px){.pulse-crosshair{width:28px;height:28px}}

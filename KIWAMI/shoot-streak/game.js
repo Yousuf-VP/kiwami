@@ -525,6 +525,7 @@ function purchaseOrEquipShopItem(itemId) {
   applyEquippedPlayerFrame();
   renderCash();
   renderShop();
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && shopInventory.owned.includes("pulse-blaster"));
 }
 document.querySelectorAll("[data-shop-filter]").forEach(button => {
   button.addEventListener("click", () => {
@@ -1205,6 +1206,7 @@ function syncBetaModeUI() {
     });
   }
   if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && shopInventory.owned.includes("pulse-blaster"));
+  if (!graphicsSettings.betaMode) clearPulseProjectiles();
   renderShop();
 }
 function syncForceLandscapeMode() {

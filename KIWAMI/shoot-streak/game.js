@@ -423,9 +423,11 @@ function loadShopInventory() {
       ? saved.equippedFrame : "default-frame";
     shopInventory = { owned:[...new Set(["crimson-core","default-frame", ...validOwned])], equippedAura, equippedFrame, equippedBeta: saved?.equippedBeta === "pulse-blaster" && validOwned.includes("pulse-blaster") ? "pulse-blaster" : null };
   } catch {
-    shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
+    shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame", equippedBeta:null };
   }
   applyEquippedPlayerFrame();
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && isPulseBlasterEquipped());
+  syncPulseBlasterPresentation();
 }
 function saveShopInventory() {
   try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}

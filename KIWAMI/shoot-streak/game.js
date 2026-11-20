@@ -385,16 +385,16 @@ function renderCash() {
 }
 /* CARD-BASED COSMETIC SHOP — purchases use the existing CASH wallet. */
 const SHOP_ITEMS = [
-  { id:"crimson-core", name:"EMBER HALO", category:"aura", description:"A warm signature aura around your theme-coloured core.", price:0, color:"#ff2447", glow:"#ff123c", rarity:"STANDARD" },
-  { id:"arctic-core", name:"FROST RING", category:"aura", description:"A crisp icy ring that surrounds the core.", price:180, color:"#75dfff", glow:"#21bfff", rarity:"RARE" },
-  { id:"violet-core", name:"VIOLET ORBIT", category:"aura", description:"A deep violet energy halo.", price:320, color:"#b18aff", glow:"#813cff", rarity:"EPIC" },
-  { id:"phantom-core", name:"GHOSTLIGHT", category:"aura", description:"A pale spectral aura with a sharp glow.", price:460, color:"#e8efff", glow:"#a9c5ff", rarity:"EPIC" },
-  { id:"void-core", name:"VOID AURA", category:"aura", description:"A dark violet energy field around the core.", price:620, color:"#77718f", glow:"#8c5cff", rarity:"ELITE" },
-  { id:"pulse-core", name:"PULSE AURA", category:"aura", description:"A vivid pulsing red glow around the core.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" },
-  { id:"default-frame", name:"STANDARD FRAME", category:"frame", description:"A clean profile frame for your player badge.", price:0, color:"#8b929f", glow:"#667080", rarity:"STANDARD" },
-  { id:"ember-frame", name:"EMBER FRAME", category:"frame", description:"A sharp red outline with a warm glow.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
-  { id:"arctic-frame", name:"ARCTIC FRAME", category:"frame", description:"A cool, bright edge for your player identity.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
-  { id:"void-frame", name:"VOID FRAME", category:"frame", description:"A dark violet frame with a subtle pulse.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" }
+  { id:"crimson-core", name:"Ember", category:"aura", description:"A warm red glow around your ball.", price:0, color:"#ff2447", glow:"#ff123c", rarity:"STANDARD" },
+  { id:"arctic-core", name:"Frost Ring", category:"aura", description:"A bright ice-blue ring around your ball.", price:180, color:"#75dfff", glow:"#21bfff", rarity:"RARE" },
+  { id:"violet-core", name:"Violet Orbit", category:"aura", description:"A rich purple energy ring.", price:320, color:"#b18aff", glow:"#813cff", rarity:"EPIC" },
+  { id:"phantom-core", name:"Ghostlight", category:"aura", description:"A cool white glow with a ghostly feel.", price:460, color:"#e8efff", glow:"#a9c5ff", rarity:"EPIC" },
+  { id:"void-core", name:"Void Aura", category:"aura", description:"A deep violet energy field.", price:620, color:"#77718f", glow:"#8c5cff", rarity:"ELITE" },
+  { id:"pulse-core", name:"Pulse", category:"aura", description:"A bold red pulse around your ball.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" },
+  { id:"default-frame", name:"Classic Frame", category:"frame", description:"The simple original look for your profile.", price:0, color:"#8b929f", glow:"#667080", rarity:"STANDARD" },
+  { id:"ember-frame", name:"Ember Frame", category:"frame", description:"A bright red border for your profile.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
+  { id:"arctic-frame", name:"Arctic Frame", category:"frame", description:"An icy blue profile border.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
+  { id:"void-frame", name:"Void Frame", category:"frame", description:"A deep purple profile border.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
 let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
@@ -455,15 +455,17 @@ function renderShop() {
     preview.className = "shop-item-preview" + (item.category === "frame" ? " is-frame" : "");
     preview.style.setProperty("--item-color", item.color);
     preview.style.setProperty("--item-glow", item.glow);
-    preview.innerHTML = '<span class="shop-preview-orb"></span><span class="shop-preview-ring"></span>';
+    preview.setAttribute("aria-hidden", "true");
+    preview.innerHTML = '<span class="shop-preview-orb"></span><span class="shop-preview-ring"></span><span class="shop-preview-spark"></span>';
     const meta = document.createElement("div");
     meta.className = "shop-item-meta";
+    const type = document.createElement("span");
+    type.className = "shop-item-type";
+    type.textContent = item.category === "frame" ? "PROFILE FRAME" : "BALL EFFECT";
     const rarity = document.createElement("span");
     rarity.className = "shop-item-rarity";
-    rarity.textContent = item.rarity;
-    const category = document.createElement("span");
-    category.textContent = item.category === "frame" ? "PLAYER FRAME" : "AURA EFFECT";
-    meta.append(rarity, category);
+    rarity.textContent = item.rarity.charAt(0) + item.rarity.slice(1).toLowerCase();
+    meta.append(type, rarity);
     const title = document.createElement("h4");
     title.textContent = item.name;
     const description = document.createElement("p");
@@ -472,15 +474,19 @@ function renderShop() {
     footer.className = "shop-item-footer";
     const price = document.createElement("strong");
     price.className = "shop-item-price";
-    price.textContent = item.price === 0 ? "FREE" : "◈ " + item.price.toLocaleString();
+    price.textContent = item.price === 0 ? "Free" : "◈ " + item.price.toLocaleString() + " CASH";
     const action = document.createElement("button");
     action.type = "button";
-    action.className = "shop-item-action";
+    action.className = "shop-item-action" + (equipped ? " is-current" : "");
     action.dataset.shopAction = item.id;
-    action.textContent = equipped ? "EQUIPPED" : owned ? "EQUIP" : "BUY";
+    action.textContent = equipped ? "✓ Using" : owned ? "Equip" : "Buy";
+    action.setAttribute("aria-label", (equipped ? "Currently using " : owned ? "Equip " : "Buy ") + item.name);
     action.disabled = equipped;
     footer.append(price, action);
-    card.append(preview, meta, title, description, footer);
+    const state = document.createElement("div");
+    state.className = "shop-item-state";
+    state.textContent = equipped ? "Currently equipped" : owned ? "In your collection" : "Unlock this look";
+    card.append(preview, meta, title, description, footer, state);
     grid.append(card);
   });
 }
@@ -496,16 +502,16 @@ function purchaseOrEquipShopItem(itemId) {
   const owned = shopInventory.owned.includes(item.id);
   if (!owned) {
     if (cashBalance < item.price) {
-      setShopStatus("NOT ENOUGH CASH — COMPLETE MORE RUNS TO EARN CASH.", true);
+      setShopStatus("You need more CASH for this item. Complete a few more runs and try again.", true);
       return;
     }
     cashBalance -= item.price;
     saveCash();
     shopInventory.owned.push(item.id);
     if (currentUser) syncCloudProgression();
-    setShopStatus(item.name + " UNLOCKED. EQUIPPED.");
+    setShopStatus(item.name + " is unlocked and equipped.");
   } else {
-    setShopStatus(item.name + " EQUIPPED.");
+    setShopStatus(item.name + " equipped.");
   }
   if (item.category === "frame") shopInventory.equippedFrame = item.id;
   else shopInventory.equippedAura = item.id;

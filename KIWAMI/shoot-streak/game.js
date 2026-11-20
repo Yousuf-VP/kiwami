@@ -36,6 +36,8 @@ const timeValue = document.getElementById("time-value");
 const betaModeInputs = [...document.querySelectorAll("[data-beta-mode]")];
 const betaShopFilter = document.querySelector('[data-shop-filter="beta"]');
 const betaFireButton = document.getElementById("beta-fire-button");
+const pulseCrosshair = document.getElementById("pulse-crosshair");
+let pulseBlasterModel = null;
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
 const jumpButton = document.getElementById("jump-button");
@@ -402,7 +404,7 @@ const SHOP_ITEMS = [
   { id:"pulse-blaster", name:"Pulse Blaster", category:"beta", description:"An experimental energy tool that knocks the arena ball away. Press F or left-click while pointer-locked; use FIRE on touch.", price:0, color:"#ff5269", glow:"#ff183d", rarity:"BETA" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
-let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
+let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame", equippedBeta:null };
 let activeShopFilter = "all";
 
 function shopStorageKey() {
@@ -419,11 +421,13 @@ function loadShopInventory() {
       ? savedAura : "crimson-core";
     const equippedFrame = SHOP_ITEMS.some(item => item.id === saved?.equippedFrame && item.category === "frame" && validOwned.includes(saved.equippedFrame))
       ? saved.equippedFrame : "default-frame";
-    shopInventory = { owned:[...new Set(["crimson-core","default-frame", ...validOwned])], equippedAura, equippedFrame };
+    shopInventory = { owned:[...new Set(["crimson-core","default-frame", ...validOwned])], equippedAura, equippedFrame, equippedBeta: saved?.equippedBeta === "pulse-blaster" && validOwned.includes("pulse-blaster") ? "pulse-blaster" : null };
   } catch {
-    shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
+    shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame", equippedBeta:null };
   }
   applyEquippedPlayerFrame();
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && isPulseBlasterEquipped());
+  syncPulseBlasterPresentation();
 }
 function saveShopInventory() {
   try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}
@@ -453,7 +457,7 @@ function renderShop() {
   const visibleItems = SHOP_ITEMS.filter(item => (item.category !== "beta" || graphicsSettings.betaMode) && (activeShopFilter === "all" || item.category === activeShopFilter));
   visibleItems.forEach(item => {
     const owned = shopInventory.owned.includes(item.id);
-    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : item.category === "aura" && shopInventory.equippedAura === item.id;
+    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : item.category === "aura" ? shopInventory.equippedAura === item.id : item.category === "beta" && shopInventory.equippedBeta === item.id;
     const card = document.createElement("article");
     card.className = "shop-item-card" + (equipped ? " is-equipped" : "");
     const preview = document.createElement("div");
@@ -484,13 +488,13 @@ function renderShop() {
     action.type = "button";
     action.className = "shop-item-action" + (equipped ? " is-current" : "");
     action.dataset.shopAction = item.id;
-    action.textContent = item.category === "beta" && owned ? "Unlocked" : equipped ? "✓ Using" : owned ? "Equip" : "Buy";
-    action.setAttribute("aria-label", (item.category === "beta" && owned ? "Unlocked " : equipped ? "Currently using " : owned ? "Equip " : "Buy ") + item.name);
-    action.disabled = equipped || (item.category === "beta" && owned);
+    action.textContent = equipped ? "✓ Using" : owned ? "Equip" : "Buy";
+    action.setAttribute("aria-label", (equipped ? "Currently using " : owned ? "Equip " : "Buy ") + item.name);
+    action.disabled = equipped;
     footer.append(price, action);
     const state = document.createElement("div");
     state.className = "shop-item-state";
-    state.textContent = item.category === "beta" && owned ? "Ready while Beta Mode is on" : equipped ? "Currently equipped" : owned ? "In your collection" : "Unlock this look";
+    state.textContent = equipped ? "Currently equipped" : owned ? "Unlocked — equip to use" : "Unlock this gear";
     card.append(preview, meta, title, description, footer, state);
     grid.append(card);
   });
@@ -514,18 +518,20 @@ function purchaseOrEquipShopItem(itemId) {
     saveCash();
     shopInventory.owned.push(item.id);
     if (currentUser) syncCloudProgression();
-    setShopStatus(item.category === "beta" ? item.name + " unlocked. Enable Beta Mode to use it." : item.name + " is unlocked and equipped.");
+    setShopStatus(item.category === "beta" ? item.name + " unlocked and equipped. Enable Beta Mode to use it." : item.name + " is unlocked and equipped.");
   } else {
     setShopStatus(item.name + " equipped.");
   }
   if (item.category === "frame") shopInventory.equippedFrame = item.id;
   else if (item.category === "aura") shopInventory.equippedAura = item.id;
+  else if (item.category === "beta") shopInventory.equippedBeta = item.id;
   saveShopInventory();
   applyEquippedAuraEffect();
   applyEquippedPlayerFrame();
   renderCash();
   renderShop();
-  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && shopInventory.owned.includes("pulse-blaster"));
+  syncPulseBlasterPresentation();
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && isPulseBlasterEquipped());
 }
 document.querySelectorAll("[data-shop-filter]").forEach(button => {
   button.addEventListener("click", () => {
@@ -743,7 +749,36 @@ scene.background = new THREE.Color(0x08090d);
 scene.fog = new THREE.Fog(0x08090d, 18, 34);
 
 const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 90);
-scene.add(camera); // Camera-attached avatar arms are rendered with the scene.
+scene.add(camera); // Camera-attached avatar arms and experimental gear are rendered with the scene.
+
+// Stylized, fictional energy-tool model: attached to the camera, not a real-world firearm.
+pulseBlasterModel = new THREE.Group();
+pulseBlasterModel.name = "pulse-blaster-viewmodel";
+const blasterBodyMaterial = new THREE.MeshStandardMaterial({ color: 0x171a22, metalness: 0.78, roughness: 0.3 });
+const blasterEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x555b68, metalness: 0.86, roughness: 0.24 });
+const blasterGlowMaterial = new THREE.MeshBasicMaterial({ color: 0xff294f, toneMapped: false });
+const blasterDarkMaterial = new THREE.MeshStandardMaterial({ color: 0x090b11, metalness: 0.42, roughness: 0.48 });
+const blasterPart = (geometry, material, position, rotation = null) => {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(...position);
+  if (rotation) mesh.rotation.set(...rotation);
+  mesh.frustumCulled = false;
+  pulseBlasterModel.add(mesh);
+  return mesh;
+};
+blasterPart(new THREE.BoxGeometry(0.23, 0.16, 0.38), blasterBodyMaterial, [0, 0, -0.12]);
+blasterPart(new THREE.BoxGeometry(0.15, 0.095, 0.34), blasterEdgeMaterial, [0, 0.085, -0.31]);
+blasterPart(new THREE.BoxGeometry(0.13, 0.22, 0.15), blasterDarkMaterial, [0, -0.17, 0.015], [-0.18, 0, 0]);
+blasterPart(new THREE.BoxGeometry(0.19, 0.045, 0.19), blasterEdgeMaterial, [0, -0.105, 0.025]);
+blasterPart(new THREE.CylinderGeometry(0.075, 0.085, 0.055, 12), blasterEdgeMaterial, [0, 0.035, -0.505], [Math.PI / 2, 0, 0]);
+blasterPart(new THREE.BoxGeometry(0.075, 0.045, 0.11), blasterDarkMaterial, [0, 0.15, -0.13]);
+blasterPart(new THREE.BoxGeometry(0.075, 0.018, 0.18), blasterGlowMaterial, [0, 0.006, -0.18]);
+blasterPart(new THREE.BoxGeometry(0.025, 0.055, 0.13), blasterGlowMaterial, [-0.13, 0.005, -0.15]);
+blasterPart(new THREE.BoxGeometry(0.025, 0.055, 0.13), blasterGlowMaterial, [0.13, 0.005, -0.15]);
+pulseBlasterModel.position.set(0.39, -0.34, -0.58);
+pulseBlasterModel.rotation.set(-0.035, -0.08, -0.035);
+pulseBlasterModel.visible = false;
+camera.add(pulseBlasterModel);
 camera.position.set(0, 1.65, CONFIG.player.startZ);
 camera.lookAt(0, 1.65, CONFIG.player.startZ - 12);
 
@@ -1194,6 +1229,14 @@ resize();
 function saveGraphicsSettings() {
   try { localStorage.setItem("dodgeCoreGraphics", JSON.stringify(graphicsSettings)); } catch {}
 }
+function isPulseBlasterEquipped() {
+  return shopInventory.equippedBeta === "pulse-blaster" && shopInventory.owned.includes("pulse-blaster");
+}
+function syncPulseBlasterPresentation() {
+  const active = state === "playing" && graphicsSettings.betaMode && isPulseBlasterEquipped();
+  if (pulseBlasterModel) pulseBlasterModel.visible = active;
+  if (pulseCrosshair) pulseCrosshair.hidden = !active;
+}
 function syncBetaModeUI() {
   betaModeInputs.forEach(input => { input.checked = graphicsSettings.betaMode; });
   if (betaShopFilter) betaShopFilter.hidden = !graphicsSettings.betaMode;
@@ -1205,8 +1248,9 @@ function syncBetaModeUI() {
       tab.setAttribute("aria-pressed", String(selected));
     });
   }
-  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && shopInventory.owned.includes("pulse-blaster"));
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && isPulseBlasterEquipped());
   if (!graphicsSettings.betaMode) clearPulseProjectiles();
+  syncPulseBlasterPresentation();
   renderShop();
 }
 function syncForceLandscapeMode() {
@@ -1616,6 +1660,7 @@ let gameOverRevealTimer = 0;
 
 function setScreen(active) {
   shell.classList.toggle("is-playing", active === "playing");
+  syncPulseBlasterPresentation();
   startScreen.classList.toggle("hidden", active !== "ready");
   pauseScreen.classList.toggle("hidden", active !== "paused");
   gameOverScreen.classList.toggle("hidden", active !== "over");
@@ -2059,7 +2104,7 @@ function aimBallAtPlayer(difficulty) {
 }
 
 function firePulse() {
-  if (state !== "playing" || !graphicsSettings.betaMode || !shopInventory.owned.includes("pulse-blaster") || pulseCooldown > 0) return;
+  if (state !== "playing" || !graphicsSettings.betaMode || !isPulseBlasterEquipped() || pulseCooldown > 0) return;
   pulseCooldown = 0.9;
   const direction = new THREE.Vector3();
   camera.getWorldDirection(direction);

@@ -399,7 +399,7 @@ const SHOP_ITEMS = [
   { id:"ember-frame", name:"Ember Frame", category:"frame", description:"A bright red border for your profile.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
   { id:"arctic-frame", name:"Arctic Frame", category:"frame", description:"An icy blue profile border.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
   { id:"void-frame", name:"Void Frame", category:"frame", description:"A deep purple profile border.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" },
-  { id:"pulse-blaster", name:"Pulse Blaster", category:"beta", description:"An experimental energy tool that knocks the arena ball away. Single-player only.", price:500, color:"#ff5269", glow:"#ff183d", rarity:"BETA" }
+  { id:"pulse-blaster", name:"Pulse Blaster", category:"beta", description:"An experimental energy tool that knocks the arena ball away. Press F or left-click while pointer-locked; use FIRE on touch.", price:500, color:"#ff5269", glow:"#ff183d", rarity:"BETA" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
 let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
@@ -514,7 +514,7 @@ function purchaseOrEquipShopItem(itemId) {
     saveCash();
     shopInventory.owned.push(item.id);
     if (currentUser) syncCloudProgression();
-    setShopStatus(item.name + " is unlocked and equipped.");
+    setShopStatus(item.category === "beta" ? item.name + " unlocked. Enable Beta Mode to use it." : item.name + " is unlocked and equipped.");
   } else {
     setShopStatus(item.name + " equipped.");
   }
@@ -2077,9 +2077,16 @@ function updatePulseProjectiles(delta) {
   for (let i = pulseProjectiles.length - 1; i >= 0; i--) {
     const pulse = pulseProjectiles[i];
     pulse.life -= delta;
+    const previousPosition = pulse.mesh.position.clone();
     pulse.mesh.position.addScaledVector(pulse.velocity, delta);
     pulse.mesh.rotation.x += delta * 8;
-    if (pulse.mesh.position.distanceTo(ball.position) <= CONFIG.ball.radius + 0.24) {
+    const segment = pulse.mesh.position.clone().sub(previousPosition);
+    const segmentLengthSq = segment.lengthSq();
+    const hitT = segmentLengthSq > 0
+      ? THREE.MathUtils.clamp(ball.position.clone().sub(previousPosition).dot(segment) / segmentLengthSq, 0, 1)
+      : 0;
+    const closestPoint = previousPosition.addScaledVector(segment, hitT);
+    if (closestPoint.distanceTo(ball.position) <= CONFIG.ball.radius + 0.24) {
       const push = pulse.velocity.clone().normalize();
       const horizontalLength = Math.hypot(push.x, push.z);
       if (horizontalLength > 0.001) {

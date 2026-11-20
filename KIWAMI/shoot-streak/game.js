@@ -33,6 +33,9 @@ const restartButton = document.getElementById("restart-button");
 const scoreValue = document.getElementById("score-value");
 const bestValue = document.getElementById("best-value");
 const timeValue = document.getElementById("time-value");
+const betaModeInputs = [...document.querySelectorAll("[data-beta-mode]")];
+const betaShopFilter = document.querySelector('[data-shop-filter="beta"]');
+const betaFireButton = document.getElementById("beta-fire-button");
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
 const jumpButton = document.getElementById("jump-button");
@@ -61,7 +64,7 @@ const GRAPHICS_PRESETS = {
   balanced: { label: "BALANCED", scale: 1.0, maxPixelRatio: 1.5, shadowMapSize: 512 },
   high: { label: "HIGH", scale: 1.08, maxPixelRatio: 2.0, shadowMapSize: 1024 }
 };
-const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true, performanceMonitor: false, forceLandscape: false };
+const graphicsSettings = { quality: "balanced", shadows: false, motionEffects: true, performanceMonitor: false, forceLandscape: false, betaMode: false };
 try {
   const savedGraphics = JSON.parse(localStorage.getItem("dodgeCoreGraphics") || "null");
   if (savedGraphics && typeof savedGraphics === "object") {
@@ -69,6 +72,7 @@ try {
     if (typeof savedGraphics.shadows === "boolean") graphicsSettings.shadows = savedGraphics.shadows;
     if (typeof savedGraphics.motionEffects === "boolean") graphicsSettings.motionEffects = savedGraphics.motionEffects;
     if (typeof savedGraphics.performanceMonitor === "boolean") graphicsSettings.performanceMonitor = savedGraphics.performanceMonitor;
+    if (typeof savedGraphics.betaMode === "boolean") graphicsSettings.betaMode = savedGraphics.betaMode;
     // Forced landscape is a per-session opt-in. Never restore it from localStorage.
   }
 } catch {}
@@ -394,7 +398,8 @@ const SHOP_ITEMS = [
   { id:"default-frame", name:"Classic Frame", category:"frame", description:"The simple original look for your profile.", price:0, color:"#8b929f", glow:"#667080", rarity:"STANDARD" },
   { id:"ember-frame", name:"Ember Frame", category:"frame", description:"A bright red border for your profile.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
   { id:"arctic-frame", name:"Arctic Frame", category:"frame", description:"An icy blue profile border.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
-  { id:"void-frame", name:"Void Frame", category:"frame", description:"A deep purple profile border.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" }
+  { id:"void-frame", name:"Void Frame", category:"frame", description:"A deep purple profile border.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" },
+  { id:"pulse-blaster", name:"Pulse Blaster", category:"beta", description:"An experimental energy tool that knocks the arena ball away. Press F or left-click while pointer-locked; use FIRE on touch.", price:500, color:"#ff5269", glow:"#ff183d", rarity:"BETA" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
 let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
@@ -445,23 +450,23 @@ function renderShop() {
     node.textContent = Math.floor(cashBalance).toLocaleString();
   });
   grid.replaceChildren();
-  const visibleItems = SHOP_ITEMS.filter(item => activeShopFilter === "all" || item.category === activeShopFilter);
+  const visibleItems = SHOP_ITEMS.filter(item => (item.category !== "beta" || graphicsSettings.betaMode) && (activeShopFilter === "all" || item.category === activeShopFilter));
   visibleItems.forEach(item => {
     const owned = shopInventory.owned.includes(item.id);
-    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : shopInventory.equippedAura === item.id;
+    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : item.category === "aura" && shopInventory.equippedAura === item.id;
     const card = document.createElement("article");
     card.className = "shop-item-card" + (equipped ? " is-equipped" : "");
     const preview = document.createElement("div");
-    preview.className = "shop-item-preview" + (item.category === "frame" ? " is-frame" : "");
+    preview.className = "shop-item-preview" + (item.category === "frame" ? " is-frame" : "") + (item.category === "beta" ? " is-blaster" : "");
     preview.style.setProperty("--item-color", item.color);
     preview.style.setProperty("--item-glow", item.glow);
     preview.setAttribute("aria-hidden", "true");
-    preview.innerHTML = '<span class="shop-preview-orb"></span><span class="shop-preview-ring"></span><span class="shop-preview-spark"></span>';
+    preview.innerHTML = item.category === "beta" ? '<span class="shop-blaster-barrel"></span><span class="shop-blaster-body"></span><span class="shop-blaster-grip"></span><span class="shop-blaster-core"></span>' : '<span class="shop-preview-orb"></span><span class="shop-preview-ring"></span><span class="shop-preview-spark"></span>';
     const meta = document.createElement("div");
     meta.className = "shop-item-meta";
     const type = document.createElement("span");
     type.className = "shop-item-type";
-    type.textContent = item.category === "frame" ? "PROFILE FRAME" : "BALL EFFECT";
+    type.textContent = item.category === "frame" ? "PROFILE FRAME" : item.category === "beta" ? "EXPERIMENTAL GEAR" : "BALL EFFECT";
     const rarity = document.createElement("span");
     rarity.className = "shop-item-rarity";
     rarity.textContent = item.rarity.charAt(0) + item.rarity.slice(1).toLowerCase();
@@ -479,13 +484,13 @@ function renderShop() {
     action.type = "button";
     action.className = "shop-item-action" + (equipped ? " is-current" : "");
     action.dataset.shopAction = item.id;
-    action.textContent = equipped ? "✓ Using" : owned ? "Equip" : "Buy";
-    action.setAttribute("aria-label", (equipped ? "Currently using " : owned ? "Equip " : "Buy ") + item.name);
-    action.disabled = equipped;
+    action.textContent = item.category === "beta" && owned ? "Unlocked" : equipped ? "✓ Using" : owned ? "Equip" : "Buy";
+    action.setAttribute("aria-label", (item.category === "beta" && owned ? "Unlocked " : equipped ? "Currently using " : owned ? "Equip " : "Buy ") + item.name);
+    action.disabled = equipped || (item.category === "beta" && owned);
     footer.append(price, action);
     const state = document.createElement("div");
     state.className = "shop-item-state";
-    state.textContent = equipped ? "Currently equipped" : owned ? "In your collection" : "Unlock this look";
+    state.textContent = item.category === "beta" && owned ? "Ready while Beta Mode is on" : equipped ? "Currently equipped" : owned ? "In your collection" : "Unlock this look";
     card.append(preview, meta, title, description, footer, state);
     grid.append(card);
   });
@@ -509,17 +514,18 @@ function purchaseOrEquipShopItem(itemId) {
     saveCash();
     shopInventory.owned.push(item.id);
     if (currentUser) syncCloudProgression();
-    setShopStatus(item.name + " is unlocked and equipped.");
+    setShopStatus(item.category === "beta" ? item.name + " unlocked. Enable Beta Mode to use it." : item.name + " is unlocked and equipped.");
   } else {
     setShopStatus(item.name + " equipped.");
   }
   if (item.category === "frame") shopInventory.equippedFrame = item.id;
-  else shopInventory.equippedAura = item.id;
+  else if (item.category === "aura") shopInventory.equippedAura = item.id;
   saveShopInventory();
   applyEquippedAuraEffect();
   applyEquippedPlayerFrame();
   renderCash();
   renderShop();
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && shopInventory.owned.includes("pulse-blaster"));
 }
 document.querySelectorAll("[data-shop-filter]").forEach(button => {
   button.addEventListener("click", () => {
@@ -1084,6 +1090,9 @@ function resetArenaEvents() {
 
 let ballVelocity = new THREE.Vector3(-4.8, 1.6, 6.2);
 let ballVerticalVelocity = 1.6;
+let ballRepelTimer = 0;
+let pulseCooldown = 0;
+const pulseProjectiles = [];
 let courseChangeTimer = 0;
 let nextCourseChange = 1.6;
 let playerVelocity = new THREE.Vector3();
@@ -1185,6 +1194,21 @@ resize();
 function saveGraphicsSettings() {
   try { localStorage.setItem("dodgeCoreGraphics", JSON.stringify(graphicsSettings)); } catch {}
 }
+function syncBetaModeUI() {
+  betaModeInputs.forEach(input => { input.checked = graphicsSettings.betaMode; });
+  if (betaShopFilter) betaShopFilter.hidden = !graphicsSettings.betaMode;
+  if (!graphicsSettings.betaMode && activeShopFilter === "beta") {
+    activeShopFilter = "all";
+    document.querySelectorAll("[data-shop-filter]").forEach(tab => {
+      const selected = tab.dataset.shopFilter === "all";
+      tab.classList.toggle("selected", selected);
+      tab.setAttribute("aria-pressed", String(selected));
+    });
+  }
+  if (betaFireButton) betaFireButton.hidden = !(graphicsSettings.betaMode && shopInventory.owned.includes("pulse-blaster"));
+  if (!graphicsSettings.betaMode) clearPulseProjectiles();
+  renderShop();
+}
 function syncForceLandscapeMode() {
   const enabled = graphicsSettings.forceLandscape;
   document.body.classList.toggle("force-landscape", enabled);
@@ -1210,6 +1234,7 @@ function applyGraphicsSettings(persist = false) {
   graphicsMotionInputs.forEach(input => { input.checked = graphicsSettings.motionEffects; });
   graphicsMonitorInputs.forEach(input => { input.checked = graphicsSettings.performanceMonitor; });
   landscapeLayoutInputs.forEach(input => { input.checked = graphicsSettings.forceLandscape; });
+  syncBetaModeUI();
   syncForceLandscapeMode();
   const monitor = document.getElementById("performance-monitor");
   if (monitor) monitor.hidden = !graphicsSettings.performanceMonitor;
@@ -1246,6 +1271,11 @@ graphicsMonitorInputs.forEach(input => input.addEventListener("change", () => {
 landscapeLayoutInputs.forEach(input => input.addEventListener("change", () => {
   graphicsSettings.forceLandscape = input.checked;
   applyGraphicsSettings(true);
+}));
+betaModeInputs.forEach(input => input.addEventListener("change", () => {
+  graphicsSettings.betaMode = input.checked;
+  applyGraphicsSettings(true);
+  setShopStatus(graphicsSettings.betaMode ? "Beta Mode enabled. Experimental single-player features are active." : "Beta Mode disabled. Standard DODGE CORE rules are active.");
 }));
 applyGraphicsSettings();
 
@@ -1652,6 +1682,7 @@ function resetRun() {
 }
 
 function startRun() {
+  clearPulseProjectiles();
   cashEarnedThisRun = 0;
   renderCash();
   refreshDailyChallengeIfNeeded();
@@ -1926,7 +1957,8 @@ window.addEventListener("keydown", (event) => {
     if (key === "escape" && state === "paused") resumeRun();
     return;
   }
-  if ([...Object.values(keybinds), "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) || key === " ") event.preventDefault();
+  if ([...Object.values(keybinds), "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key) || key === " " || key === "f") event.preventDefault();
+  if (key === "f" && !event.repeat) firePulse();
   keys.add(key);
   if (key === keybinds.jump && !event.repeat) jumpPlayer();
   if (key === "escape" && state === "playing") pauseRun();
@@ -1936,6 +1968,14 @@ jumpButton.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   event.stopPropagation();
   jumpPlayer();
+});
+betaFireButton?.addEventListener("pointerdown", event => {
+  event.preventDefault();
+  event.stopPropagation();
+  firePulse();
+});
+document.addEventListener("mousedown", event => {
+  if (event.button === 0 && state === "playing" && !coarsePointer && document.pointerLockElement === renderer.domElement) firePulse();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
 window.addEventListener("blur", () => { keys.clear(); touchDirections.clear(); resetJoystick(); });
@@ -2005,6 +2045,7 @@ function turnBallRandomly(maxAngle) {
 
 // The ball continuously tracks the player position so its approach stays deliberate.
 function aimBallAtPlayer(difficulty) {
+  if (graphicsSettings.betaMode && ballRepelTimer > 0) return;
   const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
   if (toPlayer.lengthSq() < 0.001 || currentSpeed < 0.001) return;
@@ -2017,9 +2058,75 @@ function aimBallAtPlayer(difficulty) {
   ballVelocity.z = direction.y * currentSpeed;
 }
 
+function firePulse() {
+  if (state !== "playing" || !graphicsSettings.betaMode || !shopInventory.owned.includes("pulse-blaster") || pulseCooldown > 0) return;
+  pulseCooldown = 0.9;
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+  const origin = new THREE.Vector3();
+  camera.getWorldPosition(origin);
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff536d, transparent: true, opacity: 0.96, toneMapped: false }));
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff183d, transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false }));
+  mesh.add(glow);
+  mesh.position.copy(origin).addScaledVector(direction, 0.82);
+  scene.add(mesh);
+  pulseProjectiles.push({ mesh, velocity: direction.multiplyScalar(42), life: 1.35 });
+}
+function updatePulseProjectiles(delta) {
+  pulseCooldown = Math.max(0, pulseCooldown - delta);
+  for (let i = pulseProjectiles.length - 1; i >= 0; i--) {
+    const pulse = pulseProjectiles[i];
+    pulse.life -= delta;
+    const previousPosition = pulse.mesh.position.clone();
+    pulse.mesh.position.addScaledVector(pulse.velocity, delta);
+    pulse.mesh.rotation.x += delta * 8;
+    const segment = pulse.mesh.position.clone().sub(previousPosition);
+    const segmentLengthSq = segment.lengthSq();
+    const hitT = segmentLengthSq > 0
+      ? THREE.MathUtils.clamp(ball.position.clone().sub(previousPosition).dot(segment) / segmentLengthSq, 0, 1)
+      : 0;
+    const closestPoint = previousPosition.addScaledVector(segment, hitT);
+    if (closestPoint.distanceTo(ball.position) <= CONFIG.ball.radius + 0.24) {
+      const push = pulse.velocity.clone().normalize();
+      const horizontalLength = Math.hypot(push.x, push.z);
+      if (horizontalLength > 0.001) {
+        ballVelocity.x += (push.x / horizontalLength) * 12;
+        ballVelocity.z += (push.z / horizontalLength) * 12;
+      } else {
+        const away = new THREE.Vector3(ball.position.x - player.position.x, 0, ball.position.z - player.position.z).normalize();
+        ballVelocity.x += away.x * 12;
+        ballVelocity.z += away.z * 12;
+      }
+      ballVerticalVelocity = Math.min(15, ballVerticalVelocity + Math.max(3, push.y * 4 + 3));
+      const speed = Math.hypot(ballVelocity.x, ballVelocity.z);
+      if (speed > 27) { ballVelocity.x *= 27 / speed; ballVelocity.z *= 27 / speed; }
+      ballRepelTimer = 1.2;
+      pulse.life = 0;
+    }
+    if (pulse.life <= 0) {
+      scene.remove(pulse.mesh);
+      pulse.mesh.geometry.dispose();
+      pulse.mesh.material.dispose();
+      pulse.mesh.children.forEach(child => { child.geometry.dispose(); child.material.dispose(); });
+      pulseProjectiles.splice(i, 1);
+    }
+  }
+}
+function clearPulseProjectiles() {
+  while (pulseProjectiles.length) {
+    const pulse = pulseProjectiles.pop();
+    scene.remove(pulse.mesh);
+    pulse.mesh.geometry.dispose();
+    pulse.mesh.material.dispose();
+    pulse.mesh.children.forEach(child => { child.geometry.dispose(); child.material.dispose(); });
+  }
+  pulseCooldown = 0;
+  ballRepelTimer = 0;
+}
 function updateBall(delta) {
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const horizontal = new THREE.Vector2(ballVelocity.x, ballVelocity.z);
+  ballRepelTimer = Math.max(0, ballRepelTimer - delta);
 
   // Small, irregular mid-flight course changes stop the ball feeling scripted.
   courseChangeTimer += delta;
@@ -2036,7 +2143,7 @@ function updateBall(delta) {
     player.position.z - ball.position.z
   );
   const horizontalSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
-  if (targetDirection.lengthSq() > 0.001 && horizontalSpeed > 0.001) {
+  if (ballRepelTimer <= 0 && targetDirection.lengthSq() > 0.001 && horizontalSpeed > 0.001) {
     targetDirection.normalize();
     const currentDirection = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
     const trackingStrength = 1 - Math.exp(-delta * (1.35 + difficulty.aim * 2.8));
@@ -2180,6 +2287,7 @@ function animate() {
     elapsed += delta;
     updatePlayer(delta);
     updateBall(delta);
+    updatePulseProjectiles(delta);
     updateArenaEvents(delta);
     updateCamera(delta);
     score = elapsed * 10;

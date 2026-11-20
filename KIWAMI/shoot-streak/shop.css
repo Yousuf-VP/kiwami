@@ -41,3 +41,12 @@
 @media(max-width:600px){.shop-heading-row{align-items:stretch;flex-direction:column;gap:14px}.shop-wallet{align-self:flex-start;min-width:145px}.shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shop-item-card{padding:9px}.shop-item-preview{height:108px}.shop-item-card h4{font-size:13px}.shop-item-card p{font-size:11px;min-height:48px}.shop-item-price{font-size:10px}.shop-item-action{min-width:72px;min-height:38px;padding:8px 10px;font-size:10px}}
 @media(max-width:390px){.shop-grid{grid-template-columns:1fr}.shop-item-preview{height:116px}.shop-item-card p{min-height:0}.shop-category-row button{flex:1;padding-inline:9px}}
 @media(prefers-reduced-motion:reduce){.shop-item-card,.shop-category-row button,.shop-item-action{transition:none}}
+
+/* BETA MODE — experimental Pulse Blaster card */
+.shop-item-preview.is-blaster{background:radial-gradient(ellipse at 50% 65%,rgba(255,36,71,.22),transparent 62%),linear-gradient(145deg,#1a1118,#090a0f)}
+.shop-blaster-body{position:absolute;z-index:2;left:50%;top:50%;width:92px;height:27px;transform:translate(-50%,-50%);border:1px solid rgba(255,170,181,.7);border-radius:7px 11px 8px 7px;background:linear-gradient(180deg,#55515d,#211f29 48%,#111119);box-shadow:0 0 22px rgba(255,36,71,.25),inset 0 1px rgba(255,255,255,.2)}
+.shop-blaster-barrel{position:absolute;z-index:3;left:calc(50% + 35px);top:calc(50% - 6px);width:31px;height:12px;border:1px solid rgba(255,153,168,.65);border-radius:2px 6px 6px 2px;background:linear-gradient(180deg,#77717e,#24222c)}
+.shop-blaster-grip{position:absolute;z-index:1;left:calc(50% - 12px);top:calc(50% + 9px);width:19px;height:32px;transform:skew(-13deg);border:1px solid rgba(255,255,255,.16);border-radius:2px 2px 6px 6px;background:linear-gradient(90deg,#181720,#45404b)}
+.shop-blaster-core{position:absolute;z-index:4;left:calc(50% - 27px);top:calc(50% - 3px);width:17px;height:7px;border-radius:5px;background:#ff637c;box-shadow:0 0 13px #ff2447,0 0 25px rgba(255,36,71,.75)}
+.shop-category-row button[hidden]{display:none!important}
+.beta-mode-row{margin-top:9px}

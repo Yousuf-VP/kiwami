@@ -148,6 +148,10 @@
               <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
               <input type="checkbox" data-graphics-monitor>
             </label>
+            <label class="graphics-toggle-row beta-mode-row">
+              <span><strong>BETA MODE</strong><small>Try experimental single-player features. Switch it off anytime.</small></span>
+              <input type="checkbox" data-beta-mode>
+            </label>
             <details class="advanced-settings-details">
               <summary>CUSTOM CONTROLS</summary>
               <div class="keybind-grid" aria-label="Keyboard controls">
@@ -264,6 +268,10 @@
               <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
               <input type="checkbox" data-graphics-monitor>
             </label>
+            <label class="graphics-toggle-row beta-mode-row">
+              <span><strong>BETA MODE</strong><small>Try experimental single-player features. Switch it off anytime.</small></span>
+              <input type="checkbox" data-beta-mode>
+            </label>
             <details class="advanced-settings-details">
               <summary>CUSTOM CONTROLS</summary>
               <div class="keybind-grid" aria-label="Keyboard controls">
@@ -297,16 +305,17 @@
             </div>
             <section id="shop-panel" class="menu-panel-content hidden shop-panel" aria-label="DODGE CORE shop">
               <div class="shop-heading-row">
-                <div><span class="shop-kicker">MAKE IT YOURS</span><h3>THE SHOP</h3><p>Pick a look, unlock it with CASH, and equip it. These items are visual only.</p></div>
+                <div><span class="shop-kicker">MAKE IT YOURS</span><h3>THE SHOP</h3><p>Pick a look or unlock experimental gear with CASH. Cosmetic items stay visual; Beta gear can change single-player gameplay.</p></div>
                 <div class="shop-wallet"><small>YOUR CASH</small><strong>◈ <b data-shop-cash>0</b></strong></div>
               </div>
               <div class="shop-category-row" role="group" aria-label="Shop category">
                 <button type="button" class="selected" data-shop-filter="all" aria-pressed="true">Everything</button>
                 <button type="button" data-shop-filter="aura" aria-pressed="false">Ball effects</button>
                 <button type="button" data-shop-filter="frame" aria-pressed="false">Profile frames</button>
+                <button type="button" data-shop-filter="beta" aria-pressed="false" hidden>Beta gear</button>
               </div>
               <div class="shop-grid" data-shop-grid aria-live="polite"></div>
-              <p class="shop-footnote">Earn CASH by playing runs. Auras change the glow around your ball; frames decorate your player badge. Nothing here changes gameplay.</p>
+              <p class="shop-footnote">Earn CASH by playing runs. Auras change the glow around your ball; frames decorate your player badge. Beta gear adds optional experimental gameplay and appears only while Beta Mode is enabled.</p>
               <p class="shop-status" data-shop-status role="status" aria-live="polite">Choose an item to equip it or unlock it.</p>
             </section>
             <section id="leaderboard-panel" class="menu-panel-content hidden leaderboard-panel" aria-label="Global leaderboard">
@@ -390,6 +399,10 @@
             <label class="graphics-toggle-row">
               <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
               <input type="checkbox" data-graphics-monitor>
+            </label>
+            <label class="graphics-toggle-row beta-mode-row">
+              <span><strong>BETA MODE</strong><small>Try experimental single-player features. Switch it off anytime.</small></span>
+              <input type="checkbox" data-beta-mode>
             </label>
             <details class="advanced-settings-details">
               <summary>CUSTOM CONTROLS</summary>
@@ -496,7 +509,7 @@
       </div>
     </section>
 
-    <div id="touch-controls" aria-label="Touch controls"><div id="move-joystick" aria-label="Movement joystick"><span class="joystick-ring"></span><span id="joystick-thumb"></span></div><button id="jump-button" type="button" aria-label="Jump">JUMP</button><div id="mobile-look-hint">DRAG TO LOOK</div></div>
+    <div id="touch-controls" aria-label="Touch controls"><div id="move-joystick" aria-label="Movement joystick"><span class="joystick-ring"></span><span id="joystick-thumb"></span></div><button id="jump-button" type="button" aria-label="Jump">JUMP</button><button id="beta-fire-button" type="button" aria-label="Fire pulse" hidden>FIRE</button><div id="mobile-look-hint">DRAG TO LOOK</div></div>
   </main>
 
   <script type="importmap">

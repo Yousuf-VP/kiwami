@@ -399,7 +399,7 @@ const SHOP_ITEMS = [
   { id:"ember-frame", name:"Ember Frame", category:"frame", description:"A bright red border for your profile.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
   { id:"arctic-frame", name:"Arctic Frame", category:"frame", description:"An icy blue profile border.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
   { id:"void-frame", name:"Void Frame", category:"frame", description:"A deep purple profile border.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" },
-  { id:"pulse-blaster", name:"Pulse Blaster", category:"beta", description:"An experimental energy tool that knocks the arena ball away. Press F or left-click while pointer-locked; use FIRE on touch.", price:500, color:"#ff5269", glow:"#ff183d", rarity:"BETA" }
+  { id:"pulse-blaster", name:"Pulse Blaster", category:"beta", description:"An experimental energy tool that knocks the arena ball away. Press F or left-click while pointer-locked; use FIRE on touch.", price:0, color:"#ff5269", glow:"#ff183d", rarity:"BETA" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
 let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };

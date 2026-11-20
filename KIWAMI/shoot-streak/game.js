@@ -385,19 +385,19 @@ function renderCash() {
 }
 /* CARD-BASED COSMETIC SHOP — purchases use the existing CASH wallet. */
 const SHOP_ITEMS = [
-  { id:"crimson-core", name:"CRIMSON CORE", category:"skin", description:"The original arena signature.", price:0, color:"#ff2447", glow:"#ff123c", rarity:"STANDARD" },
-  { id:"arctic-core", name:"ARCTIC CORE", category:"skin", description:"A cold, high-voltage finish.", price:180, color:"#75dfff", glow:"#21bfff", rarity:"RARE" },
-  { id:"violet-core", name:"VIOLET CORE", category:"skin", description:"A deep violet energy shell.", price:320, color:"#b18aff", glow:"#813cff", rarity:"EPIC" },
-  { id:"phantom-core", name:"PHANTOM CORE", category:"skin", description:"A pale core with a sharp glow.", price:460, color:"#e8efff", glow:"#a9c5ff", rarity:"EPIC" },
-  { id:"void-core", name:"VOID CORE", category:"effect", description:"A dark shell wrapped in purple light.", price:620, color:"#77718f", glow:"#8c5cff", rarity:"ELITE" },
-  { id:"pulse-core", name:"PULSE CORE", category:"effect", description:"A bright red core with an amplified aura.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" },
+  { id:"crimson-core", name:"EMBER HALO", category:"aura", description:"A warm signature aura around your theme-coloured core.", price:0, color:"#ff2447", glow:"#ff123c", rarity:"STANDARD" },
+  { id:"arctic-core", name:"FROST RING", category:"aura", description:"A crisp icy ring that surrounds the core.", price:180, color:"#75dfff", glow:"#21bfff", rarity:"RARE" },
+  { id:"violet-core", name:"VIOLET ORBIT", category:"aura", description:"A deep violet energy halo.", price:320, color:"#b18aff", glow:"#813cff", rarity:"EPIC" },
+  { id:"phantom-core", name:"GHOSTLIGHT", category:"aura", description:"A pale spectral aura with a sharp glow.", price:460, color:"#e8efff", glow:"#a9c5ff", rarity:"EPIC" },
+  { id:"void-core", name:"VOID AURA", category:"aura", description:"A dark violet energy field around the core.", price:620, color:"#77718f", glow:"#8c5cff", rarity:"ELITE" },
+  { id:"pulse-core", name:"PULSE AURA", category:"aura", description:"A vivid pulsing red glow around the core.", price:780, color:"#ff5269", glow:"#ff183d", rarity:"ELITE" },
   { id:"default-frame", name:"STANDARD FRAME", category:"frame", description:"A clean profile frame for your player badge.", price:0, color:"#8b929f", glow:"#667080", rarity:"STANDARD" },
   { id:"ember-frame", name:"EMBER FRAME", category:"frame", description:"A sharp red outline with a warm glow.", price:220, color:"#ff536b", glow:"#ff183d", rarity:"RARE" },
   { id:"arctic-frame", name:"ARCTIC FRAME", category:"frame", description:"A cool, bright edge for your player identity.", price:380, color:"#75dfff", glow:"#21bfff", rarity:"EPIC" },
   { id:"void-frame", name:"VOID FRAME", category:"frame", description:"A dark violet frame with a subtle pulse.", price:540, color:"#b18aff", glow:"#813cff", rarity:"ELITE" }
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
-let shopInventory = { owned:["crimson-core","default-frame"], equipped:"crimson-core", equippedFrame:"default-frame" };
+let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
 let activeShopFilter = "all";
 
 function shopStorageKey() {
@@ -409,24 +409,24 @@ function loadShopInventory() {
     const validOwned = Array.isArray(saved?.owned)
       ? saved.owned.filter(id => SHOP_ITEMS.some(item => item.id === id))
       : [];
-    const equipped = SHOP_ITEMS.some(item => item.id === saved?.equipped && item.category !== "frame" && validOwned.includes(saved.equipped))
-      ? saved.equipped : "crimson-core";
+    const savedAura = saved?.equippedAura || saved?.equipped; // migrate existing CORE SKIN inventory to aura cosmetics
+    const equippedAura = SHOP_ITEMS.some(item => item.id === savedAura && item.category === "aura" && validOwned.includes(savedAura))
+      ? savedAura : "crimson-core";
     const equippedFrame = SHOP_ITEMS.some(item => item.id === saved?.equippedFrame && item.category === "frame" && validOwned.includes(saved.equippedFrame))
       ? saved.equippedFrame : "default-frame";
-    shopInventory = { owned:[...new Set(["crimson-core","default-frame", ...validOwned])], equipped, equippedFrame };
+    shopInventory = { owned:[...new Set(["crimson-core","default-frame", ...validOwned])], equippedAura, equippedFrame };
   } catch {
-    shopInventory = { owned:["crimson-core","default-frame"], equipped:"crimson-core", equippedFrame:"default-frame" };
+    shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame" };
   }
   applyEquippedPlayerFrame();
 }
 function saveShopInventory() {
   try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}
 }
-function applyEquippedBallSkin() {
-  const item = SHOP_ITEMS.find(entry => entry.id === shopInventory.equipped && entry.category !== "frame") || SHOP_ITEMS[0];
-  if (typeof THREE === "undefined" || !mats?.ball || !ballAura || !ballLight) return;
-  mats.ball.color.set(item.color);
-  mats.ball.emissive.set(item.glow);
+function applyEquippedAuraEffect() {
+  const item = SHOP_ITEMS.find(entry => entry.id === shopInventory.equippedAura && entry.category === "aura") || SHOP_ITEMS[0];
+  if (typeof THREE === "undefined" || !ballAura?.material || !ballLight) return;
+  // The arena theme owns the core colour. The shop only styles its surrounding aura.
   ballAura.material.color.set(item.glow);
   ballLight.color.set(item.glow);
 }
@@ -448,7 +448,7 @@ function renderShop() {
   const visibleItems = SHOP_ITEMS.filter(item => activeShopFilter === "all" || item.category === activeShopFilter);
   visibleItems.forEach(item => {
     const owned = shopInventory.owned.includes(item.id);
-    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : shopInventory.equipped === item.id;
+    const equipped = item.category === "frame" ? shopInventory.equippedFrame === item.id : shopInventory.equippedAura === item.id;
     const card = document.createElement("article");
     card.className = "shop-item-card" + (equipped ? " is-equipped" : "");
     const preview = document.createElement("div");
@@ -462,7 +462,7 @@ function renderShop() {
     rarity.className = "shop-item-rarity";
     rarity.textContent = item.rarity;
     const category = document.createElement("span");
-    category.textContent = item.category === "skin" ? "CORE SKIN" : item.category === "frame" ? "PLAYER FRAME" : "AURA EFFECT";
+    category.textContent = item.category === "frame" ? "PLAYER FRAME" : "AURA EFFECT";
     meta.append(rarity, category);
     const title = document.createElement("h4");
     title.textContent = item.name;
@@ -508,9 +508,9 @@ function purchaseOrEquipShopItem(itemId) {
     setShopStatus(item.name + " EQUIPPED.");
   }
   if (item.category === "frame") shopInventory.equippedFrame = item.id;
-  else shopInventory.equipped = item.id;
+  else shopInventory.equippedAura = item.id;
   saveShopInventory();
-  applyEquippedBallSkin();
+  applyEquippedAuraEffect();
   applyEquippedPlayerFrame();
   renderCash();
   renderShop();
@@ -928,7 +928,6 @@ document.querySelectorAll("[data-arena-theme]").forEach(select => select.addEven
 
 const themeCurrent = {
   ball: mats.ball.color.clone(), ballEmissive: mats.ball.emissive.clone(),
-  aura: ballAura.material.color.clone(), ballLight: ballLight.color.clone(),
   roomGlow: redRoomGlow.color.clone(), playerFill: playerFillLight.color.clone(), ambientSky: ambient.color.clone(),
   ambientGround: ambient.groundColor.clone(), ceiling: ceilingLight.color.clone(),
   wall: mats.wall.color.clone(), floor: mats.floor.color.clone(),
@@ -942,7 +941,6 @@ let currentThemeName = "RED";
 const themeBanner = document.getElementById("theme-banner");
 const themeDefault = {
   ball: new THREE.Color(0xff2447), ballEmissive: new THREE.Color(0xff002b),
-  aura: new THREE.Color(0xff123c), ballLight: new THREE.Color(0xff123c),
   roomGlow: new THREE.Color(0xff153d), playerFill: new THREE.Color(0xd8dce6), ambientSky: new THREE.Color(0xd8dce6),
   ambientGround: new THREE.Color(0x17151a), ceiling: new THREE.Color(0xffffff),
   wall: new THREE.Color(0x202229), floor: new THREE.Color(0x17191f),
@@ -956,8 +954,6 @@ function applyThemeTargets(palette) {
   const ground = new THREE.Color(palette.ground);
   themeTarget.ball = accent.clone();
   themeTarget.ballEmissive = glow.clone();
-  themeTarget.aura = glow.clone();
-  themeTarget.ballLight = glow.clone();
   themeTarget.roomGlow = glow.clone();
   themeTarget.playerFill = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.68);
   themeTarget.ambientSky = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.62);
@@ -992,7 +988,6 @@ function updateArenaTheme(delta) {
   const amount = 1 - Math.exp(-delta * 2.5);
   const pairs = [
     [mats.ball.color, themeTarget.ball], [mats.ball.emissive, themeTarget.ballEmissive],
-    [ballAura.material.color, themeTarget.aura], [ballLight.color, themeTarget.ballLight],
     [redRoomGlow.color, themeTarget.roomGlow], [playerFillLight.color, themeTarget.playerFill], [ambient.color, themeTarget.ambientSky],
     [ambient.groundColor, themeTarget.ambientGround], [ceilingLight.color, themeTarget.ceiling],
     [mats.wall.color, themeTarget.wall], [mats.floor.color, themeTarget.floor],
@@ -1011,8 +1006,7 @@ function resetArenaTheme() {
   Object.keys(themeDefault).forEach(key => themeCurrent[key].copy(themeDefault[key]));
   mats.ball.color.copy(themeDefault.ball);
   mats.ball.emissive.copy(themeDefault.ballEmissive);
-  ballAura.material.color.copy(themeDefault.aura);
-  ballLight.color.copy(themeDefault.ballLight);
+  applyEquippedAuraEffect();
   redRoomGlow.color.copy(themeDefault.roomGlow);
   playerFillLight.color.copy(themeDefault.playerFill);
   ambient.color.copy(themeDefault.ambientSky);
@@ -2191,7 +2185,7 @@ function animate() {
       triggerArenaTheme(reachedMilestone);
     }
     updateArenaTheme(delta);
-    applyEquippedBallSkin();
+
     scoreValue.textContent = String(Math.floor(score)).padStart(4, "0");
     timeValue.textContent = elapsed.toFixed(1) + "s";
     ball.rotation.x += delta * 0.8;
@@ -2199,7 +2193,7 @@ function animate() {
     ballAura.rotation.y -= delta * 0.4;
   } else {
     updateArenaTheme(delta);
-    applyEquippedBallSkin();
+
     ball.rotation.x += delta * 0.25;
     ball.rotation.z += delta * 0.32;
   }

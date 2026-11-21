@@ -3274,3 +3274,16 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 .pulse-crosshair span:nth-child(4){right:1px;top:14px;width:7px;height:2px}
 .pulse-crosshair i{position:absolute;left:13px;top:13px;width:4px;height:4px;border:1px solid #ff526d;border-radius:50%;background:rgba(255,55,83,.3)}
 @media(max-width:800px){.pulse-crosshair{width:28px;height:28px}}
+
+
+/* KIWAMI — cinematic Pulse Blaster impact confirmation */
+.pulse-hit-marker{position:absolute;z-index:8;left:50%;top:50%;width:42px;height:42px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;filter:drop-shadow(0 0 7px rgba(255,30,65,.95))}
+.pulse-hit-marker span{position:absolute;display:block;width:11px;height:2px;border-radius:2px;background:#fff;box-shadow:0 0 7px #ff2348,0 0 15px rgba(255,35,72,.9)}
+.pulse-hit-marker span:nth-child(1){left:3px;top:8px;transform:rotate(45deg)}
+.pulse-hit-marker span:nth-child(2){right:3px;top:8px;transform:rotate(135deg)}
+.pulse-hit-marker span:nth-child(3){left:3px;bottom:8px;transform:rotate(135deg)}
+.pulse-hit-marker span:nth-child(4){right:3px;bottom:8px;transform:rotate(45deg)}
+.pulse-hit-marker i{position:absolute;left:19px;top:19px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 9px 3px #ff3154}
+.pulse-hit-marker.is-hit{animation:pulse-hit-confirm .34s cubic-bezier(.16,1,.3,1) both}
+@keyframes pulse-hit-confirm{0%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}22%{opacity:1;transform:translate(-50%,-50%) scale(.78)}55%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.35)}}
+@media(prefers-reduced-motion:reduce){.pulse-hit-marker.is-hit{animation-duration:.12s}}

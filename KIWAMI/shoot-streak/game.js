@@ -2088,15 +2088,23 @@ function turnBallRandomly(maxAngle) {
   ballVelocity.z = horizontal.y;
 }
 
-// The ball continuously tracks the player position so its approach stays deliberate.
+// Each physical bounce makes one steering decision: 70% toward the player,
+// 30% into a fully random horizontal direction. No continuous homing between bounces.
 function aimBallAtPlayer(difficulty) {
   if (graphicsSettings.betaMode && ballRepelTimer > 0) return;
-  const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
-  if (toPlayer.lengthSq() < 0.001 || currentSpeed < 0.001) return;
-  const direction = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
-  const target = toPlayer.normalize();
-  direction.lerp(target, difficulty.aim).normalize();
+  if (currentSpeed < 0.001) return;
+
+  if (Math.random() < 0.30) {
+    const randomAngle = Math.random() * Math.PI * 2;
+    ballVelocity.x = Math.cos(randomAngle) * currentSpeed;
+    ballVelocity.z = Math.sin(randomAngle) * currentSpeed;
+    return;
+  }
+
+  const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
+  if (toPlayer.lengthSq() < 0.001) return;
+  const direction = toPlayer.normalize();
   const spread = selectedDifficulty === "master" ? 0.025 : 0.11 * difficulty.chaos;
   direction.rotateAround(new THREE.Vector2(), (Math.random() - 0.5) * spread);
   ballVelocity.x = direction.x * currentSpeed;
@@ -2114,8 +2122,23 @@ function firePulse() {
   const glow = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff183d, transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false }));
   mesh.add(glow);
   mesh.position.copy(origin).addScaledVector(direction, 0.82);
-  scene.add(mesh);
-  pulseProjectiles.push({ mesh, velocity: direction.multiplyScalar(42), life: 1.35 });
+
+  // Two slim energy streaks give the projectile a bright, fast-moving trail.
+  const trail = new THREE.Group();
+  const trailDirection = direction.clone().normalize();
+  const trailStart = mesh.position.clone().addScaledVector(trailDirection, -1.25);
+  const trailEnd = mesh.position.clone().addScaledVector(trailDirection, -0.12);
+  const outerTrail = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([trailStart, trailEnd]),
+    new THREE.LineBasicMaterial({ color: 0xff183d, transparent: true, opacity: 0.82, depthWrite: false, toneMapped: false })
+  );
+  const innerTrail = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([trailStart, trailEnd]),
+    new THREE.LineBasicMaterial({ color: 0xffc1cb, transparent: true, opacity: 0.92, depthWrite: false, toneMapped: false })
+  );
+  trail.add(outerTrail, innerTrail);
+  scene.add(mesh, trail);
+  pulseProjectiles.push({ mesh, trail, velocity: direction.multiplyScalar(88), life: 1.1 });
 }
 function updatePulseProjectiles(delta) {
   pulseCooldown = Math.max(0, pulseCooldown - delta);
@@ -2125,6 +2148,10 @@ function updatePulseProjectiles(delta) {
     const previousPosition = pulse.mesh.position.clone();
     pulse.mesh.position.addScaledVector(pulse.velocity, delta);
     pulse.mesh.rotation.x += delta * 8;
+    const trailDirection = pulse.velocity.clone().normalize();
+    const trailStart = pulse.mesh.position.clone().addScaledVector(trailDirection, -1.25);
+    const trailEnd = pulse.mesh.position.clone().addScaledVector(trailDirection, -0.12);
+    pulse.trail.children.forEach(line => line.geometry.setFromPoints([trailStart, trailEnd]));
     const segment = pulse.mesh.position.clone().sub(previousPosition);
     const segmentLengthSq = segment.lengthSq();
     const hitT = segmentLengthSq > 0
@@ -2149,10 +2176,11 @@ function updatePulseProjectiles(delta) {
       pulse.life = 0;
     }
     if (pulse.life <= 0) {
-      scene.remove(pulse.mesh);
+      scene.remove(pulse.mesh, pulse.trail);
       pulse.mesh.geometry.dispose();
       pulse.mesh.material.dispose();
       pulse.mesh.children.forEach(child => { child.geometry.dispose(); child.material.dispose(); });
+      pulse.trail.children.forEach(line => { line.geometry.dispose(); line.material.dispose(); });
       pulseProjectiles.splice(i, 1);
     }
   }
@@ -2160,10 +2188,11 @@ function updatePulseProjectiles(delta) {
 function clearPulseProjectiles() {
   while (pulseProjectiles.length) {
     const pulse = pulseProjectiles.pop();
-    scene.remove(pulse.mesh);
+    scene.remove(pulse.mesh, pulse.trail);
     pulse.mesh.geometry.dispose();
     pulse.mesh.material.dispose();
     pulse.mesh.children.forEach(child => { child.geometry.dispose(); child.material.dispose(); });
+    pulse.trail.children.forEach(line => { line.geometry.dispose(); line.material.dispose(); });
   }
   pulseCooldown = 0;
   ballRepelTimer = 0;
@@ -2180,21 +2209,6 @@ function updateBall(delta) {
     nextCourseChange = 0.85 + Math.random() * 1.8;
     turnBallRandomly(0.18 + difficulty.chaos * 0.16);
     ballVerticalVelocity += (Math.random() - 0.5) * difficulty.chaos * 2.4;
-  }
-
-  // Smooth pursuit: steer toward the player's current arena position every frame.
-  const targetDirection = new THREE.Vector2(
-    player.position.x - ball.position.x,
-    player.position.z - ball.position.z
-  );
-  const horizontalSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
-  if (ballRepelTimer <= 0 && targetDirection.lengthSq() > 0.001 && horizontalSpeed > 0.001) {
-    targetDirection.normalize();
-    const currentDirection = new THREE.Vector2(ballVelocity.x, ballVelocity.z).normalize();
-    const trackingStrength = 1 - Math.exp(-delta * (1.35 + difficulty.aim * 2.8));
-    currentDirection.lerp(targetDirection, trackingStrength).normalize();
-    ballVelocity.x = currentDirection.x * horizontalSpeed;
-    ballVelocity.z = currentDirection.y * horizontalSpeed;
   }
 
   ball.position.x += ballVelocity.x * delta;

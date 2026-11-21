@@ -46,11 +46,11 @@ const joystickBase = document.getElementById("move-joystick");
 const joystickThumb = document.getElementById("joystick-thumb");
 
 const DIFFICULTIES = {
-  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 1.10, chaos: 0.45, aim: 0.18, xpMultiplier: 0.75 },
-  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 1.18, chaos: 0.7, aim: 0.34, xpMultiplier: 1 },
-  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.28, chaos: 1.0, aim: 0.52, xpMultiplier: 1.5 },
-  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.42, chaos: 1.35, aim: 0.72, xpMultiplier: 2 },
-  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.58, chaos: 1.75, aim: 1.0, xpMultiplier: 2.5 }
+  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 1.10, chaos: 0.45, aim: 0.40, xpMultiplier: 0.75 },
+  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 1.18, chaos: 0.7, aim: 0.50, xpMultiplier: 1 },
+  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.28, chaos: 1.0, aim: 0.60, xpMultiplier: 1.5 },
+  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.42, chaos: 1.35, aim: 0.70, xpMultiplier: 2 },
+  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.58, chaos: 1.75, aim: 0.80, xpMultiplier: 2.5 }
 };
 let selectedDifficulty = "medium";
 
@@ -92,7 +92,7 @@ const emptyCareerStats = () => ({
 let careerStats = emptyCareerStats();
 
 /* INFINITE XP + LEVEL PROGRESSION
-   Every 100 score grants 10 base XP, multiplied by the selected difficulty.
+   Each completed run grants 1 base XP per 10 score, multiplied by difficulty.
    Level N begins at 100 * N^2 total XP; level progress is XP within that band.
 */
 const PROGRESSION_KEY = "dodgeCoreProgression";
@@ -576,17 +576,18 @@ function renderProgression() {
   if (fillNode) fillNode.style.width = progress.percent + "%";
   syncMenuProgression();
 }
-function awardXPForScore(currentScore) {
-  const reachedMilestone = Math.floor(currentScore / 100);
-  if (reachedMilestone <= lastXpMilestone) return;
+function awardXPForRun(finalScore) {
   const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
-  const gainedXP = (reachedMilestone - lastXpMilestone) * 10 * difficultyMultiplier;
-  lastXpMilestone = reachedMilestone;
+  const gainedXP = finalScore > 0
+    ? Math.max(1, Math.floor((finalScore / 10) * difficultyMultiplier))
+    : 0;
+  if (gainedXP <= 0) return 0;
   totalXP = Math.round((totalXP + gainedXP) * 100) / 100;
   saveProgression();
   renderProgression();
   renderCareerStats();
   syncCloudProgression();
+  return gainedXP;
 }
 
 const keys = new Set();
@@ -1840,6 +1841,7 @@ function endRun() {
   playGameOverSound();
   const final = Math.floor(score);
   const survived = Math.max(0, elapsed);
+  awardXPForRun(final);
   const earnedThisRun = Math.max(0, totalXP - runStartingXP);
   const cashEarned = awardCashForRun(survived);
   updateDailyChallenge(true);
@@ -2088,14 +2090,14 @@ function turnBallRandomly(maxAngle) {
   ballVelocity.z = horizontal.y;
 }
 
-// Each physical bounce makes one steering decision: 70% toward the player,
-// 30% into a fully random horizontal direction. No continuous homing between bounces.
+// Each physical bounce makes one difficulty-scaled steering decision.
+// No continuous homing occurs between bounces.
 function aimBallAtPlayer(difficulty) {
   if (graphicsSettings.betaMode && ballRepelTimer > 0) return;
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
   if (currentSpeed < 0.001) return;
 
-  if (Math.random() < 0.30) {
+  if (Math.random() >= difficulty.aim) {
     const randomAngle = Math.random() * Math.PI * 2;
     ballVelocity.x = Math.cos(randomAngle) * currentSpeed;
     ballVelocity.z = Math.sin(randomAngle) * currentSpeed;
@@ -2350,7 +2352,6 @@ function animate() {
     updateArenaEvents(delta);
     updateCamera(delta);
     score = elapsed * 10;
-    awardXPForScore(score);
     tickDailyChallenge(delta);
     const reachedMilestone = Math.floor(score / 100);
     if (reachedMilestone > lastThemeMilestone) {

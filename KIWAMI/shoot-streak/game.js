@@ -38,6 +38,17 @@ const betaShopFilter = document.querySelector('[data-shop-filter="beta"]');
 const betaFireButton = document.getElementById("beta-fire-button");
 const pulseCrosshair = document.getElementById("pulse-crosshair");
 let pulseBlasterModel = null;
+const pulseHitMarker = document.createElement("div");
+pulseHitMarker.className = "pulse-hit-marker";
+pulseHitMarker.setAttribute("aria-hidden", "true");
+pulseHitMarker.innerHTML = "<span></span><span></span><span></span><span></span><i></i>";
+shell.appendChild(pulseHitMarker);
+function triggerPulseHitMarker() {
+  pulseHitMarker.classList.remove("is-hit");
+  void pulseHitMarker.offsetWidth;
+  pulseHitMarker.classList.add("is-hit");
+}
+pulseHitMarker.addEventListener("animationend", () => pulseHitMarker.classList.remove("is-hit"));
 const finalScore = document.getElementById("final-score");
 const touchControls = document.getElementById("touch-controls");
 const jumpButton = document.getElementById("jump-button");
@@ -46,11 +57,11 @@ const joystickBase = document.getElementById("move-joystick");
 const joystickThumb = document.getElementById("joystick-thumb");
 
 const DIFFICULTIES = {
-  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 1.10, chaos: 0.45, aim: 0.40, xpMultiplier: 0.75 },
-  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 1.18, chaos: 0.7, aim: 0.50, xpMultiplier: 1 },
-  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.28, chaos: 1.0, aim: 0.60, xpMultiplier: 1.5 },
-  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.42, chaos: 1.35, aim: 0.70, xpMultiplier: 2 },
-  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.58, chaos: 1.75, aim: 0.80, xpMultiplier: 2.5 }
+  easy: { label: "EASY", speed: 1.05, ramp: 0.85, bounce: 1.10, chaos: 0.45, aim: 0.40, xpMultiplier: 1.0, cashMultiplier: 1.0 },
+  medium: { label: "MEDIUM", speed: 1.3, ramp: 1.05, bounce: 1.18, chaos: 0.7, aim: 0.50, xpMultiplier: 1.35, cashMultiplier: 1.5 },
+  hard: { label: "HARD", speed: 1.6, ramp: 1.28, bounce: 1.28, chaos: 1.0, aim: 0.60, xpMultiplier: 1.8, cashMultiplier: 2.1 },
+  extreme: { label: "EXTREME", speed: 1.95, ramp: 1.55, bounce: 1.42, chaos: 1.35, aim: 0.70, xpMultiplier: 2.4, cashMultiplier: 2.8 },
+  master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.58, chaos: 1.75, aim: 0.80, xpMultiplier: 3.0, cashMultiplier: 3.6 }
 };
 let selectedDifficulty = "medium";
 
@@ -553,7 +564,7 @@ renderShop();
 applyEquippedPlayerFrame();
 
 function awardCashForRun(survivalSeconds) {
-  const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
+  const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.cashMultiplier ?? 1;
   const earned = survivalSeconds > 0
     ? Math.max(1, Math.floor((survivalSeconds / 5) * difficultyMultiplier))
     : 0;
@@ -578,8 +589,10 @@ function renderProgression() {
 }
 function awardXPForRun(finalScore) {
   const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
+  // Beta Mode is experimental gear: keep progression possible, but reduce its XP payout by 50%.
+  const betaModeMultiplier = graphicsSettings.betaMode ? 0.5 : 1;
   const gainedXP = finalScore > 0
-    ? Math.max(1, Math.floor((finalScore / 10) * difficultyMultiplier))
+    ? Math.max(1, Math.floor((finalScore / 10) * difficultyMultiplier * betaModeMultiplier))
     : 0;
   if (gainedXP <= 0) return 0;
   totalXP = Math.round((totalXP + gainedXP) * 100) / 100;
@@ -2120,23 +2133,41 @@ function firePulse() {
   camera.getWorldDirection(direction);
   const origin = new THREE.Vector3();
   camera.getWorldPosition(origin);
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff536d, transparent: true, opacity: 0.96, toneMapped: false }));
-  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff183d, transparent: true, opacity: 0.22, depthWrite: false, toneMapped: false }));
-  mesh.add(glow);
+  const mesh = new THREE.Group();
   mesh.position.copy(origin).addScaledVector(direction, 0.82);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction.clone().normalize());
 
-  // Two slim energy streaks give the projectile a bright, fast-moving trail.
+  // A jagged, branching-free energy bolt: a sharp thunder-like line with a hot white core.
+  const boltPoints = [
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.075, 0.025, -0.22),
+    new THREE.Vector3(-0.055, -0.025, -0.43),
+    new THREE.Vector3(0.09, 0.035, -0.66),
+    new THREE.Vector3(-0.035, -0.02, -0.9),
+    new THREE.Vector3(0, 0, -1.18)
+  ];
+  const boltGlow = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(boltPoints),
+    new THREE.LineBasicMaterial({ color: 0xff123b, transparent: true, opacity: 0.42, linewidth: 5, depthWrite: false, toneMapped: false })
+  );
+  const boltCore = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(boltPoints),
+    new THREE.LineBasicMaterial({ color: 0xfff1f4, transparent: true, opacity: 1, linewidth: 2, depthWrite: false, toneMapped: false })
+  );
+  mesh.add(boltGlow, boltCore);
+
+  // Long twin streaks leave a cinematic red-and-white afterimage behind the bolt.
   const trail = new THREE.Group();
   const trailDirection = direction.clone().normalize();
-  const trailStart = mesh.position.clone().addScaledVector(trailDirection, -1.25);
-  const trailEnd = mesh.position.clone().addScaledVector(trailDirection, -0.12);
+  const trailStart = mesh.position.clone().addScaledVector(trailDirection, -2.25);
+  const trailEnd = mesh.position.clone().addScaledVector(trailDirection, -0.08);
   const outerTrail = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([trailStart, trailEnd]),
-    new THREE.LineBasicMaterial({ color: 0xff183d, transparent: true, opacity: 0.82, depthWrite: false, toneMapped: false })
+    new THREE.LineBasicMaterial({ color: 0xff123b, transparent: true, opacity: 0.78, depthWrite: false, toneMapped: false })
   );
   const innerTrail = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([trailStart, trailEnd]),
-    new THREE.LineBasicMaterial({ color: 0xffc1cb, transparent: true, opacity: 0.92, depthWrite: false, toneMapped: false })
+    new THREE.LineBasicMaterial({ color: 0xffdce2, transparent: true, opacity: 0.96, depthWrite: false, toneMapped: false })
   );
   trail.add(outerTrail, innerTrail);
   scene.add(mesh, trail);
@@ -2175,13 +2206,18 @@ function updatePulseProjectiles(delta) {
       const speed = Math.hypot(ballVelocity.x, ballVelocity.z);
       if (speed > 27) { ballVelocity.x *= 27 / speed; ballVelocity.z *= 27 / speed; }
       ballRepelTimer = 1.2;
+      triggerPulseHitMarker();
       pulse.life = 0;
     }
     if (pulse.life <= 0) {
       scene.remove(pulse.mesh, pulse.trail);
-      pulse.mesh.geometry.dispose();
-      pulse.mesh.material.dispose();
-      pulse.mesh.children.forEach(child => { child.geometry.dispose(); child.material.dispose(); });
+      pulse.mesh.traverse(node => {
+        if (node.geometry) node.geometry.dispose();
+        if (node.material) {
+          if (Array.isArray(node.material)) node.material.forEach(material => material.dispose());
+          else node.material.dispose();
+        }
+      });
       pulse.trail.children.forEach(line => { line.geometry.dispose(); line.material.dispose(); });
       pulseProjectiles.splice(i, 1);
     }
@@ -2191,9 +2227,13 @@ function clearPulseProjectiles() {
   while (pulseProjectiles.length) {
     const pulse = pulseProjectiles.pop();
     scene.remove(pulse.mesh, pulse.trail);
-    pulse.mesh.geometry.dispose();
-    pulse.mesh.material.dispose();
-    pulse.mesh.children.forEach(child => { child.geometry.dispose(); child.material.dispose(); });
+    pulse.mesh.traverse(node => {
+      if (node.geometry) node.geometry.dispose();
+      if (node.material) {
+        if (Array.isArray(node.material)) node.material.forEach(material => material.dispose());
+        else node.material.dispose();
+      }
+    });
     pulse.trail.children.forEach(line => { line.geometry.dispose(); line.material.dispose(); });
   }
   pulseCooldown = 0;

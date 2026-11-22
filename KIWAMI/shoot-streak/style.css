@@ -3415,3 +3415,19 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 @keyframes justMissStreaks{0%{opacity:0;transform:scale(.65) rotate(-8deg)}18%{opacity:.9}100%{opacity:0;transform:scale(1.18) rotate(7deg)}}
 @keyframes justMissCaption{0%{opacity:0;transform:translate(-50%,-12px) scale(.88);letter-spacing:.7em}18%{opacity:1;transform:translate(-50%,0) scale(1);letter-spacing:.42em}62%{opacity:.9}100%{opacity:0;transform:translate(-50%,5px) scale(1.04)}}
 @media(prefers-reduced-motion:reduce){.just-miss-overlay.is-active{animation-duration:.35s}.just-miss-flare,.just-miss-streaks{animation-duration:.35s}.just-miss-overlay.is-active .just-miss-caption{animation-duration:.35s}}
+
+
+/* Game-surface copy deterrent. Inputs keep native text editing and selection. */
+#game-shell.copy-guard-enabled,
+#game-shell.copy-guard-enabled *:not(input):not(textarea):not([contenteditable="true"]):not([contenteditable=""]) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+#game-shell.copy-guard-enabled input,
+#game-shell.copy-guard-enabled textarea,
+#game-shell.copy-guard-enabled [contenteditable="true"],
+#game-shell.copy-guard-enabled [contenteditable=""] {
+  -webkit-user-select: text;
+  user-select: text;
+}

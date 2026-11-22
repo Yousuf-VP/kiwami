@@ -1215,10 +1215,10 @@ box(0.045, 0.055, 5.5, mats.trim, 7.34, 4.65, -3.8);
 const hazardWorld=new THREE.Group(); hazardWorld.name="hazard-grounds-world"; scene.add(hazardWorld);
 const hazardGroundMaterial=new THREE.MeshStandardMaterial({color:0x080b14,roughness:.82,metalness:.18});
 const hazardGridMaterial=new THREE.LineBasicMaterial({color:0xff2447,transparent:true,opacity:.78,toneMapped:false});
-const hazardGround=new THREE.Mesh(new THREE.PlaneGeometry(64,88),hazardGroundMaterial); hazardGround.rotation.x=-Math.PI/2; hazardGround.position.y=-.29; hazardGround.receiveShadow=true; hazardWorld.add(hazardGround);
+const hazardGround=new THREE.Mesh(new THREE.PlaneGeometry(64,88),hazardGroundMaterial); hazardGround.rotation.x=-Math.PI/2; hazardGround.position.y=-.01; hazardGround.receiveShadow=true; hazardWorld.add(hazardGround);
 const gridPositions=[],gridW=32,gridD=44,tile=4;
-for(let x=-gridW;x<=gridW;x+=tile)gridPositions.push(x,-.025,-gridD,x,-.025,gridD);
-for(let z=-gridD;z<=gridD;z+=tile)gridPositions.push(-gridW,-.025,z,gridW,-.025,z);
+for(let x=-gridW;x<=gridW;x+=tile)gridPositions.push(x,.012,-gridD,x,.012,gridD);
+for(let z=-gridD;z<=gridD;z+=tile)gridPositions.push(-gridW,.012,z,gridW,.012,z);
 const gridGeometry=new THREE.BufferGeometry();gridGeometry.setAttribute("position",new THREE.Float32BufferAttribute(gridPositions,3));hazardWorld.add(new THREE.LineSegments(gridGeometry,hazardGridMaterial));
 const starPositions=[];for(let n=0;n<900;n++)starPositions.push((Math.random()-.5)*300,12+Math.random()*145,(Math.random()-.5)*300);
 const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute("position",new THREE.Float32BufferAttribute(starPositions,3));
@@ -1430,11 +1430,11 @@ let arenaEventRemaining = 0;
 let arenaEventCooldown = 18;
 function finishArenaEvent() {
   if (!activeArenaEvent) return;
-  if (activeArenaEvent.id === "fog-surge") { scene.fog.near = 24; scene.fog.far = 46; }
+  if (activeArenaEvent.id === "fog-surge") { scene.fog.near = arenaMode==="hazard" ? 165 : 24; scene.fog.far = arenaMode==="hazard" ? 360 : 46; }
   if (activeArenaEvent.id === "ball-tempo") { ballVelocity.multiplyScalar(1 / 1.15); }
   if (activeArenaEvent.id === "ball-rush") { ballVelocity.multiplyScalar(1 / 1.24); }
   if (activeArenaEvent.id === "ball-drift") { ballVelocity.multiplyScalar(1 / 0.82); }
-  if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = 28; redRoomGlow.intensity = 18; }
+  if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = arenaMode==="hazard" ? 0 : 28; redRoomGlow.intensity = arenaMode==="hazard" ? 1.5 : 18; }
   if (activeArenaEvent.id === "xp-surge") arenaEventXpMultiplier = 1;
   if(activeArenaEvent.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);}
   activeArenaEvent = null;
@@ -1445,13 +1445,13 @@ function startArenaEvent() {
   const event=availableEvents[Math.floor(Math.random()*availableEvents.length)];
   activeArenaEvent = event;
   arenaEventRemaining = event.duration;
-  if (event.id === "fog-surge") { scene.fog.near = 8; scene.fog.far = 23; }
+  if (event.id === "fog-surge") { scene.fog.near = arenaMode==="hazard" ? 65 : 8; scene.fog.far = arenaMode==="hazard" ? 155 : 23; }
   if (event.id === "ball-tempo") { ballVelocity.multiplyScalar(1.15); }
   if (event.id === "ball-rush") { ballVelocity.multiplyScalar(1.24); }
   if (event.id === "ball-drift") { ballVelocity.multiplyScalar(0.82); }
   if (event.id === "xp-surge") arenaEventXpMultiplier = 2;
   if(event.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS*1.7;ball.scale.setScalar(1.7);}
-  if (event.id === "light-shift") { ceilingLight.intensity = 16; redRoomGlow.intensity = 26; }
+  if (event.id === "light-shift") { ceilingLight.intensity = arenaMode==="hazard" ? 0 : 16; redRoomGlow.intensity = arenaMode==="hazard" ? 8 : 26; }
   if (eventBanner) {
     eventBanner.textContent = "ARENA EVENT  /  " + event.label + " — " + event.description;
     eventBanner.classList.remove("event-banner-show");

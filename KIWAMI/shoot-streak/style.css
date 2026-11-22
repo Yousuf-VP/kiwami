@@ -3404,8 +3404,10 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 .just-miss-overlay{position:absolute;inset:0;z-index:24;pointer-events:none;overflow:hidden;opacity:0;visibility:hidden;mix-blend-mode:screen}
 .just-miss-overlay.is-active{visibility:visible;animation:justMissOverlayIn .92s cubic-bezier(.16,.72,.18,1) both}
 .just-miss-vignette{position:absolute;inset:-8%;background:radial-gradient(ellipse at 50% 53%,rgba(255,35,76,.02) 18%,rgba(255,24,64,.16) 58%,rgba(255,10,45,.48) 100%);filter:blur(5px)}
-.just-miss-flare{position:absolute;inset:-25%;background:radial-gradient(ellipse at 50% 52%,rgba(255,238,243,.38) 0,rgba(255,53,94,.22) 12%,rgba(255,12,55,.10) 30%,transparent 58%);transform:scale(.45);filter:blur(22px);animation:justMissFlare .92s ease-out both}
-.just-miss-streaks{position:absolute;inset:-35%;opacity:0;background:repeating-conic-gradient(from 8deg at 50% 50%,transparent 0deg 8deg,rgba(255,90,125,.22) 8.4deg 8.8deg,transparent 9.2deg 17deg);mask-image:radial-gradient(ellipse at center,#000 0,transparent 68%);animation:justMissStreaks .92s ease-out both}
+.just-miss-flare{position:absolute;inset:-25%;background:radial-gradient(ellipse at 50% 52%,rgba(255,238,243,.38) 0,rgba(255,53,94,.22) 12%,rgba(255,12,55,.10) 30%,transparent 58%);transform:scale(.45);filter:blur(22px)}
+.just-miss-overlay.is-active .just-miss-flare{animation:justMissFlare .92s ease-out both}
+.just-miss-streaks{position:absolute;inset:-35%;opacity:0;background:repeating-conic-gradient(from 8deg at 50% 50%,transparent 0deg 8deg,rgba(255,90,125,.22) 8.4deg 8.8deg,transparent 9.2deg 17deg);mask-image:radial-gradient(ellipse at center,#000 0,transparent 68%)}
+.just-miss-overlay.is-active .just-miss-streaks{animation:justMissStreaks .92s ease-out both}
 .just-miss-caption{position:absolute;left:50%;top:22%;transform:translate(-50%,-12px) scale(.88);color:#fff5f7;font:900 clamp(11px,1.5vw,17px) var(--display);letter-spacing:.42em;text-shadow:0 0 8px #fff,0 0 22px #ff315d,0 0 52px #ff123c;opacity:0;white-space:nowrap}
 .just-miss-overlay.is-active .just-miss-caption{animation:justMissCaption .92s cubic-bezier(.16,.72,.18,1) both}
 @keyframes justMissOverlayIn{0%{opacity:0}12%{opacity:1}55%{opacity:.82}100%{opacity:0;visibility:hidden}}

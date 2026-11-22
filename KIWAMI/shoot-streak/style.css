@@ -3454,3 +3454,13 @@ body.hazard-grounds-active #event-banner{
   box-shadow:0 0 24px rgba(150,103,255,.2),inset 0 0 18px rgba(150,103,255,.08);
   text-shadow:0 0 12px rgba(190,150,255,.45);
 }
+
+
+/* Hazard Grounds events remain visible for the full event duration. */
+#event-banner.hazard-event-active{
+  animation:none;
+  opacity:1;
+  transform:translate(-50%,0);
+  border-color:rgba(186,145,255,.72);
+  box-shadow:0 0 26px rgba(150,103,255,.28),inset 0 0 18px rgba(150,103,255,.1);
+}

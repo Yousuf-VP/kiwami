@@ -38,6 +38,14 @@ const betaShopFilter = document.querySelector('[data-shop-filter="beta"]');
 const betaFireButton = document.getElementById("beta-fire-button");
 const pulseCrosshair = document.getElementById("pulse-crosshair");
 let pulseBlasterModel = null;
+const recordChaseToast = document.createElement("div");
+recordChaseToast.className = "record-chase-toast";
+recordChaseToast.setAttribute("role", "status");
+recordChaseToast.setAttribute("aria-live", "polite");
+recordChaseToast.textContent = "NEW PERSONAL BEST";
+shell.appendChild(recordChaseToast);
+let runRecordToastShown = false;
+recordChaseToast.addEventListener("animationend", () => recordChaseToast.classList.remove("is-visible"));
 const pulseHitMarker = document.createElement("div");
 pulseHitMarker.className = "pulse-hit-marker";
 pulseHitMarker.setAttribute("aria-hidden", "true");
@@ -1754,6 +1762,8 @@ function resetRun() {
   resetArenaEvents();
   elapsed = 0;
   score = 0;
+  runRecordToastShown = false;
+  recordChaseToast.classList.remove("is-visible");
   lastXpMilestone = 0;
   runStartingXP = totalXP;
   renderProgression();
@@ -2480,6 +2490,12 @@ function animate() {
     updateArenaEvents(delta);
     updateCamera(delta);
     score = elapsed * 10;
+    if (score > best && !runRecordToastShown) {
+      runRecordToastShown = true;
+      recordChaseToast.classList.remove("is-visible");
+      void recordChaseToast.offsetWidth;
+      recordChaseToast.classList.add("is-visible");
+    }
     tickDailyChallenge(delta);
     const reachedMilestone = Math.floor(score / 100);
     if (reachedMilestone > lastThemeMilestone) {

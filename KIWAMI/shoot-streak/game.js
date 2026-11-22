@@ -605,6 +605,33 @@ function renderProgression() {
   if (fillNode) fillNode.style.width = progress.percent + "%";
   syncMenuProgression();
 }
+function awardXPPulseHit() {
+  const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
+  const eventMultiplier = arenaEventXpMultiplier || 1;
+  const betaModeMultiplier = graphicsSettings.betaMode ? 0.5 : 1;
+  const gainedXP = Math.max(1, Math.floor(5 * difficultyMultiplier * eventMultiplier * betaModeMultiplier));
+  totalXP = Math.round((totalXP + gainedXP) * 100) / 100;
+  saveProgression();
+  renderProgression();
+  renderCareerStats();
+  syncCloudProgression();
+  showPulseXPGain(gainedXP);
+  return gainedXP;
+}
+function showPulseXPGain(amount) {
+  if (!pulseXpToast) return;
+  pulseXpToast.textContent = "+" + amount + " XP";
+  pulseXpToast.classList.remove("is-visible");
+  void pulseXpToast.offsetWidth;
+  pulseXpToast.classList.add("is-visible");
+}
+const pulseXpToast = document.createElement("div");
+pulseXpToast.className = "pulse-xp-toast";
+pulseXpToast.setAttribute("role", "status");
+pulseXpToast.setAttribute("aria-live", "polite");
+shell.appendChild(pulseXpToast);
+pulseXpToast.addEventListener("animationend", () => pulseXpToast.classList.remove("is-visible"));
+
 function awardXPForRun(finalScore) {
   const difficultyMultiplier = DIFFICULTIES[selectedDifficulty]?.xpMultiplier ?? 1;
   // Beta Mode is experimental gear: keep progression possible, but reduce its XP payout by 50%.
@@ -777,8 +804,8 @@ function tickDailyChallenge(delta) {
 renderDailyChallenge();
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x08090d);
-scene.fog = new THREE.Fog(0x08090d, 18, 34);
+scene.background = new THREE.Color(0x11151d);
+scene.fog = new THREE.Fog(0x11151d, 24, 46);
 
 const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 90);
 scene.add(camera); // Camera-attached avatar arms and experimental gear are rendered with the scene.
@@ -862,9 +889,9 @@ renderer.domElement.addEventListener("pointerup", releaseLookPointer);
 renderer.domElement.addEventListener("pointercancel", releaseLookPointer);
 renderer.domElement.addEventListener("lostpointercapture", releaseLookPointer);
 
-const ambient = new THREE.HemisphereLight(0xd8dce6, 0x17151a, 1.45);
+const ambient = new THREE.HemisphereLight(0xe7edf8, 0x343943, 2.0);
 scene.add(ambient);
-const ceilingLight = new THREE.PointLight(0xffffff, 22, 28);
+const ceilingLight = new THREE.PointLight(0xffffff, 28, 34);
 ceilingLight.position.set(0, 4.8, 0);
 scene.add(ceilingLight);
 
@@ -873,7 +900,7 @@ redRoomGlow.position.set(0, 2.3, -5.5);
 scene.add(redRoomGlow);
 
 // Very soft neutral fill follows the player, keeping nearby wall edges readable.
-const playerFillLight = new THREE.PointLight(0xd8dce8, 2.4, 9, 2);
+const playerFillLight = new THREE.PointLight(0xe5ebf5, 4.8, 12, 2);
 playerFillLight.position.set(0, 1.9, CONFIG.player.startZ);
 scene.add(playerFillLight);
 
@@ -894,8 +921,8 @@ scene.add(shadowLight);
 scene.add(shadowLight.target);
 
 const mats = {
-  floor: new THREE.MeshStandardMaterial({ color: 0x17191f, roughness: 0.82, metalness: 0.12 }),
-  wall: new THREE.MeshStandardMaterial({ color: 0x202229, roughness: 0.88, metalness: 0.08 }),
+  floor: new THREE.MeshStandardMaterial({ color: 0x292d36, roughness: 0.82, metalness: 0.08 }),
+  wall: new THREE.MeshStandardMaterial({ color: 0x303540, roughness: 0.88, metalness: 0.05 }),
   trim: new THREE.MeshBasicMaterial({ color: 0x9d172d, toneMapped: false }),
   player: new THREE.MeshStandardMaterial({ color: 0xd8dbe2, roughness: 0.65 }),
   playerAccent: new THREE.MeshStandardMaterial({ color: 0xff294b, emissive: 0x5b0718, emissiveIntensity: 1.2 }),
@@ -1020,11 +1047,11 @@ let currentThemeName = "RED";
 const themeBanner = document.getElementById("theme-banner");
 const themeDefault = {
   ball: new THREE.Color(0xff2447), ballEmissive: new THREE.Color(0xff002b),
-  roomGlow: new THREE.Color(0xff153d), playerFill: new THREE.Color(0xd8dce6), ambientSky: new THREE.Color(0xd8dce6),
-  ambientGround: new THREE.Color(0x17151a), ceiling: new THREE.Color(0xffffff),
-  wall: new THREE.Color(0x202229), floor: new THREE.Color(0x17191f),
-  trim: new THREE.Color(0x9d172d), background: new THREE.Color(0x08090d),
-  fog: new THREE.Color(0x08090d)
+  roomGlow: new THREE.Color(0xff153d), playerFill: new THREE.Color(0xd8dce6), ambientSky: new THREE.Color(0xe7edf8),
+  ambientGround: new THREE.Color(0x343943), ceiling: new THREE.Color(0xffffff),
+  wall: new THREE.Color(0x303540), floor: new THREE.Color(0x292d36),
+  trim: new THREE.Color(0x9d172d), background: new THREE.Color(0x11151d),
+  fog: new THREE.Color(0x11151d)
 };
 function applyThemeTargets(palette) {
   const accent = new THREE.Color(palette.hex);
@@ -1042,11 +1069,11 @@ function applyThemeTargets(palette) {
   themeTarget.ambientSky = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.62);
   themeTarget.ambientGround = ground.clone();
   themeTarget.ceiling = accent.clone().lerp(new THREE.Color(0xffffff), 0.82);
-  themeTarget.wall = new THREE.Color(0x202229).lerp(dark, 0.36);
-  themeTarget.floor = new THREE.Color(0x17191f).lerp(dark, 0.22);
+  themeTarget.wall = new THREE.Color(0x303540).lerp(dark, 0.24);
+  themeTarget.floor = new THREE.Color(0x292d36).lerp(dark, 0.16);
   themeTarget.trim = accent.clone();
-  themeTarget.background = new THREE.Color(0x08090d).lerp(dark, 0.32);
-  themeTarget.fog = new THREE.Color(0x08090d).lerp(dark, 0.46);
+  themeTarget.background = new THREE.Color(0x11151d).lerp(dark, 0.24);
+  themeTarget.fog = new THREE.Color(0x11151d).lerp(dark, 0.32);
   currentThemeName = palette.name;
 }
 function triggerArenaTheme(milestone) {
@@ -1115,16 +1142,23 @@ const ARENA_EVENTS = [
   { id:"low-gravity", label:"LOW GRAVITY", description:"JUMPS STAY AIRBORNE LONGER", duration:7.5 },
   { id:"fog-surge", label:"FOG SURGE", description:"VISIBILITY TEMPORARILY REDUCED", duration:7.5 },
   { id:"ball-tempo", label:"BALL TEMPO", description:"THE BALL MOVES FASTER", duration:7.5 },
-  { id:"light-shift", label:"LIGHT SHIFT", description:"ARENA LIGHTING CHANGES", duration:7.5 }
+  { id:"light-shift", label:"LIGHT SHIFT", description:"ARENA LIGHTING CHANGES", duration:7.5 },
+  { id:"ball-rush", label:"BALL RUSH", description:"THE BALL SURGES TO HIGH SPEED", duration:6.5 },
+  { id:"ball-drift", label:"SLOW-MOTION WINDOW", description:"THE BALL TEMPORARILY SLOWS DOWN", duration:7.5 },
+  { id:"xp-surge", label:"XP SURGE", description:"SUCCESSFUL PULSE HITS EARN DOUBLE XP", duration:8.0 }
 ];
+let arenaEventXpMultiplier = 1;
 let activeArenaEvent = null;
 let arenaEventRemaining = 0;
 let arenaEventCooldown = 18;
 function finishArenaEvent() {
   if (!activeArenaEvent) return;
-  if (activeArenaEvent.id === "fog-surge") { scene.fog.near = 18; scene.fog.far = 34; }
+  if (activeArenaEvent.id === "fog-surge") { scene.fog.near = 24; scene.fog.far = 46; }
   if (activeArenaEvent.id === "ball-tempo") { ballVelocity.multiplyScalar(1 / 1.15); }
-  if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = 22; redRoomGlow.intensity = 18; }
+  if (activeArenaEvent.id === "ball-rush") { ballVelocity.multiplyScalar(1 / 1.24); }
+  if (activeArenaEvent.id === "ball-drift") { ballVelocity.multiplyScalar(1 / 0.82); }
+  if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = 28; redRoomGlow.intensity = 18; }
+  if (activeArenaEvent.id === "xp-surge") arenaEventXpMultiplier = 1;
   activeArenaEvent = null;
   arenaEventRemaining = 0;
 }
@@ -1134,7 +1168,10 @@ function startArenaEvent() {
   arenaEventRemaining = event.duration;
   if (event.id === "fog-surge") { scene.fog.near = 8; scene.fog.far = 23; }
   if (event.id === "ball-tempo") { ballVelocity.multiplyScalar(1.15); }
-  if (event.id === "light-shift") { ceilingLight.intensity = 12; redRoomGlow.intensity = 26; }
+  if (event.id === "ball-rush") { ballVelocity.multiplyScalar(1.24); }
+  if (event.id === "ball-drift") { ballVelocity.multiplyScalar(0.82); }
+  if (event.id === "xp-surge") arenaEventXpMultiplier = 2;
+  if (event.id === "light-shift") { ceilingLight.intensity = 16; redRoomGlow.intensity = 26; }
   if (eventBanner) {
     eventBanner.textContent = "ARENA EVENT  /  " + event.label + " — " + event.description;
     eventBanner.classList.remove("event-banner-show");
@@ -1156,6 +1193,7 @@ function updateArenaEvents(delta) {
 }
 function resetArenaEvents() {
   finishArenaEvent();
+  arenaEventXpMultiplier = 1;
   arenaEventCooldown = 18;
   if (eventBanner) eventBanner.classList.remove("event-banner-show");
 }
@@ -1244,7 +1282,7 @@ let lookSensitivity = 0.0035;
 let savedFov = 76;
 try {
   lookSensitivity = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreSensitivity")) || 0.0035, 0.001, 0.01);
-  savedFov = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreFov")) || 76, 60, 100);
+  savedFov = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreFov")) || 86, 60, 120);
 } catch {}
 camera.fov = savedFov;
 camera.updateProjectionMatrix();
@@ -2289,6 +2327,7 @@ function updatePulseProjectiles(delta) {
       if (speed > 38) { ballVelocity.x *= 38 / speed; ballVelocity.z *= 38 / speed; }
       ballRepelTimer = 1.2;
       triggerPulseHitMarker();
+      awardXPPulseHit();
       triggerCameraShake(0.22, 0.34);
       pulse.fading = true;
       pulse.mesh.visible = false;

@@ -2148,6 +2148,7 @@ function resumeRun() {
 
 function showMainMenu() {
   setArenaMode("classic");
+  resetArenaEvents();
   state = "ready";
   gameOverTrack.pause();
   if (musicEnabled) startBackgroundMusic();

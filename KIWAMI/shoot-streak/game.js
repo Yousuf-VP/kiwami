@@ -443,12 +443,22 @@ function loadShopInventory() {
 function saveShopInventory() {
   try { localStorage.setItem(shopStorageKey(), JSON.stringify(shopInventory)); } catch {}
 }
-function applyEquippedAuraEffect() {
+let arenaThemeGlowHex = 0xff002b;
+function getThemedBallGlow(themeGlowHex = arenaThemeGlowHex) {
   const item = SHOP_ITEMS.find(entry => entry.id === shopInventory.equippedAura && entry.category === "aura") || SHOP_ITEMS[0];
+  const themed = new THREE.Color(themeGlowHex);
+  if (item && item.id !== "crimson-core") themed.lerp(new THREE.Color(item.glow), 0.16);
+  return themed;
+}
+function applyEquippedAuraEffect() {
   if (typeof THREE === "undefined" || !ballAura?.material || !ballLight) return;
-  // The arena theme owns the core colour. The shop only styles its surrounding aura.
-  ballAura.material.color.set(item.glow);
-  ballLight.color.set(item.glow);
+  const glow = getThemedBallGlow();
+  ballAura.material.color.copy(glow);
+  ballLight.color.copy(glow);
+  if (typeof themeTarget !== "undefined" && themeTarget.ballAura) {
+    themeTarget.ballAura.copy(glow);
+    themeTarget.ballLight.copy(glow);
+  }
 }
 function applyEquippedPlayerFrame() {
   const frame = SHOP_ITEMS.find(entry => entry.id === shopInventory.equippedFrame && entry.category === "frame") || SHOP_ITEMS.find(entry => entry.id === "default-frame");
@@ -1011,6 +1021,10 @@ const themeDefault = {
 function applyThemeTargets(palette) {
   const accent = new THREE.Color(palette.hex);
   const glow = new THREE.Color(palette.glow);
+  arenaThemeGlowHex = palette.glow;
+  const themedBallGlow = getThemedBallGlow(palette.glow);
+  themeTarget.ballAura = themedBallGlow.clone();
+  themeTarget.ballLight = themedBallGlow.clone();
   const dark = new THREE.Color(palette.dark);
   const ground = new THREE.Color(palette.ground);
   themeTarget.ball = accent.clone();
@@ -1049,6 +1063,7 @@ function updateArenaTheme(delta) {
   const amount = 1 - Math.exp(-delta * 2.5);
   const pairs = [
     [mats.ball.color, themeTarget.ball], [mats.ball.emissive, themeTarget.ballEmissive],
+    [ballAura.material.color, themeTarget.ballAura], [ballLight.color, themeTarget.ballLight],
     [redRoomGlow.color, themeTarget.roomGlow], [playerFillLight.color, themeTarget.playerFill], [ambient.color, themeTarget.ambientSky],
     [ambient.groundColor, themeTarget.ambientGround], [ceilingLight.color, themeTarget.ceiling],
     [mats.wall.color, themeTarget.wall], [mats.floor.color, themeTarget.floor],
@@ -1450,7 +1465,7 @@ async function loadGlobalLeaderboard() {
   if (valueHeading) valueHeading.textContent = headings[leaderboardMetric];
   if (!supabase) {
     host.innerHTML = '<div class="leaderboard-state">CLOUD LEADERBOARD IS NOT CONFIGURED.</div>';
-    if (status) status.textContent = "Add the Supabase configuration and apply leaderboard-schema.sql in your project.";
+    if (status) status.textContent = "Supabase is not configured. Add the public project URL and anon key, then run the combined supabase-schema.sql migration.";
     return;
   }
   host.innerHTML = '<div class="leaderboard-state">SYNCING GLOBAL RANKINGS…</div>';
@@ -1473,8 +1488,12 @@ async function loadGlobalLeaderboard() {
       : "Public rankings are read-only while signed out. Sign in to publish your personal best.";
   } catch (error) {
     if (requestId !== leaderboardRequest) return;
-    host.innerHTML = '<div class="leaderboard-state">RANKINGS COULD NOT BE LOADED.</div>';
-    if (status) status.textContent = error.message || "Check the leaderboard database setup and try again.";
+    const detail = String(error?.message || "Unknown database error");
+    const migrationMissing = /get_dodge_core_leaderboard|schema cache|does not exist|could not find the function|function .* not found/i.test(detail);
+    host.innerHTML = '<div class="leaderboard-state">' + (migrationMissing ? "LEADERBOARD DATABASE SETUP REQUIRED." : "RANKINGS COULD NOT BE LOADED.") + '</div>';
+    if (status) status.textContent = migrationMissing
+      ? "Run KIWAMI/shoot-streak/supabase-schema.sql in Supabase SQL Editor, then refresh. Database says: " + detail
+      : "Leaderboard request failed: " + detail;
     if (rankNode) rankNode.textContent = "—";
     if (bestNode) bestNode.textContent = "—";
     if (countNode) countNode.textContent = "—";
@@ -1497,7 +1516,11 @@ async function submitGlobalBestScore(finalScoreValue, survivalSeconds) {
     if (!document.getElementById("leaderboard-panel")?.classList.contains("hidden")) await loadGlobalLeaderboard();
   } catch (error) {
     const status = document.querySelector("[data-leaderboard-status]");
-    if (status) status.textContent = "GLOBAL RECORD NOT SUBMITTED: " + (error.message || "Please try again later.");
+    const detail = String(error?.message || "Please try again later.");
+    const migrationMissing = /submit_dodge_core_score|schema cache|does not exist|could not find the function|function .* not found/i.test(detail);
+    if (status) status.textContent = migrationMissing
+      ? "LEADERBOARD SETUP REQUIRED: run supabase-schema.sql in Supabase SQL Editor. " + detail
+      : "GLOBAL RECORD NOT SUBMITTED: " + detail;
   }
 }
 
@@ -2182,22 +2205,29 @@ function firePulse() {
   const beamRotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), beamAxis);
   const beamCenter = mesh.position.clone().addScaledVector(trailDirection, -beamLength * 0.5);
   const outerBeam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.105, 0.045, beamLength, 10, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xff123b, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
+    // Cylinder top faces the fading tail; the broad base sits at the projectile emitter.
+    new THREE.CylinderGeometry(0.014, 0.17, beamLength, 20, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xff123b, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
   );
   const innerBeam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.038, 0.018, beamLength * 0.98, 8, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xffe8ed, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
+    new THREE.CylinderGeometry(0.004, 0.052, beamLength * 0.98, 16, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xfff0f3, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
   );
-  outerBeam.userData.baseOpacity = 0.42;
-  innerBeam.userData.baseOpacity = 0.9;
+  const beamLight = new THREE.PointLight(0xfff1f4, 3.6, 5.5, 2);
+  beamLight.position.set(0, 0, 0);
+  mesh.add(beamLight);
+  outerBeam.userData.baseOpacity = 0.34;
+  innerBeam.userData.baseOpacity = 0.88;
+  beamLight.userData.baseIntensity = 3.6;
+  boltGlow.userData.baseOpacity = 0.42;
+  boltCore.userData.baseOpacity = 1;
   outerBeam.position.copy(beamCenter);
   innerBeam.position.copy(beamCenter);
   outerBeam.quaternion.copy(beamRotation);
   innerBeam.quaternion.copy(beamRotation);
   trail.add(outerBeam, innerBeam);
   scene.add(mesh, trail);
-  pulseProjectiles.push({ mesh, trail, velocity: direction.multiplyScalar(88), life: 1.1, fading: false });
+  pulseProjectiles.push({ mesh, trail, beamLight, velocity: direction.multiplyScalar(88), life: 1.1, fading: false });
 }
 function updatePulseProjectiles(delta) {
   pulseCooldown = Math.max(0, pulseCooldown - delta);
@@ -2219,8 +2249,14 @@ function updatePulseProjectiles(delta) {
     pulse.trail.children.forEach(beam => {
       beam.position.copy(beamCenter);
       beam.quaternion.copy(beamRotation);
-      if (beam.material) beam.material.opacity = (beam.userData.baseOpacity || 1) * fade;
+      if (beam.material) beam.material.opacity = beam.userData.baseOpacity * fade;
     });
+    pulse.mesh.children.forEach(effect => {
+      if (effect.material && effect.userData.baseOpacity !== undefined) {
+        effect.material.opacity = effect.userData.baseOpacity * fade;
+      }
+    });
+    if (pulse.beamLight) pulse.beamLight.intensity = pulse.beamLight.userData.baseIntensity * fade;
     const segment = pulse.mesh.position.clone().sub(previousPosition);
     const segmentLengthSq = segment.lengthSq();
     const hitT = segmentLengthSq > 0

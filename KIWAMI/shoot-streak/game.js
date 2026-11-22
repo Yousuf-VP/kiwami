@@ -57,7 +57,8 @@ let justMissTimer = 0;
 let justMissArmed = true;
 let justMissAura = null;
 let justMissAuraLight = null;
-\nconst pulseHitMarker = document.createElement("div");
+
+const pulseHitMarker = document.createElement("div");
 pulseHitMarker.className = "pulse-hit-marker";
 pulseHitMarker.setAttribute("aria-hidden", "true");
 pulseHitMarker.innerHTML = "<span></span><span></span><span></span><span></span><i></i>";
@@ -2775,9 +2776,9 @@ function animate() {
 
     scoreValue.textContent = String(Math.floor(score)).padStart(4, "0");
     timeValue.textContent = elapsed.toFixed(1) + "s";
-    ball.rotation.x += delta * 0.8;
-    ball.rotation.z += delta * 1.1;
-    ballAura.rotation.y -= delta * 0.4;
+    ball.rotation.x += gameDelta * 0.8;
+    ball.rotation.z += gameDelta * 1.1;
+    ballAura.rotation.y -= gameDelta * 0.4;
   } else {
     if (justMissTimer > 0) {
       justMissTimer = 0;

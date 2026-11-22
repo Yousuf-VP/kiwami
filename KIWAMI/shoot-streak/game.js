@@ -1279,7 +1279,7 @@ joystickResponseInputs.forEach(input => input.addEventListener("input", () => {
 applyTouchControlSettings();
 
 let lookSensitivity = 0.0035;
-let savedFov = 76;
+let savedFov = 86;
 try {
   lookSensitivity = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreSensitivity")) || 0.0035, 0.001, 0.01);
   savedFov = THREE.MathUtils.clamp(Number(localStorage.getItem("dodgeCoreFov")) || 86, 60, 120);

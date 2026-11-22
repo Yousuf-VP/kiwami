@@ -3359,3 +3359,10 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 @media(prefers-reduced-motion:reduce) {
   .record-chase-toast.is-visible { animation-duration:.8s; }
 }
+
+
+/* DODGE CORE — PULSE HIT XP FEEDBACK */
+.pulse-xp-toast{position:absolute;z-index:8;left:50%;top:clamp(190px,29vh,250px);transform:translate(-50%,8px) scale(.94);padding:8px 13px;border:1px solid rgba(255,83,107,.55);border-radius:999px;color:#fff;background:rgba(15,8,12,.94);box-shadow:0 0 22px rgba(255,24,61,.2);font:800 10px var(--display);letter-spacing:1.4px;opacity:0;pointer-events:none;text-shadow:0 0 12px rgba(255,83,107,.65)}
+.pulse-xp-toast.is-visible{animation:pulseXpToast 1.15s ease both}
+@keyframes pulseXpToast{0%{opacity:0;transform:translate(-50%,8px) scale(.94)}18%,72%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-12px) scale(1.02)}}
+@media(prefers-reduced-motion:reduce){.pulse-xp-toast.is-visible{animation:none;opacity:1;transform:translate(-50%,0)}}

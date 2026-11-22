@@ -2215,7 +2215,7 @@ function updatePulseProjectiles(delta) {
     const beamLength = 3.15;
     const beamCenter = pulse.mesh.position.clone().addScaledVector(trailDirection, -beamLength * 0.5);
     const beamRotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), trailDirection.clone().negate());
-    const fade = Math.min(1, pulse.life / 0.32);
+    const fade = THREE.MathUtils.clamp(pulse.life / 0.55, 0, 1);
     pulse.trail.children.forEach(beam => {
       beam.position.copy(beamCenter);
       beam.quaternion.copy(beamRotation);
@@ -2246,8 +2246,7 @@ function updatePulseProjectiles(delta) {
       triggerCameraShake(0.22, 0.34);
       pulse.fading = true;
       pulse.mesh.visible = false;
-      pulse.velocity.set(0, 0, 0);
-      pulse.life = 0.32;
+      pulse.life = 0.55;
     }
     if (pulse.life <= 0) {
       scene.remove(pulse.mesh, pulse.trail);

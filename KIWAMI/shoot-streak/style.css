@@ -3444,3 +3444,13 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 @media(max-width:800px){.menu-mode-actions{gap:7px}.menu-mode-actions .primary-button{min-height:50px;padding:10px 7px;gap:5px;font-size:8px;letter-spacing:.7px}.hazard-mode-button{padding:7px 5px;font-size:7px;letter-spacing:.45px}.hazard-mode-button small{font-size:5px;letter-spacing:.5px}}
 @media(max-width:360px){.menu-mode-actions{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.hazard-mode-button{transition:none}}
+
+
+/* HAZARD GROUNDS — event alerts stay readable against the open-space sky. */
+body.hazard-grounds-active #event-banner{
+  border-color:rgba(186,145,255,.62);
+  color:#f5edff;
+  background:linear-gradient(100deg,rgba(43,25,76,.92),rgba(12,13,25,.9));
+  box-shadow:0 0 24px rgba(150,103,255,.2),inset 0 0 18px rgba(150,103,255,.08);
+  text-shadow:0 0 12px rgba(190,150,255,.45);
+}

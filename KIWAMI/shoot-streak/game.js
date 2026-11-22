@@ -1220,10 +1220,33 @@ const gridPositions=[],gridW=32,gridD=44,tile=4;
 for(let x=-gridW;x<=gridW;x+=tile)gridPositions.push(x,.012,-gridD,x,.012,gridD);
 for(let z=-gridD;z<=gridD;z+=tile)gridPositions.push(-gridW,.012,z,gridW,.012,z);
 const gridGeometry=new THREE.BufferGeometry();gridGeometry.setAttribute("position",new THREE.Float32BufferAttribute(gridPositions,3));hazardWorld.add(new THREE.LineSegments(gridGeometry,hazardGridMaterial));
+// Open-top perimeter walls: glowing wireframe panels, with no ceiling.
+const hazardWallPositions=[],hazardWallHeight=17;
+for(let x=-gridW;x<=gridW;x+=tile){
+  for(const z of [-gridD,gridD])hazardWallPositions.push(x,.02,z,x,hazardWallHeight,z);
+  for(let y=3;y<=hazardWallHeight;y+=3)for(const z of [-gridD,gridD])hazardWallPositions.push(-gridW,y,z,gridW,y,z);
+}
+for(let z=-gridD;z<=gridD;z+=tile){
+  for(const x of [-gridW,gridW])hazardWallPositions.push(x,.02,z,x,hazardWallHeight,z);
+  for(let y=3;y<=hazardWallHeight;y+=3)for(const x of [-gridW,gridW])hazardWallPositions.push(x,y,-gridD,x,y,gridD);
+}
+const hazardWallGeometry=new THREE.BufferGeometry();
+hazardWallGeometry.setAttribute("position",new THREE.Float32BufferAttribute(hazardWallPositions,3));
+hazardWorld.add(new THREE.LineSegments(hazardWallGeometry,hazardGridMaterial));
 const starPositions=[];for(let n=0;n<900;n++)starPositions.push((Math.random()-.5)*300,12+Math.random()*145,(Math.random()-.5)*300);
 const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute("position",new THREE.Float32BufferAttribute(starPositions,3));
 hazardWorld.add(new THREE.Points(starGeometry,new THREE.PointsMaterial({color:0xe8edff,size:.48,transparent:true,opacity:.9,sizeAttenuation:true,depthWrite:false})));
-function makeHazardPlanet(radius,color,emissive,position){const p=new THREE.Mesh(new THREE.SphereGeometry(radius,40,28),new THREE.MeshStandardMaterial({color,emissive,emissiveIntensity:.8,roughness:.78}));p.position.set(...position);hazardWorld.add(p);const l=new THREE.PointLight(emissive,18,radius*8,2);l.position.copy(p.position);hazardWorld.add(l);return p;}
+function makeHazardPlanet(radius,color,emissive,position){
+  const geometry=new THREE.SphereGeometry(radius,40,28);
+  const p=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color,emissive,emissiveIntensity:1.35,roughness:.78}));
+  p.position.set(...position);hazardWorld.add(p);
+  const halo=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:emissive,transparent:true,opacity:.17,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+  halo.scale.setScalar(1.16);p.add(halo);
+  const outerHalo=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:emissive,transparent:true,opacity:.055,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+  outerHalo.scale.setScalar(1.34);p.add(outerHalo);
+  const l=new THREE.PointLight(emissive,32,radius*11,2);l.position.copy(p.position);hazardWorld.add(l);
+  return p;
+}
 const hazardPlanetA=makeHazardPlanet(10.5,0x452b68,0x6d39a6,[-48,36,-82]),hazardPlanetB=makeHazardPlanet(6.5,0x263d65,0x2866bd,[52,53,-118]);makeHazardPlanet(3.8,0x6a303b,0xb52e54,[72,24,34]);
 const hazardPlanetRing=new THREE.Mesh(new THREE.TorusGeometry(13.2,.16,8,100),new THREE.MeshBasicMaterial({color:0xb17bff,transparent:true,opacity:.58,toneMapped:false}));hazardPlanetRing.position.copy(hazardPlanetA.position);hazardPlanetRing.rotation.set(1.12,.18,-.2);hazardWorld.add(hazardPlanetRing);
 const shootingStars=[];for(let n=0;n<3;n++){const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(-1.2,-.8,-13)]),new THREE.LineBasicMaterial({color:0xffdce5,transparent:true,opacity:0,toneMapped:false}));line.visible=false;hazardWorld.add(line);shootingStars.push({line,life:0,delay:1.5+Math.random()*5});}
@@ -1248,10 +1271,11 @@ scene.add(ball);
 
 const ballAura = new THREE.Mesh(
   new THREE.SphereGeometry(0.9, 20, 16),
-  new THREE.MeshBasicMaterial({ color: 0xff123c, transparent: true, opacity: 0.12, depthWrite: false, toneMapped: false })
+  new THREE.MeshBasicMaterial({ color: 0xff123c, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })
 );
+ballAura.scale.setScalar(1.22);
 ball.add(ballAura);
-const ballLight = new THREE.PointLight(0xff123c, 45, 10);
+const ballLight = new THREE.PointLight(0xff123c, 62, 15);
 
 ball.add(ballLight);
 
@@ -1468,13 +1492,13 @@ function updateArenaEvents(delta) {
   arenaEventCooldown -= delta;
   if (arenaEventCooldown <= 0) {
     startArenaEvent();
-    arenaEventCooldown = 22 + Math.random() * 8;
+    arenaEventCooldown = arenaMode === "hazard" ? 3.5 + Math.random() * 3.5 : 22 + Math.random() * 8;
   }
 }
 function resetArenaEvents() {
   finishArenaEvent();
   arenaEventXpMultiplier = 1;
-  arenaEventCooldown = 18;
+  arenaEventCooldown = arenaMode === "hazard" ? 3.5 + Math.random() * 2.5 : 18;
   if (eventBanner) eventBanner.classList.remove("event-banner-show");
 }
 
@@ -2536,6 +2560,20 @@ function firePulse() {
   camera.getWorldDirection(direction);
   const origin = new THREE.Vector3();
   camera.getWorldPosition(origin);
+  // Hazard Grounds gets gentle cone-based aim assistance, never a hard lock.
+  if (arenaMode === "hazard") {
+    const toBall = ball.position.clone().sub(origin);
+    const targetDistance = toBall.length();
+    if (targetDistance > 0.001 && targetDistance < 72) {
+      toBall.normalize();
+      const aimAngle = direction.angleTo(toBall);
+      const assistCone = 0.14;
+      if (aimAngle < assistCone) {
+        const assistStrength = 0.28 * (1 - aimAngle / assistCone);
+        direction.lerp(toBall, assistStrength).normalize();
+      }
+    }
+  }
   const mesh = new THREE.Group();
   mesh.position.copy(origin).addScaledVector(direction, 0.82);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction.clone().normalize());

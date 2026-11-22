@@ -1558,6 +1558,24 @@ function openMenuDetail(button) {
   if (kind === "leaderboard") loadGlobalLeaderboard();
 }
 
+
+document.querySelectorAll("#mobile-settings-panel [data-mobile-settings-tab]").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const panel = tab.closest("#mobile-settings-panel");
+    const selected = tab.dataset.mobileSettingsTab;
+    panel.querySelectorAll("[data-mobile-settings-tab]").forEach(button => {
+      const active = button === tab;
+      button.classList.toggle("selected", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+    panel.querySelectorAll("[data-mobile-settings-page]").forEach(page => {
+      const active = page.dataset.mobileSettingsPage === selected;
+      page.hidden = !active;
+      page.classList.toggle("active", active);
+    });
+  });
+});
+
 document.querySelectorAll("[data-panel-toggle]").forEach(button => {
   button.setAttribute("aria-haspopup", "dialog");
   button.addEventListener("click", () => openMenuDetail(button));
@@ -2171,13 +2189,15 @@ function firePulse() {
     new THREE.CylinderGeometry(0.038, 0.018, beamLength * 0.98, 8, 1, true),
     new THREE.MeshBasicMaterial({ color: 0xffe8ed, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
   );
+  outerBeam.userData.baseOpacity = 0.42;
+  innerBeam.userData.baseOpacity = 0.9;
   outerBeam.position.copy(beamCenter);
   innerBeam.position.copy(beamCenter);
   outerBeam.quaternion.copy(beamRotation);
   innerBeam.quaternion.copy(beamRotation);
   trail.add(outerBeam, innerBeam);
   scene.add(mesh, trail);
-  pulseProjectiles.push({ mesh, trail, velocity: direction.multiplyScalar(88), life: 1.1 });
+  pulseProjectiles.push({ mesh, trail, velocity: direction.multiplyScalar(88), life: 1.1, fading: false });
 }
 function updatePulseProjectiles(delta) {
   pulseCooldown = Math.max(0, pulseCooldown - delta);
@@ -2185,15 +2205,21 @@ function updatePulseProjectiles(delta) {
     const pulse = pulseProjectiles[i];
     pulse.life -= delta;
     const previousPosition = pulse.mesh.position.clone();
-    pulse.mesh.position.addScaledVector(pulse.velocity, delta);
-    pulse.mesh.rotation.x += delta * 8;
-    const trailDirection = pulse.velocity.clone().normalize();
+    if (!pulse.fading) {
+      pulse.mesh.position.addScaledVector(pulse.velocity, delta);
+      pulse.mesh.rotation.x += delta * 8;
+    }
+    const trailDirection = pulse.velocity.lengthSq() > 0.0001
+      ? pulse.velocity.clone().normalize()
+      : new THREE.Vector3(0, 0, -1);
     const beamLength = 3.15;
     const beamCenter = pulse.mesh.position.clone().addScaledVector(trailDirection, -beamLength * 0.5);
     const beamRotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), trailDirection.clone().negate());
+    const fade = Math.min(1, pulse.life / 0.32);
     pulse.trail.children.forEach(beam => {
       beam.position.copy(beamCenter);
       beam.quaternion.copy(beamRotation);
+      if (beam.material) beam.material.opacity = (beam.userData.baseOpacity || 1) * fade;
     });
     const segment = pulse.mesh.position.clone().sub(previousPosition);
     const segmentLengthSq = segment.lengthSq();
@@ -2201,7 +2227,7 @@ function updatePulseProjectiles(delta) {
       ? THREE.MathUtils.clamp(ball.position.clone().sub(previousPosition).dot(segment) / segmentLengthSq, 0, 1)
       : 0;
     const closestPoint = previousPosition.addScaledVector(segment, hitT);
-    if (closestPoint.distanceTo(ball.position) <= CONFIG.ball.radius + 0.24) {
+    if (!pulse.fading && closestPoint.distanceTo(ball.position) <= CONFIG.ball.radius + 0.24) {
       const push = pulse.velocity.clone().normalize();
       const horizontalLength = Math.hypot(push.x, push.z);
       if (horizontalLength > 0.001) {
@@ -2217,7 +2243,11 @@ function updatePulseProjectiles(delta) {
       if (speed > 38) { ballVelocity.x *= 38 / speed; ballVelocity.z *= 38 / speed; }
       ballRepelTimer = 1.2;
       triggerPulseHitMarker();
-      pulse.life = 0;
+      triggerCameraShake(0.22, 0.34);
+      pulse.fading = true;
+      pulse.mesh.visible = false;
+      pulse.velocity.set(0, 0, 0);
+      pulse.life = 0.32;
     }
     if (pulse.life <= 0) {
       scene.remove(pulse.mesh, pulse.trail);
@@ -2340,6 +2370,12 @@ function updateBall(delta) {
 
 let cameraMotionTime = 0;
 let landingKick = 0;
+let cameraShakeTime = 0;
+let cameraShakeStrength = 0;
+function triggerCameraShake(strength = 0.16, duration = 0.28) {
+  cameraShakeTime = Math.max(cameraShakeTime, duration);
+  cameraShakeStrength = Math.max(cameraShakeStrength, strength);
+}
 function updateCamera(delta = 0) {
   // Athletic parkour-style movement: stronger stride bob, directional lean,
   // forward momentum pitch and a brief cushioned landing response.
@@ -2361,17 +2397,24 @@ function updateCamera(delta = 0) {
   const forwardDip = -Math.max(0, localForward) * 0.045 * motionScale;
   const strafeLean = -localStrafe * 0.075 * motionScale;
   const strideRoll = Math.sin(cameraMotionTime) * 0.012 * moveAmount * motionScale;
+  cameraShakeTime = Math.max(0, cameraShakeTime - delta);
+  cameraShakeStrength = THREE.MathUtils.damp(cameraShakeStrength, 0, 12, delta);
+  const shakeScale = graphicsSettings.motionEffects ? 1 : 0.25;
+  const shakeEnvelope = cameraShakeTime > 0 ? cameraShakeTime / 0.34 : 0;
+  const shakeX = Math.sin(cameraMotionTime * 31 + elapsed * 73) * cameraShakeStrength * shakeEnvelope * shakeScale;
+  const shakeY = Math.cos(cameraMotionTime * 37 + elapsed * 61) * cameraShakeStrength * 0.62 * shakeEnvelope * shakeScale;
+  const shakeRoll = Math.sin(cameraMotionTime * 27 + elapsed * 83) * cameraShakeStrength * 0.11 * shakeEnvelope * shakeScale;
 
   camera.position.set(
-    player.position.x + rightX * lateralSway,
-    1.65 + jumpHeight - strideBob + verticalBounce - landingKick + forwardDip * 0.18,
+    player.position.x + rightX * lateralSway + shakeX,
+    1.65 + jumpHeight - strideBob + verticalBounce - landingKick + forwardDip * 0.18 + shakeY,
     player.position.z + rightZ * lateralSway
   );
   camera.rotation.order = "YXZ";
   camera.rotation.set(
-    cameraPitch + Math.max(0, localForward) * 0.025 * motionScale + landingKick * 0.22 * motionScale,
-    cameraYaw,
-    strafeLean + strideRoll
+    cameraPitch + Math.max(0, localForward) * 0.025 * motionScale + landingKick * 0.22 * motionScale + shakeY * 0.16,
+    cameraYaw + shakeX * 0.22,
+    strafeLean + strideRoll + shakeRoll
   );
   playerFillLight.position.set(player.position.x, 1.9 + jumpHeight, player.position.z);
 }

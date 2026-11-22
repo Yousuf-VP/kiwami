@@ -748,8 +748,21 @@ function awardCashForRun(survivalSeconds) {
   if (earned > 0 && currentUser) syncCloudProgression();
   return earned;
 }
+function updateHazardGroundsAccess() {
+  const unlocked = getLevelProgress().level >= 5;
+  document.querySelectorAll("#start-hazard-button, #mobile-start-hazard-button").forEach(button => {
+    button.disabled = !unlocked;
+    button.setAttribute("aria-disabled", String(!unlocked));
+    button.classList.toggle("hazard-locked", !unlocked);
+    const note = button.querySelector("small");
+    if (note) note.textContent = unlocked ? "OPEN SPACE SURVIVAL" : "UNLOCKS AT LEVEL 5";
+    button.title = unlocked ? "Enter Hazard Grounds" : "Reach Level 5 to unlock Hazard Grounds";
+  });
+}
+
 function renderProgression() {
   updateKiwamiPlayerBadge();
+  updateHazardGroundsAccess();
   const progress = getLevelProgress();
   const levelNode = document.getElementById("level-value");
   const xpNode = document.getElementById("xp-value");
@@ -2408,8 +2421,16 @@ updateMusicControls();
 
 startButton.addEventListener("click",()=>{setArenaMode("classic");startRun();});
 document.getElementById("mobile-start-button")?.addEventListener("click",()=>{setArenaMode("classic");startRun();});
-document.getElementById("start-hazard-button")?.addEventListener("click",()=>{setArenaMode("hazard");startRun();});
-document.getElementById("mobile-start-hazard-button")?.addEventListener("click",()=>{setArenaMode("hazard");startRun();});
+function enterHazardGrounds() {
+  if (getLevelProgress().level < 5) {
+    updateHazardGroundsAccess();
+    return;
+  }
+  setArenaMode("hazard");
+  startRun();
+}
+document.getElementById("start-hazard-button")?.addEventListener("click", enterHazardGrounds);
+document.getElementById("mobile-start-hazard-button")?.addEventListener("click", enterHazardGrounds);
 restartButton.addEventListener("click", startRun);
 pauseButton.addEventListener("click", pauseRun);
 gameplayPauseButton.addEventListener("click", pauseRun);

@@ -3618,3 +3618,126 @@ body.hazard-grounds-active #event-banner{
   .desktop-camera-grid { gap:12px; }
   .desktop-controls-grid { gap:10px; }
 }
+
+
+/* DESKTOP SETTINGS — use the same compact tab language as the phone UI. */
+@media (min-width:761px) {
+  .desktop-settings-panel {
+    width:100%;
+    max-height:none;
+    overflow:hidden;
+  }
+  .desktop-settings-tabs {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:5px;
+    margin:0 0 12px;
+    padding:4px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:8px;
+    background:rgba(0,0,0,.32);
+  }
+  .desktop-settings-tabs button {
+    min-height:38px;
+    border:1px solid transparent;
+    border-radius:6px;
+    color:#9697a1;
+    background:transparent;
+    font:800 8px var(--display);
+    letter-spacing:.8px;
+    cursor:pointer;
+  }
+  .desktop-settings-tabs button:hover,
+  .desktop-settings-tabs button.selected {
+    border-color:rgba(255,65,91,.65);
+    color:#fff;
+    background:linear-gradient(145deg,rgba(112,12,36,.8),rgba(35,7,17,.95));
+    box-shadow:0 0 16px rgba(255,24,61,.12);
+  }
+  .desktop-settings-page {
+    min-width:0;
+    max-height:none;
+    overflow:hidden;
+    animation:panelOpen .16s ease both;
+  }
+  .desktop-settings-page .mobile-settings-hint,
+  .desktop-settings-page .advanced-help {
+    margin:10px 2px 0;
+    color:#858691;
+    font:600 8px var(--display);
+    letter-spacing:.55px;
+    line-height:1.5;
+  }
+  .desktop-settings-page .mobile-setting { margin:12px 0; }
+  .desktop-settings-page .mobile-setting>span {
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:8px;
+    color:#bfc0c8;
+    font:700 8px var(--display);
+    letter-spacing:1px;
+  }
+  .desktop-settings-page .mobile-setting output { color:#ff899b; }
+  .desktop-settings-page input[type=range] { width:100%;accent-color:var(--red);cursor:pointer; }
+  .desktop-camera-grid { grid-template-columns:1fr;gap:5px; }
+  .desktop-graphics-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .desktop-graphics-grid .music-setting-row,
+  .desktop-graphics-grid .graphics-status { grid-column:1/-1; }
+  .desktop-graphics-grid .graphics-toggle-row {
+    min-height:40px;
+    margin:0;
+    padding:7px 8px;
+  }
+  .desktop-graphics-grid .graphics-toggle-row strong { font-size:7px; }
+  .desktop-graphics-grid .graphics-toggle-row small { font-size:6px; }
+  .desktop-graphics-grid .graphics-quality-row {
+    min-height:40px;
+    margin:0;
+    padding:6px 8px;
+  }
+  .desktop-graphics-grid .graphics-status { margin:0;padding:6px 8px; }
+  .desktop-controls-grid { grid-template-columns:1fr;gap:8px; }
+  .desktop-keybinds,
+  .desktop-joystick-settings {
+    padding:8px;
+  }
+  .desktop-keybinds .graphics-settings-heading { margin:0 0 7px; }
+  .desktop-joystick-settings .advanced-setting-row { margin:7px 0 10px; }
+  .menu-detail-content-wrap:has(#desktop-settings-panel) {
+    width:min(640px,100%);
+    max-height:calc(100dvh - 170px);
+    padding:12px 0;
+    overflow:hidden;
+  }
+  .menu-detail-content:has(#desktop-settings-panel) {
+    padding:12px 14px;
+    overflow:hidden;
+  }
+  .menu-detail-content #desktop-settings-panel { overflow:hidden; }
+}
+@media (max-height:760px) and (min-width:761px) {
+  .desktop-settings-tabs { margin-bottom:8px; }
+  .desktop-settings-tabs button { min-height:34px; }
+  .desktop-graphics-grid { gap:4px 7px; }
+  .desktop-graphics-grid .graphics-toggle-row { min-height:36px;padding:5px 7px; }
+  .desktop-camera-grid { gap:2px; }
+  .desktop-controls-grid { gap:6px; }
+}
+
+/* Hazard Grounds stays visible but cannot be entered before player level 5. */
+.hazard-mode-button:disabled,
+.hazard-mode-button.hazard-locked {
+  cursor:not-allowed;
+  opacity:.58;
+  filter:saturate(.55);
+  border-color:rgba(255,255,255,.12);
+  box-shadow:none;
+}
+.hazard-mode-button:disabled:hover,
+.hazard-mode-button.hazard-locked:hover {
+  transform:none;
+}

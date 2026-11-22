@@ -2156,20 +2156,26 @@ function firePulse() {
   );
   mesh.add(boltGlow, boltCore);
 
-  // Long twin streaks leave a cinematic red-and-white afterimage behind the bolt.
+  // A volumetric-looking beam: layered tapered cylinders read as a solid energy lance.
   const trail = new THREE.Group();
   const trailDirection = direction.clone().normalize();
-  const trailStart = mesh.position.clone().addScaledVector(trailDirection, -2.25);
-  const trailEnd = mesh.position.clone().addScaledVector(trailDirection, -0.08);
-  const outerTrail = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([trailStart, trailEnd]),
-    new THREE.LineBasicMaterial({ color: 0xff123b, transparent: true, opacity: 0.78, depthWrite: false, toneMapped: false })
+  const beamLength = 3.15;
+  const beamAxis = trailDirection.clone().negate();
+  const beamRotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), beamAxis);
+  const beamCenter = mesh.position.clone().addScaledVector(trailDirection, -beamLength * 0.5);
+  const outerBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.105, 0.045, beamLength, 10, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xff123b, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
   );
-  const innerTrail = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([trailStart, trailEnd]),
-    new THREE.LineBasicMaterial({ color: 0xffdce2, transparent: true, opacity: 0.96, depthWrite: false, toneMapped: false })
+  const innerBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.038, 0.018, beamLength * 0.98, 8, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffe8ed, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })
   );
-  trail.add(outerTrail, innerTrail);
+  outerBeam.position.copy(beamCenter);
+  innerBeam.position.copy(beamCenter);
+  outerBeam.quaternion.copy(beamRotation);
+  innerBeam.quaternion.copy(beamRotation);
+  trail.add(outerBeam, innerBeam);
   scene.add(mesh, trail);
   pulseProjectiles.push({ mesh, trail, velocity: direction.multiplyScalar(88), life: 1.1 });
 }
@@ -2182,9 +2188,13 @@ function updatePulseProjectiles(delta) {
     pulse.mesh.position.addScaledVector(pulse.velocity, delta);
     pulse.mesh.rotation.x += delta * 8;
     const trailDirection = pulse.velocity.clone().normalize();
-    const trailStart = pulse.mesh.position.clone().addScaledVector(trailDirection, -1.25);
-    const trailEnd = pulse.mesh.position.clone().addScaledVector(trailDirection, -0.12);
-    pulse.trail.children.forEach(line => line.geometry.setFromPoints([trailStart, trailEnd]));
+    const beamLength = 3.15;
+    const beamCenter = pulse.mesh.position.clone().addScaledVector(trailDirection, -beamLength * 0.5);
+    const beamRotation = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), trailDirection.clone().negate());
+    pulse.trail.children.forEach(beam => {
+      beam.position.copy(beamCenter);
+      beam.quaternion.copy(beamRotation);
+    });
     const segment = pulse.mesh.position.clone().sub(previousPosition);
     const segmentLengthSq = segment.lengthSq();
     const hitT = segmentLengthSq > 0
@@ -2195,16 +2205,16 @@ function updatePulseProjectiles(delta) {
       const push = pulse.velocity.clone().normalize();
       const horizontalLength = Math.hypot(push.x, push.z);
       if (horizontalLength > 0.001) {
-        ballVelocity.x += (push.x / horizontalLength) * 12;
-        ballVelocity.z += (push.z / horizontalLength) * 12;
+        ballVelocity.x += (push.x / horizontalLength) * 26;
+        ballVelocity.z += (push.z / horizontalLength) * 26;
       } else {
         const away = new THREE.Vector3(ball.position.x - player.position.x, 0, ball.position.z - player.position.z).normalize();
-        ballVelocity.x += away.x * 12;
-        ballVelocity.z += away.z * 12;
+        ballVelocity.x += away.x * 26;
+        ballVelocity.z += away.z * 26;
       }
-      ballVerticalVelocity = Math.min(15, ballVerticalVelocity + Math.max(3, push.y * 4 + 3));
+      ballVerticalVelocity = Math.min(22, ballVerticalVelocity + Math.max(7, push.y * 7 + 7));
       const speed = Math.hypot(ballVelocity.x, ballVelocity.z);
-      if (speed > 27) { ballVelocity.x *= 27 / speed; ballVelocity.z *= 27 / speed; }
+      if (speed > 38) { ballVelocity.x *= 38 / speed; ballVelocity.z *= 38 / speed; }
       ballRepelTimer = 1.2;
       triggerPulseHitMarker();
       pulse.life = 0;

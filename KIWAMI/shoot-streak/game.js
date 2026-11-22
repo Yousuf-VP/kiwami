@@ -6,7 +6,24 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
    Lightweight, non-combat arcade game.
 */
 
+
 const shell = document.getElementById("game-shell");
+
+// Casual copy/selection deterrents for the game surface. Editable fields remain usable.
+if (shell) {
+  shell.classList.add("copy-guard-enabled");
+  const isEditableTarget = (target) => !!target?.closest?.('input, textarea, [contenteditable="true"], [contenteditable=""], .allow-text-selection');
+  ["copy", "cut", "contextmenu", "dragstart"].forEach((eventName) => {
+    shell.addEventListener(eventName, (event) => {
+      if (isEditableTarget(event.target)) return;
+      event.preventDefault();
+    }, true);
+  });
+  shell.addEventListener("selectstart", (event) => {
+    if (!isEditableTarget(event.target)) event.preventDefault();
+  }, true);
+}
+
 const startScreen = document.getElementById("start-screen");
 const pauseScreen = document.getElementById("pause-screen");
 const gameOverScreen = document.getElementById("game-over-screen");
@@ -969,6 +986,56 @@ blasterPart(new THREE.BoxGeometry(0.075, 0.045, 0.11), blasterDarkMaterial, [0, 
 blasterPart(new THREE.BoxGeometry(0.075, 0.018, 0.18), blasterGlowMaterial, [0, 0.006, -0.18]);
 blasterPart(new THREE.BoxGeometry(0.025, 0.055, 0.13), blasterGlowMaterial, [-0.13, 0.005, -0.15]);
 blasterPart(new THREE.BoxGeometry(0.025, 0.055, 0.13), blasterGlowMaterial, [0.13, 0.005, -0.15]);
+
+/* Premium Pulse Blaster detail pass — fictional energy-tool styling. */
+// Layered side armor and bevel-like panels.
+blasterPart(new THREE.BoxGeometry(0.065, 0.115, 0.255), blasterDarkMaterial, [-0.148, 0.015, -0.19], [0.02, 0.08, -0.04]);
+blasterPart(new THREE.BoxGeometry(0.065, 0.115, 0.255), blasterDarkMaterial, [0.148, 0.015, -0.19], [0.02, -0.08, 0.04]);
+blasterPart(new THREE.BoxGeometry(0.035, 0.075, 0.205), blasterEdgeMaterial, [-0.184, 0.018, -0.205]);
+blasterPart(new THREE.BoxGeometry(0.035, 0.075, 0.205), blasterEdgeMaterial, [0.184, 0.018, -0.205]);
+blasterPart(new THREE.BoxGeometry(0.012, 0.052, 0.17), blasterGlowMaterial, [-0.205, 0.018, -0.205]);
+blasterPart(new THREE.BoxGeometry(0.012, 0.052, 0.17), blasterGlowMaterial, [0.205, 0.018, -0.205]);
+
+// Raised top spine, segmented rail and rear power housing.
+blasterPart(new THREE.BoxGeometry(0.105, 0.035, 0.255), blasterDarkMaterial, [0, 0.125, -0.29]);
+blasterPart(new THREE.BoxGeometry(0.052, 0.026, 0.19), blasterEdgeMaterial, [0, 0.151, -0.31]);
+for (let railIndex = 0; railIndex < 5; railIndex++) {
+  blasterPart(new THREE.BoxGeometry(0.066, 0.012, 0.022), blasterGlowMaterial, [0, 0.17, -0.235 - railIndex * 0.039]);
+}
+blasterPart(new THREE.BoxGeometry(0.13, 0.09, 0.09), blasterBodyMaterial, [0, 0.015, 0.075]);
+blasterPart(new THREE.BoxGeometry(0.09, 0.045, 0.045), blasterGlowMaterial, [0, 0.018, 0.124]);
+
+// Vent stacks on both flanks.
+for (let ventIndex = 0; ventIndex < 4; ventIndex++) {
+  const ventZ = -0.105 - ventIndex * 0.043;
+  blasterPart(new THREE.BoxGeometry(0.012, 0.012, 0.026), blasterGlowMaterial, [-0.218, 0.071, ventZ], [0, 0, -0.18]);
+  blasterPart(new THREE.BoxGeometry(0.012, 0.012, 0.026), blasterGlowMaterial, [0.218, 0.071, ventZ], [0, 0, 0.18]);
+}
+
+// Reinforced energy barrel with concentric emitter rings and a bright inner core.
+blasterPart(new THREE.CylinderGeometry(0.055, 0.062, 0.235, 16, 1, true), blasterDarkMaterial, [0, 0.035, -0.62], [Math.PI / 2, 0, 0]);
+blasterPart(new THREE.CylinderGeometry(0.038, 0.038, 0.205, 16), blasterGlowMaterial, [0, 0.035, -0.63], [Math.PI / 2, 0, 0]);
+const blasterMuzzleRing = new THREE.Mesh(new THREE.TorusGeometry(0.078, 0.012, 8, 24), blasterEdgeMaterial);
+blasterMuzzleRing.position.set(0, 0.035, -0.735);
+pulseBlasterModel.add(blasterMuzzleRing);
+const blasterInnerRing = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.006, 6, 24), blasterGlowMaterial);
+blasterInnerRing.position.set(0, 0.035, -0.741);
+pulseBlasterModel.add(blasterInnerRing);
+blasterPart(new THREE.CircleGeometry(0.036, 24), blasterGlowMaterial, [0, 0.035, -0.744]);
+
+// Energy-cell side capsules, grip ribs and a compact illuminated status strip.
+blasterPart(new THREE.CylinderGeometry(0.032, 0.032, 0.19, 12), blasterEdgeMaterial, [-0.125, -0.035, -0.12], [Math.PI / 2, 0, 0]);
+blasterPart(new THREE.CylinderGeometry(0.024, 0.024, 0.16, 12), blasterGlowMaterial, [-0.125, -0.035, -0.12], [Math.PI / 2, 0, 0]);
+blasterPart(new THREE.CylinderGeometry(0.032, 0.032, 0.19, 12), blasterEdgeMaterial, [0.125, -0.035, -0.12], [Math.PI / 2, 0, 0]);
+blasterPart(new THREE.CylinderGeometry(0.024, 0.024, 0.16, 12), blasterGlowMaterial, [0.125, -0.035, -0.12], [Math.PI / 2, 0, 0]);
+for (let gripRib = 0; gripRib < 3; gripRib++) {
+  blasterPart(new THREE.BoxGeometry(0.142, 0.012, 0.018), blasterEdgeMaterial, [0, -0.205, -0.005 + gripRib * 0.035], [-0.18, 0, 0]);
+}
+blasterPart(new THREE.BoxGeometry(0.07, 0.018, 0.045), blasterGlowMaterial, [0, 0.092, -0.045]);
+const blasterAccentLight = new THREE.PointLight(0xff244f, 1.4, 1.7);
+blasterAccentLight.position.set(0, 0.035, -0.56);
+pulseBlasterModel.add(blasterAccentLight);
+
 pulseBlasterModel.position.set(0.39, -0.34, -0.58);
 pulseBlasterModel.rotation.set(-0.035, -0.08, -0.035);
 pulseBlasterModel.visible = false;
@@ -2672,11 +2739,11 @@ function updateBall(delta) {
     return;
   }
   // Trigger once as the ball crosses the danger envelope, then re-arm after it clears.
-  const nearMissDistance = collisionDistance + 1.05;
+  const nearMissDistance = collisionDistance + 1.65;
   if (justMissArmed && distance < nearMissDistance && distance > collisionDistance + 0.08) {
     justMissArmed = false;
     triggerJustMiss();
-  } else if (!justMissArmed && distance > nearMissDistance + 1.15) {
+  } else if (!justMissArmed && distance > nearMissDistance + 1.35) {
     justMissArmed = true;
   }
 }

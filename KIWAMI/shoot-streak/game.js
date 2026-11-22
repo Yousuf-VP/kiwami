@@ -386,6 +386,7 @@ document.querySelectorAll("[data-account-logout]").forEach(button => {
       } else {
         setAccountMessage("Guest session ended. Sign in or create an account to continue.");
       }
+      closeMenuDetail();
       document.getElementById("auth-gate")?.classList.remove("hidden");
       renderAccountUI();
     } catch (error) {
@@ -496,6 +497,7 @@ accountDeleteButton?.addEventListener("click", async () => {
     loadShopInventory();
     renderShop();
     renderAccountUI();
+    closeMenuDetail();
     document.getElementById("auth-gate")?.classList.remove("hidden");
     accountDeleteConfirm.value = "";
     setAccountSettingsMessage("Account deleted. Your cloud profile and leaderboard record have been removed.");
@@ -507,6 +509,7 @@ accountDeleteButton?.addEventListener("click", async () => {
 });
 document.querySelectorAll("[data-account-open-auth]").forEach(button => {
   button.addEventListener("click", () => {
+    closeMenuDetail();
     document.getElementById("auth-gate")?.classList.remove("hidden");
   });
 });

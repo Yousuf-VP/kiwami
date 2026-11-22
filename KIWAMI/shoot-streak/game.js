@@ -101,12 +101,14 @@ const DIFFICULTIES = {
   master: { label: "MASTER", speed: 2.35, ramp: 1.85, bounce: 1.58, chaos: 1.75, aim: 0.80, xpMultiplier: 3.0, cashMultiplier: 3.6 }
 };
 let selectedDifficulty = "medium";
+let arenaMode = "classic";
 
 const CONFIG = {
   room: { halfWidth: 7.5, halfDepth: 10, height: 5.5 },
   player: { speed: 9.2, radius: 0.42, startX: 0, startZ: 5.8, jumpSpeed: 9.4, jumpGravity: 19 },
   ball: { radius: 0.62, speed: 8.2, gravity: 12.5, bounce: 0.92, maxSpeed: 25 }
 };
+const BASE_BALL_RADIUS = CONFIG.ball.radius;
 
 let state = "ready";
 const GRAPHICS_PRESETS = {
@@ -959,7 +961,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x030407);
 scene.fog = new THREE.Fog(0x030407, 28, 52);
 
-const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 90);
+const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 420);
 scene.add(camera); // Camera-attached avatar arms and experimental gear are rendered with the scene.
 
 // Stylized, fictional energy-tool model: attached to the camera, not a real-world firearm.
@@ -1187,11 +1189,13 @@ const mats = {
 };
 
 const themeTrimMeshes = [];
+const originalArenaMeshes = [];
 function box(w, h, d, mat, x, y, z) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   mesh.receiveShadow = true;
   mesh.position.set(x, y, z);
   scene.add(mesh);
+  originalArenaMeshes.push(mesh);
   if (mat === mats.trim) themeTrimMeshes.push(mesh);
   return mesh;
 }
@@ -1207,7 +1211,24 @@ box(15.2, CONFIG.room.height, 0.45, mats.wall, 0, CONFIG.room.height / 2, 10.1);
 // A pair of narrow red wall lights are the only room accents.
 box(0.045, 0.055, 5.5, mats.trim, -7.34, 4.65, -3.8);
 box(0.045, 0.055, 5.5, mats.trim, 7.34, 4.65, -3.8);
-
+/* HAZARD GROUNDS — open-space arena */
+const hazardWorld=new THREE.Group(); hazardWorld.name="hazard-grounds-world"; scene.add(hazardWorld);
+const hazardGroundMaterial=new THREE.MeshStandardMaterial({color:0x080b14,roughness:.82,metalness:.18});
+const hazardGridMaterial=new THREE.LineBasicMaterial({color:0xff2447,transparent:true,opacity:.78,toneMapped:false});
+const hazardGround=new THREE.Mesh(new THREE.PlaneGeometry(64,88),hazardGroundMaterial); hazardGround.rotation.x=-Math.PI/2; hazardGround.position.y=-.29; hazardGround.receiveShadow=true; hazardWorld.add(hazardGround);
+const gridPositions=[],gridW=32,gridD=44,tile=4;
+for(let x=-gridW;x<=gridW;x+=tile)gridPositions.push(x,-.025,-gridD,x,-.025,gridD);
+for(let z=-gridD;z<=gridD;z+=tile)gridPositions.push(-gridW,-.025,z,gridW,-.025,z);
+const gridGeometry=new THREE.BufferGeometry();gridGeometry.setAttribute("position",new THREE.Float32BufferAttribute(gridPositions,3));hazardWorld.add(new THREE.LineSegments(gridGeometry,hazardGridMaterial));
+const starPositions=[];for(let n=0;n<900;n++)starPositions.push((Math.random()-.5)*300,12+Math.random()*145,(Math.random()-.5)*300);
+const starGeometry=new THREE.BufferGeometry();starGeometry.setAttribute("position",new THREE.Float32BufferAttribute(starPositions,3));
+hazardWorld.add(new THREE.Points(starGeometry,new THREE.PointsMaterial({color:0xe8edff,size:.48,transparent:true,opacity:.9,sizeAttenuation:true,depthWrite:false})));
+function makeHazardPlanet(radius,color,emissive,position){const p=new THREE.Mesh(new THREE.SphereGeometry(radius,40,28),new THREE.MeshStandardMaterial({color,emissive,emissiveIntensity:.8,roughness:.78}));p.position.set(...position);hazardWorld.add(p);const l=new THREE.PointLight(emissive,18,radius*8,2);l.position.copy(p.position);hazardWorld.add(l);return p;}
+const hazardPlanetA=makeHazardPlanet(10.5,0x452b68,0x6d39a6,[-48,36,-82]),hazardPlanetB=makeHazardPlanet(6.5,0x263d65,0x2866bd,[52,53,-118]);makeHazardPlanet(3.8,0x6a303b,0xb52e54,[72,24,34]);
+const hazardPlanetRing=new THREE.Mesh(new THREE.TorusGeometry(13.2,.16,8,100),new THREE.MeshBasicMaterial({color:0xb17bff,transparent:true,opacity:.58,toneMapped:false}));hazardPlanetRing.position.copy(hazardPlanetA.position);hazardPlanetRing.rotation.set(1.12,.18,-.2);hazardWorld.add(hazardPlanetRing);
+const shootingStars=[];for(let n=0;n<3;n++){const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(-1.2,-.8,-13)]),new THREE.LineBasicMaterial({color:0xffdce5,transparent:true,opacity:0,toneMapped:false}));line.visible=false;hazardWorld.add(line);shootingStars.push({line,life:0,delay:1.5+Math.random()*5});}
+function updateHazardCosmos(delta){hazardPlanetA.rotation.y+=delta*.018;hazardPlanetB.rotation.y-=delta*.012;hazardPlanetRing.rotation.z+=delta*.025;for(const star of shootingStars){if(star.life<=0){star.delay-=delta;if(star.delay<=0){star.life=.95+Math.random()*.55;star.delay=4+Math.random()*8;star.line.position.set((Math.random()-.5)*115,24+Math.random()*65,-75+Math.random()*145);star.line.userData.velocity=new THREE.Vector3(34+Math.random()*22,-13-Math.random()*10,0);star.line.visible=true;}}else{star.life-=delta;star.line.position.addScaledVector(star.line.userData.velocity,delta);star.line.material.opacity=Math.min(1,star.life*2.2);if(star.life<=0){star.line.visible=false;star.line.material.opacity=0;}}}}
+hazardWorld.visible=false;
 const player = new THREE.Group();
 scene.add(player);
 // The player collision body is invisible in first-person view.
@@ -1357,7 +1378,7 @@ function updateArenaTheme(delta) {
     [redRoomGlow.color, themeTarget.roomGlow], [playerFillLight.color, themeTarget.playerFill], [ambient.color, themeTarget.ambientSky],
     [ambient.groundColor, themeTarget.ambientGround], [ceilingLight.color, themeTarget.ceiling],
     [mats.wall.color, themeTarget.wall], [mats.floor.color, themeTarget.floor],
-    [mats.trim.color, themeTarget.trim], [scene.background, themeTarget.background],
+    [mats.trim.color, themeTarget.trim], [hazardGridMaterial.color, themeTarget.trim], [hazardGroundMaterial.color, themeTarget.floor], [scene.background, themeTarget.background],
     [scene.fog.color, themeTarget.fog]
   ];
   for (const [current, target] of pairs) current.lerp(target, amount);
@@ -1400,7 +1421,8 @@ const ARENA_EVENTS = [
   { id:"light-shift", label:"LIGHT SHIFT", description:"ARENA LIGHTING CHANGES", duration:7.5 },
   { id:"ball-rush", label:"BALL RUSH", description:"THE BALL SURGES TO HIGH SPEED", duration:6.5 },
   { id:"ball-drift", label:"SLOW-MOTION WINDOW", description:"THE BALL TEMPORARILY SLOWS DOWN", duration:7.5 },
-  { id:"xp-surge", label:"XP SURGE", description:"SUCCESSFUL PULSE HITS EARN DOUBLE XP", duration:8.0 }
+  { id:"xp-surge", label:"XP SURGE", description:"SUCCESSFUL PULSE HITS EARN DOUBLE XP", duration:8.0 },
+  { id:"giant-ball", label:"GIANT BALL", description:"THE BALL GROWS TO MASSIVE SIZE", duration:8.5, hazardOnly:true }
 ];
 let arenaEventXpMultiplier = 1;
 let activeArenaEvent = null;
@@ -1414,11 +1436,13 @@ function finishArenaEvent() {
   if (activeArenaEvent.id === "ball-drift") { ballVelocity.multiplyScalar(1 / 0.82); }
   if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = 28; redRoomGlow.intensity = 18; }
   if (activeArenaEvent.id === "xp-surge") arenaEventXpMultiplier = 1;
+  if(activeArenaEvent.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);}
   activeArenaEvent = null;
   arenaEventRemaining = 0;
 }
 function startArenaEvent() {
-  const event = ARENA_EVENTS[Math.floor(Math.random() * ARENA_EVENTS.length)];
+  const availableEvents=ARENA_EVENTS.filter(event=>!event.hazardOnly||arenaMode==="hazard");
+  const event=availableEvents[Math.floor(Math.random()*availableEvents.length)];
   activeArenaEvent = event;
   arenaEventRemaining = event.duration;
   if (event.id === "fog-surge") { scene.fog.near = 8; scene.fog.far = 23; }
@@ -1426,6 +1450,7 @@ function startArenaEvent() {
   if (event.id === "ball-rush") { ballVelocity.multiplyScalar(1.24); }
   if (event.id === "ball-drift") { ballVelocity.multiplyScalar(0.82); }
   if (event.id === "xp-surge") arenaEventXpMultiplier = 2;
+  if(event.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS*1.7;ball.scale.setScalar(1.7);}
   if (event.id === "light-shift") { ceilingLight.intensity = 16; redRoomGlow.intensity = 26; }
   if (eventBanner) {
     eventBanner.textContent = "ARENA EVENT  /  " + event.label + " — " + event.description;
@@ -1541,8 +1566,8 @@ try {
 } catch {}
 camera.fov = savedFov;
 camera.updateProjectionMatrix();
-const roomBounds = { x: 6.65, z: 9.05 };
-const playerBounds = { x: 6.7, z: 8.95 };
+const roomBounds={x:6.65,z:9.05},playerBounds={x:6.7,z:8.95};
+function setArenaMode(mode){arenaMode=mode==="hazard"?"hazard":"classic";const hazard=arenaMode==="hazard";originalArenaMeshes.forEach(mesh=>mesh.visible=!hazard);hazardWorld.visible=hazard;roomBounds.x=hazard?27.5:6.65;roomBounds.z=hazard?39:9.05;playerBounds.x=hazard?27:6.7;playerBounds.z=hazard?38:8.95;CONFIG.player.startZ=hazard?24:5.8;scene.background.set(hazard?0x02030a:0x030407);scene.fog.color.set(hazard?0x02030a:0x030407);scene.fog.near=hazard?165:28;scene.fog.far=hazard?360:52;ceilingLight.intensity=hazard?0:28;redRoomGlow.intensity=hazard?1.5:18;document.body.classList.toggle("hazard-grounds-active",hazard);if(modeLabel)modeLabel.textContent=hazard?"HAZARD GROUNDS":"CLASSIC ARENA";}
 
 function resize() {
   const width = shell.clientWidth || window.innerWidth;
@@ -2074,7 +2099,8 @@ function resetRun() {
   justMissOverlay.classList.remove("is-active");
   if (justMissAura) justMissAura.visible = false;
   if (justMissAuraLight) justMissAuraLight.intensity = 0;
-  ball.position.set(1.5, 2.1, -5.5);
+  CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);
+  ball.position.set(arenaMode==="hazard"?0:1.5,arenaMode==="hazard"?3.2:2.1,arenaMode==="hazard"?-23:-5.5);
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const startAngle = Math.random() * Math.PI * 2;
   const startSpeed = CONFIG.ball.speed * difficulty.speed;
@@ -2121,6 +2147,7 @@ function resumeRun() {
 }
 
 function showMainMenu() {
+  setArenaMode("classic");
   state = "ready";
   gameOverTrack.pause();
   if (musicEnabled) startBackgroundMusic();
@@ -2329,8 +2356,10 @@ document.addEventListener("visibilitychange", () => {
 
 updateMusicControls();
 
-startButton.addEventListener("click", startRun);
-document.getElementById("mobile-start-button")?.addEventListener("click", startRun);
+startButton.addEventListener("click",()=>{setArenaMode("classic");startRun();});
+document.getElementById("mobile-start-button")?.addEventListener("click",()=>{setArenaMode("classic");startRun();});
+document.getElementById("start-hazard-button")?.addEventListener("click",()=>{setArenaMode("hazard");startRun();});
+document.getElementById("mobile-start-hazard-button")?.addEventListener("click",()=>{setArenaMode("hazard");startRun();});
 restartButton.addEventListener("click", startRun);
 pauseButton.addEventListener("click", pauseRun);
 gameplayPauseButton.addEventListener("click", pauseRun);
@@ -2702,7 +2731,7 @@ function updateBall(delta) {
     turnBallRandomly(0.08 + difficulty.chaos * 0.12);
     aimBallAtPlayer(difficulty);
   }
-  if (ball.position.y > CONFIG.room.height - CONFIG.ball.radius) {
+  if (arenaMode==="classic" && ball.position.y > CONFIG.room.height - CONFIG.ball.radius) {
     ball.position.y = CONFIG.room.height - CONFIG.ball.radius;
     const ceilingRestitution = Math.min(1.35, 0.94 * difficulty.bounce);
     ballVerticalVelocity = -Math.min(20, Math.abs(ballVerticalVelocity) * ceilingRestitution);
@@ -2826,6 +2855,7 @@ function animate() {
     updateArenaEvents(gameDelta);
     updateCamera(gameDelta);
     updateJustMissVisual(delta);
+    if(arenaMode==="hazard") updateHazardCosmos(delta);
     score = elapsed * 10;
     if (score > best && !runRecordToastShown) {
       runRecordToastShown = true;

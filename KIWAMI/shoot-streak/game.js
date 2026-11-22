@@ -1940,6 +1940,24 @@ function openMenuDetail(button) {
 }
 
 
+
+document.querySelectorAll("#desktop-settings-panel [data-desktop-settings-tab]").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const panel = tab.closest("#desktop-settings-panel");
+    const selected = tab.dataset.desktopSettingsTab;
+    panel.querySelectorAll("[data-desktop-settings-tab]").forEach(button => {
+      const active = button === tab;
+      button.classList.toggle("selected", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+    panel.querySelectorAll("[data-desktop-settings-page]").forEach(page => {
+      const active = page.dataset.desktopSettingsPage === selected;
+      page.hidden = !active;
+      page.classList.toggle("active", active);
+    });
+  });
+});
+
 document.querySelectorAll("#mobile-settings-panel [data-mobile-settings-tab]").forEach(tab => {
   tab.addEventListener("click", () => {
     const panel = tab.closest("#mobile-settings-panel");

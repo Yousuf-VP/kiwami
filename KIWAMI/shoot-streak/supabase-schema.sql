@@ -11,6 +11,11 @@ create table if not exists public.player_profiles (
   updated_at timestamptz not null default now()
 );
 
+
+-- Existing installs: add the wallet field if player_profiles was created by an older version.
+alter table public.player_profiles
+  add column if not exists cash_balance bigint not null default 0 check (cash_balance >= 0);
+
 alter table public.player_profiles enable row level security;
 
 -- Grant only the browser operations the game actually needs.

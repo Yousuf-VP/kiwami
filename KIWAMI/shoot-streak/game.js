@@ -1463,6 +1463,9 @@ function finishArenaEvent() {
   if(activeArenaEvent.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);}
   activeArenaEvent = null;
   arenaEventRemaining = 0;
+  if (eventBanner) {
+    eventBanner.classList.remove("event-banner-show", "hazard-event-active");
+  }
 }
 function startArenaEvent() {
   const availableEvents=ARENA_EVENTS.filter(event=>!event.hazardOnly||arenaMode==="hazard");
@@ -1481,25 +1484,26 @@ function startArenaEvent() {
     eventBanner.classList.remove("event-banner-show");
     void eventBanner.offsetWidth;
     eventBanner.classList.add("event-banner-show");
+    if (arenaMode === "hazard") eventBanner.classList.add("hazard-event-active");
   }
 }
 function updateArenaEvents(delta) {
   if (activeArenaEvent) {
     arenaEventRemaining -= delta;
-    if (arenaEventRemaining <= 0) finishArenaEvent();
+    if (arenaEventRemaining <= 0) {
+      finishArenaEvent();
+      if (arenaMode === "hazard") arenaEventCooldown = 1.0 + Math.random() * 1.5;
+    }
     return;
   }
   arenaEventCooldown -= delta;
-  if (arenaEventCooldown <= 0) {
-    startArenaEvent();
-    arenaEventCooldown = arenaMode === "hazard" ? 3.5 + Math.random() * 3.5 : 22 + Math.random() * 8;
-  }
+  if (arenaEventCooldown <= 0) startArenaEvent();
 }
 function resetArenaEvents() {
   finishArenaEvent();
   arenaEventXpMultiplier = 1;
-  arenaEventCooldown = arenaMode === "hazard" ? 3.5 + Math.random() * 2.5 : 18;
-  if (eventBanner) eventBanner.classList.remove("event-banner-show");
+  arenaEventCooldown = arenaMode === "hazard" ? 1.5 + Math.random() * 1.5 : 18;
+  if (eventBanner) eventBanner.classList.remove("event-banner-show", "hazard-event-active");
 }
 
 let ballVelocity = new THREE.Vector3(-4.8, 1.6, 6.2);
@@ -2127,7 +2131,7 @@ function resetRun() {
   ball.position.set(arenaMode==="hazard"?0:1.5,arenaMode==="hazard"?3.2:2.1,arenaMode==="hazard"?-23:-5.5);
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const startAngle = Math.random() * Math.PI * 2;
-  const startSpeed = CONFIG.ball.speed * difficulty.speed;
+  const startSpeed = CONFIG.ball.speed * difficulty.speed * (arenaMode === "hazard" ? 1.75 : 1);
   ballVelocity.set(Math.cos(startAngle) * startSpeed, 0, Math.sin(startAngle) * startSpeed);
   ballVerticalVelocity = 2.2 + Math.random() * 1.2;
   courseChangeTimer = 0;
@@ -2779,9 +2783,10 @@ function updateBall(delta) {
   }
 
   // Accelerate toward a difficulty-scaled target, with a hard cap for stable physics.
+  const hazardSpeedMultiplier = arenaMode === "hazard" ? 1.75 : 1;
   const targetSpeed = Math.min(
-    (CONFIG.ball.speed + Math.min(elapsed * 0.09 * difficulty.ramp, 5.5 * difficulty.ramp)) * difficulty.speed * (activeArenaEvent?.id === "ball-tempo" ? 1.15 : 1),
-    CONFIG.ball.maxSpeed
+    (CONFIG.ball.speed + Math.min(elapsed * (arenaMode === "hazard" ? 0.15 : 0.09) * difficulty.ramp, (arenaMode === "hazard" ? 9 : 5.5) * difficulty.ramp)) * difficulty.speed * hazardSpeedMultiplier * (activeArenaEvent?.id === "ball-tempo" ? 1.15 : 1),
+    arenaMode === "hazard" ? 38 : CONFIG.ball.maxSpeed
   );
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
   if (currentSpeed < targetSpeed) {

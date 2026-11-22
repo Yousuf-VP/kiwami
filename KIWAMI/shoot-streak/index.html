@@ -117,59 +117,45 @@
               <button type="button" data-difficulty="easy"><strong>EASY</strong><small>Warm up</small></button><button type="button" data-difficulty="medium" class="selected" aria-pressed="true"><strong>MEDIUM</strong><small>Balanced</small></button><button type="button" data-difficulty="hard"><strong>HARD</strong><small>Fast</small></button><button type="button" data-difficulty="extreme"><strong>EXTREME</strong><small>Intense</small></button><button type="button" data-difficulty="master"><strong>MASTER</strong><small>Expert</small></button>
             </div>
           </div>
-          <div id="mobile-settings-panel" class="menu-panel-content hidden">
-            <label class="mobile-setting" for="mobile-sensitivity"><span>LOOK SENSITIVITY <output id="mobile-sensitivity-value">0.0035</output></span><input id="mobile-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
-            <label class="mobile-setting" for="mobile-fov"><span>FIELD OF VIEW <output id="mobile-fov-value">76°</output></span><input id="mobile-fov" type="range" min="60" max="100" step="1" value="76"></label>
-          <div class="graphics-settings-block">
-            <div class="graphics-toggle-row music-setting-row"><span><strong>BACKGROUND MUSIC</strong><small>Original cinematic ambient soundtrack</small></span><button type="button" class="music-toggle-button" data-music-toggle aria-pressed="true">ON</button></div>
-<div class="graphics-settings-heading">GRAPHICS OPTIONS <small>APPLIES IMMEDIATELY</small></div>
-            <label class="mobile-setting graphics-quality-row" for="mobile-quality">
-              <span>QUALITY PRESET</span>
-              <select id="mobile-quality" data-graphics-quality>
-                <option value="performance">PERFORMANCE</option>
-                <option value="balanced">BALANCED</option>
-                <option value="high">HIGH</option>
-              </select>
-            </label>
-            <label class="graphics-toggle-row" for="mobile-shadows">
-              <span><strong>REAL-TIME SHADOWS</strong><small>Higher GPU load</small></span>
-              <input id="mobile-shadows" data-graphics-shadows type="checkbox">
-            </label>
-            <label class="graphics-toggle-row" for="mobile-motion">
-              <span><strong>MOTION EFFECTS</strong><small>Camera bob and movement lean</small></span>
-              <input id="mobile-motion" data-graphics-motion type="checkbox" checked>
-            </label>            <label class="graphics-toggle-row">
-              <span><strong>LANDSCAPE LAYOUT</strong><small>Rotate the game interface for portrait-held phones</small></span>
-              <input type="checkbox" data-force-landscape>
-            </label>
-
-            <output class="graphics-status" data-graphics-status aria-live="polite">BALANCED / SHADOWS OFF</output>
-            <label class="graphics-toggle-row">
-              <span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span>
-              <input type="checkbox" data-graphics-monitor>
-            </label>
-            <label class="graphics-toggle-row beta-mode-row">
-              <span><strong>BETA MODE</strong><small>Try experimental single-player features. Switch it off anytime.</small></span>
-              <input type="checkbox" data-beta-mode>
-            </label>
-            <details class="advanced-settings-details">
-              <summary>CUSTOM CONTROLS</summary>
-              <div class="keybind-grid" aria-label="Keyboard controls">
-                <span>MOVE FORWARD</span><button type="button" data-rebind="forward">W</button>
-                <span>MOVE BACK</span><button type="button" data-rebind="backward">S</button>
-                <span>MOVE LEFT</span><button type="button" data-rebind="left">A</button>
-                <span>MOVE RIGHT</span><button type="button" data-rebind="right">D</button>
-                <span>JUMP</span><button type="button" data-rebind="jump">SPACE</button>
+          <div id="mobile-settings-panel" class="menu-panel-content hidden mobile-settings-panel">
+            <div class="mobile-settings-tabs" role="tablist" aria-label="Settings categories">
+              <button type="button" class="selected" data-mobile-settings-tab="camera" role="tab" aria-selected="true">CAMERA</button>
+              <button type="button" data-mobile-settings-tab="visual" role="tab" aria-selected="false">VISUAL</button>
+              <button type="button" data-mobile-settings-tab="controls" role="tab" aria-selected="false">CONTROLS</button>
+            </div>
+            <section class="mobile-settings-page active" data-mobile-settings-page="camera" role="tabpanel">
+              <label class="mobile-setting" for="mobile-sensitivity"><span>LOOK SENSITIVITY <output id="mobile-sensitivity-value">0.0035</output></span><input id="mobile-sensitivity" type="range" min="0.001" max="0.010" step="0.0005" value="0.0035"></label>
+              <label class="mobile-setting" for="mobile-fov"><span>FIELD OF VIEW <output id="mobile-fov-value">76°</output></span><input id="mobile-fov" type="range" min="60" max="100" step="1" value="76"></label>
+              <p class="mobile-settings-hint">Tune how the arena feels while looking around.</p>
+            </section>
+            <section class="mobile-settings-page" data-mobile-settings-page="visual" role="tabpanel" hidden>
+              <div class="graphics-settings-block">
+                <div class="graphics-toggle-row music-setting-row"><span><strong>BACKGROUND MUSIC</strong><small>Original cinematic ambient soundtrack</small></span><button type="button" class="music-toggle-button" data-music-toggle aria-pressed="true">ON</button></div>
+                <div class="graphics-settings-heading">GRAPHICS OPTIONS <small>APPLIES IMMEDIATELY</small></div>
+                <label class="mobile-setting graphics-quality-row" for="mobile-quality"><span>QUALITY PRESET</span><select id="mobile-quality" data-graphics-quality><option value="performance">PERFORMANCE</option><option value="balanced">BALANCED</option><option value="high">HIGH</option></select></label>
+                <label class="graphics-toggle-row" for="mobile-shadows"><span><strong>REAL-TIME SHADOWS</strong><small>Higher GPU load</small></span><input id="mobile-shadows" data-graphics-shadows type="checkbox"></label>
+                <label class="graphics-toggle-row" for="mobile-motion"><span><strong>MOTION EFFECTS</strong><small>Camera bob, shake and movement lean</small></span><input id="mobile-motion" data-graphics-motion type="checkbox" checked></label>
+                <label class="graphics-toggle-row"><span><strong>LANDSCAPE LAYOUT</strong><small>Rotate the interface for portrait-held phones</small></span><input type="checkbox" data-force-landscape></label>
+                <output class="graphics-status" data-graphics-status aria-live="polite">BALANCED / SHADOWS OFF</output>
+                <label class="graphics-toggle-row"><span><strong>PERFORMANCE MONITOR</strong><small>Live FPS and frame time</small></span><input type="checkbox" data-graphics-monitor></label>
+                <label class="graphics-toggle-row beta-mode-row"><span><strong>BETA MODE</strong><small>Experimental single-player features</small></span><input type="checkbox" data-beta-mode></label>
               </div>
-              <label class="advanced-setting-row"><span>JOYSTICK SIZE <output data-joystick-size-value>100%</output></span>
-                <input type="range" min="80" max="130" step="5" value="100" data-joystick-size>
-              </label>
-              <label class="advanced-setting-row"><span>JOYSTICK RESPONSE <output data-joystick-sensitivity-value>100%</output></span>
-                <input type="range" min="60" max="160" step="5" value="100" data-joystick-sensitivity>
-              </label>
-              <p class="advanced-help">Select a key, then press the replacement key. ESC cancels rebinding.</p>
-            </details>
-          </div>
+            </section>
+            <section class="mobile-settings-page" data-mobile-settings-page="controls" role="tabpanel" hidden>
+              <details class="advanced-settings-details" open>
+                <summary>CUSTOM CONTROLS</summary>
+                <div class="keybind-grid" aria-label="Keyboard controls">
+                  <span>MOVE FORWARD</span><button type="button" data-rebind="forward">W</button>
+                  <span>MOVE BACK</span><button type="button" data-rebind="backward">S</button>
+                  <span>MOVE LEFT</span><button type="button" data-rebind="left">A</button>
+                  <span>MOVE RIGHT</span><button type="button" data-rebind="right">D</button>
+                  <span>JUMP</span><button type="button" data-rebind="jump">SPACE</button>
+                </div>
+                <label class="advanced-setting-row"><span>JOYSTICK SIZE <output data-joystick-size-value>100%</output></span><input type="range" min="80" max="130" step="5" value="100" data-joystick-size></label>
+                <label class="advanced-setting-row"><span>JOYSTICK RESPONSE <output data-joystick-sensitivity-value>100%</output></span><input type="range" min="60" max="160" step="5" value="100" data-joystick-sensitivity></label>
+                <p class="advanced-help">Select a key, then press the replacement key. ESC cancels rebinding.</p>
+              </details>
+            </section>
           </div>
           <div id="mobile-career-panel" class="menu-panel-content hidden">
             <div class="career-grid">

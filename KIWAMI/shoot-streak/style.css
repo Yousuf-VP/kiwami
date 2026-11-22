@@ -3366,3 +3366,35 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 .pulse-xp-toast.is-visible{animation:pulseXpToast 1.15s ease both}
 @keyframes pulseXpToast{0%{opacity:0;transform:translate(-50%,8px) scale(.94)}18%,72%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-12px) scale(1.02)}}
 @media(prefers-reduced-motion:reduce){.pulse-xp-toast.is-visible{animation:none;opacity:1;transform:translate(-50%,0)}}
+
+
+/* ACCOUNT SETTINGS — responsive profile, credential and deletion controls */
+.account-settings-panel{display:grid;gap:14px}
+.account-settings-summary{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 17px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(110deg,rgba(25,26,34,.92),rgba(7,8,12,.82))}
+.account-settings-summary>div{display:grid;gap:5px;min-width:0}
+.account-settings-summary small,.account-settings-form-heading small{color:#ff7186;font:800 8px var(--display);letter-spacing:1.5px}
+.account-settings-summary strong{color:#fff;font:800 clamp(15px,2vw,21px) var(--display);overflow-wrap:anywhere}
+.account-settings-summary span:not(.account-settings-status){color:#9b9ba7;font:600 10px var(--body);overflow-wrap:anywhere}
+.account-settings-status{padding:6px 8px;border:1px solid rgba(255,65,91,.3);color:#ff9aaa;font:800 7px var(--display);letter-spacing:1px;white-space:nowrap}
+.account-settings-auth-only{display:grid;gap:12px}
+.account-settings-form,.account-danger-zone{display:grid;gap:9px;padding:15px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22)}
+.account-settings-form-heading{display:grid;gap:5px;margin-bottom:3px}
+.account-settings-form-heading strong{color:#fff;font:800 11px var(--display);letter-spacing:.8px}
+.account-settings-form label,.account-danger-zone label{display:grid;gap:6px;color:#a9a9b4;font:800 8px var(--display);letter-spacing:.8px}
+.account-settings-form input,.account-danger-zone input{width:100%;min-width:0;min-height:42px;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(255,255,255,.14);border-radius:3px;outline:none;color:#fff;background:rgba(0,0,0,.5);font:500 13px var(--body)}
+.account-settings-form input:focus,.account-danger-zone input:focus{border-color:rgba(255,70,98,.8);box-shadow:0 0 0 2px rgba(255,40,70,.1)}
+.account-settings-action{width:100%;min-height:43px;justify-content:center}
+.account-danger-zone{border-color:rgba(255,55,75,.32);background:linear-gradient(130deg,rgba(55,7,16,.25),rgba(0,0,0,.28))}
+.account-danger-zone p,.account-settings-guest p{margin:0;color:#aaa9b4;font:500 11px/1.6 var(--body)}
+.account-delete-button{min-height:44px;padding:10px 14px;border:1px solid rgba(255,75,92,.55);color:#ffb2bd;background:rgba(85,8,22,.35);font:800 8px var(--display);letter-spacing:1px;cursor:pointer}
+.account-delete-button:disabled{opacity:.38;cursor:not-allowed}
+.account-settings-logout{border-color:rgba(255,255,255,.16)}
+.account-settings-message{min-height:18px;margin:0;color:#c7c6d0;font:600 10px/1.5 var(--body)}
+.account-settings-message.is-error{color:#ff8394}
+@media(max-width:800px){
+  .kiwami-menu-nav{flex-wrap:wrap}
+  .kiwami-nav-button{padding:0 10px}
+  .account-settings-summary{align-items:flex-start;flex-direction:column}
+  .account-settings-form,.account-danger-zone{padding:12px}
+  .account-settings-form input,.account-danger-zone input{font-size:16px}
+}

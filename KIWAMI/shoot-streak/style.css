@@ -3326,3 +3326,36 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 @media(prefers-reduced-motion:reduce) {
   .mobile-settings-page.active { animation:none; }
 }
+
+
+/* RUN FEEDBACK — a clean personal-best chase cue, never a forced reward loop */
+.record-chase-toast {
+  position:absolute;
+  z-index:12;
+  left:50%;
+  top:calc(env(safe-area-inset-top,0px) + 88px);
+  transform:translate(-50%,-8px) scale(.96);
+  padding:10px 16px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:7px;
+  color:#fff;
+  background:linear-gradient(100deg,rgba(20,20,27,.94),rgba(94,10,29,.94));
+  box-shadow:0 8px 28px rgba(0,0,0,.35),0 0 22px rgba(255,35,69,.2);
+  font:900 9px var(--display);
+  letter-spacing:1.5px;
+  opacity:0;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.record-chase-toast.is-visible { animation:record-chase-pop 2.2s cubic-bezier(.16,1,.3,1) both; }
+@keyframes record-chase-pop {
+  0% { opacity:0; transform:translate(-50%,-8px) scale(.96); }
+  12%,76% { opacity:1; transform:translate(-50%,0) scale(1); }
+  100% { opacity:0; transform:translate(-50%,-4px) scale(.98); }
+}
+@media(max-width:800px) {
+  .record-chase-toast { top:calc(env(safe-area-inset-top,0px) + 64px); font-size:8px; padding:9px 12px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .record-chase-toast.is-visible { animation-duration:.8s; }
+}

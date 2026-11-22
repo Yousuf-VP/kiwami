@@ -1497,7 +1497,10 @@ function updateArenaEvents(delta) {
     return;
   }
   arenaEventCooldown -= delta;
-  if (arenaEventCooldown <= 0) startArenaEvent();
+  if (arenaEventCooldown <= 0) {
+    startArenaEvent();
+    if (arenaMode !== "hazard") arenaEventCooldown = 22 + Math.random() * 8;
+  }
 }
 function resetArenaEvents() {
   finishArenaEvent();

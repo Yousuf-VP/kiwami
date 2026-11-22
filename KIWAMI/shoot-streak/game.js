@@ -178,6 +178,10 @@ function renderAccountUI() {
   document.querySelectorAll("[data-account-switch-label], [data-account-mode-switch]").forEach(node => node.classList.toggle("hidden", signedIn));
   document.querySelectorAll("[data-account-identity-name]").forEach(node => node.textContent = currentUsername);
   document.querySelectorAll("[data-account-identity-email]").forEach(node => node.textContent = currentUser?.email || "");
+  document.querySelectorAll("[data-account-settings-auth-only]").forEach(node => node.classList.toggle("hidden", !signedIn));
+  document.querySelectorAll("[data-account-settings-guest]").forEach(node => node.classList.toggle("hidden", signedIn));
+  document.querySelectorAll("[data-account-settings-username]").forEach(node => node.textContent = signedIn ? currentUsername : "GUEST PLAYER");
+  document.querySelectorAll("[data-account-settings-email]").forEach(node => node.textContent = signedIn ? (currentUser?.email || "") : "Not signed in");
   renderProgression();
   renderCash();
 }
@@ -388,6 +392,121 @@ document.querySelectorAll("[data-account-logout]").forEach(button => {
     } finally {
       button.disabled = false;
     }
+  });
+});
+
+
+function setAccountSettingsMessage(message, isError = false) {
+  document.querySelectorAll("[data-account-settings-message]").forEach(node => {
+    node.textContent = message;
+    node.classList.toggle("is-error", isError);
+  });
+}
+document.querySelectorAll("[data-account-username-form]").forEach(form => {
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!supabase || !currentUser) return setAccountSettingsMessage("Sign in before changing your player name.", true);
+    const input = form.querySelector('[name="username"]');
+    const submit = form.querySelector('button[type="submit"]');
+    const nextUsername = String(input?.value || "").trim();
+    if (nextUsername.length < 3 || nextUsername.length > 18) {
+      setAccountSettingsMessage("Player names must be between 3 and 18 characters.", true);
+      return;
+    }
+    if (submit) submit.disabled = true;
+    setAccountSettingsMessage("Updating player name…");
+    try {
+      const { error: profileError } = await supabase.from("player_profiles")
+        .update({ username: nextUsername }).eq("id", currentUser.id);
+      if (profileError) throw profileError;
+      const { data, error: metadataError } = await supabase.auth.updateUser({ data: { username: nextUsername } });
+      currentUsername = nextUsername;
+      if (data?.user) currentUser = data.user;
+      renderAccountUI();
+      await syncCloudProgression();
+      if (metadataError) throw new Error("Player name saved to your cloud profile, but account metadata could not refresh: " + metadataError.message);
+      setAccountSettingsMessage("Player name updated successfully.");
+    } catch (error) {
+      setAccountSettingsMessage(error.message || "Could not update player name.", true);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+});
+document.querySelectorAll("[data-account-password-form]").forEach(form => {
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!supabase || !currentUser?.email) return setAccountSettingsMessage("Sign in with an email account before changing your password.", true);
+    const values = new FormData(form);
+    const currentPassword = String(values.get("current-password") || "");
+    const nextPassword = String(values.get("new-password") || "");
+    const confirmPassword = String(values.get("confirm-password") || "");
+    const submit = form.querySelector('button[type="submit"]');
+    if (nextPassword.length < 8) return setAccountSettingsMessage("Your new password must contain at least 8 characters.", true);
+    if (nextPassword !== confirmPassword) return setAccountSettingsMessage("The new passwords do not match.", true);
+    if (submit) submit.disabled = true;
+    setAccountSettingsMessage("Verifying your current password…");
+    try {
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email,
+        password: currentPassword
+      });
+      if (loginError) throw new Error("Current password is incorrect. Please try again.");
+      if (loginData?.user) currentUser = loginData.user;
+      const { error } = await supabase.auth.updateUser({ password: nextPassword });
+      if (error) throw error;
+      form.reset();
+      setAccountSettingsMessage("Password changed successfully.");
+    } catch (error) {
+      setAccountSettingsMessage(error.message || "Could not change password.", true);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+});
+const accountDeleteConfirm = document.getElementById("account-delete-confirm");
+const accountDeleteButton = document.getElementById("account-delete-button");
+accountDeleteConfirm?.addEventListener("input", () => {
+  if (accountDeleteButton) accountDeleteButton.disabled = accountDeleteConfirm.value.trim() !== "DELETE";
+});
+accountDeleteButton?.addEventListener("click", async () => {
+  if (!supabase || !currentUser) return setAccountSettingsMessage("Sign in before deleting an account.", true);
+  if (accountDeleteConfirm?.value.trim() !== "DELETE") return setAccountSettingsMessage('Type DELETE to confirm account removal.', true);
+  const accepted = window.confirm("Permanently delete your DODGE CORE account, cloud progression and leaderboard record? This cannot be undone.");
+  if (!accepted) return;
+  accountDeleteButton.disabled = true;
+  setAccountSettingsMessage("Deleting account and cloud records…");
+  try {
+    const { data, error } = await supabase.functions.invoke("delete-account", { body: { confirm: "DELETE" } });
+    if (error) throw new Error(error.message || "The secure deletion service is unavailable. Deploy the delete-account Edge Function first.");
+    if (!data?.ok) throw new Error(data?.error || "The account deletion service did not confirm deletion.");
+    await supabase.auth.signOut({ scope: "local" });
+    currentUser = null;
+    currentUsername = "GUEST PLAYER";
+    totalXP = 0;
+    cashBalance = 0;
+    try {
+      localStorage.removeItem(PROGRESSION_KEY);
+      localStorage.removeItem(PROGRESSION_OWNER_KEY);
+      localStorage.removeItem(CASH_KEY);
+      localStorage.removeItem(CASH_OWNER_KEY);
+    } catch {}
+    renderCash();
+    loadShopInventory();
+    renderShop();
+    renderAccountUI();
+    document.getElementById("auth-gate")?.classList.remove("hidden");
+    accountDeleteConfirm.value = "";
+    setAccountSettingsMessage("Account deleted. Your cloud profile and leaderboard record have been removed.");
+  } catch (error) {
+    setAccountSettingsMessage(error.message || "Account deletion failed.", true);
+  } finally {
+    accountDeleteButton.disabled = accountDeleteConfirm?.value.trim() !== "DELETE";
+  }
+});
+document.querySelectorAll("[data-account-open-auth]").forEach(button => {
+  button.addEventListener("click", () => {
+    document.getElementById("auth-gate")?.classList.remove("hidden");
   });
 });
 
@@ -804,8 +923,8 @@ function tickDailyChallenge(delta) {
 renderDailyChallenge();
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x11151d);
-scene.fog = new THREE.Fog(0x11151d, 24, 46);
+scene.background = new THREE.Color(0x030407);
+scene.fog = new THREE.Fog(0x030407, 28, 52);
 
 const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 90);
 scene.add(camera); // Camera-attached avatar arms and experimental gear are rendered with the scene.
@@ -921,8 +1040,8 @@ scene.add(shadowLight);
 scene.add(shadowLight.target);
 
 const mats = {
-  floor: new THREE.MeshStandardMaterial({ color: 0x292d36, roughness: 0.82, metalness: 0.08 }),
-  wall: new THREE.MeshStandardMaterial({ color: 0x303540, roughness: 0.88, metalness: 0.05 }),
+  floor: new THREE.MeshStandardMaterial({ color: 0x101219, roughness: 0.86, metalness: 0.06 }),
+  wall: new THREE.MeshStandardMaterial({ color: 0x191c25, roughness: 0.9, metalness: 0.04 }),
   trim: new THREE.MeshBasicMaterial({ color: 0x9d172d, toneMapped: false }),
   player: new THREE.MeshStandardMaterial({ color: 0xd8dbe2, roughness: 0.65 }),
   playerAccent: new THREE.MeshStandardMaterial({ color: 0xff294b, emissive: 0x5b0718, emissiveIntensity: 1.2 }),
@@ -1049,9 +1168,9 @@ const themeDefault = {
   ball: new THREE.Color(0xff2447), ballEmissive: new THREE.Color(0xff002b),
   roomGlow: new THREE.Color(0xff153d), playerFill: new THREE.Color(0xd8dce6), ambientSky: new THREE.Color(0xe7edf8),
   ambientGround: new THREE.Color(0x343943), ceiling: new THREE.Color(0xffffff),
-  wall: new THREE.Color(0x303540), floor: new THREE.Color(0x292d36),
-  trim: new THREE.Color(0x9d172d), background: new THREE.Color(0x11151d),
-  fog: new THREE.Color(0x11151d)
+  wall: new THREE.Color(0x191c25), floor: new THREE.Color(0x101219),
+  trim: new THREE.Color(0x9d172d), background: new THREE.Color(0x030407),
+  fog: new THREE.Color(0x030407)
 };
 function applyThemeTargets(palette) {
   const accent = new THREE.Color(palette.hex);
@@ -1069,11 +1188,11 @@ function applyThemeTargets(palette) {
   themeTarget.ambientSky = accent.clone().lerp(new THREE.Color(0xd8dce6), 0.62);
   themeTarget.ambientGround = ground.clone();
   themeTarget.ceiling = accent.clone().lerp(new THREE.Color(0xffffff), 0.82);
-  themeTarget.wall = new THREE.Color(0x303540).lerp(dark, 0.24);
-  themeTarget.floor = new THREE.Color(0x292d36).lerp(dark, 0.16);
+  themeTarget.wall = new THREE.Color(0x191c25).lerp(dark, 0.3);
+  themeTarget.floor = new THREE.Color(0x101219).lerp(dark, 0.22);
   themeTarget.trim = accent.clone();
-  themeTarget.background = new THREE.Color(0x11151d).lerp(dark, 0.24);
-  themeTarget.fog = new THREE.Color(0x11151d).lerp(dark, 0.32);
+  themeTarget.background = new THREE.Color(0x030407).lerp(dark, 0.18);
+  themeTarget.fog = new THREE.Color(0x030407).lerp(dark, 0.24);
   currentThemeName = palette.name;
 }
 function triggerArenaTheme(milestone) {
@@ -1451,6 +1570,7 @@ const detailTitles = {
   career: "CAREER RECORD",
   shop: "CORE SHOP",
   leaderboard: "GLOBAL LEADERBOARD",
+  account: "ACCOUNT SETTINGS",
   daily: "DAILY CHALLENGE"
 };
 
@@ -2199,18 +2319,41 @@ function aimBallAtPlayer(difficulty) {
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
   if (currentSpeed < 0.001) return;
 
-  if (Math.random() >= difficulty.aim) {
+  // The ball makes a steering decision on impacts, not a continuous lock-on.
+  // Its aim probability rises with difficulty, but it still sometimes breaks away.
+  const pressureChance = Math.min(0.94, difficulty.aim + 0.08);
+  if (Math.random() >= pressureChance) {
     const randomAngle = Math.random() * Math.PI * 2;
     ballVelocity.x = Math.cos(randomAngle) * currentSpeed;
     ballVelocity.z = Math.sin(randomAngle) * currentSpeed;
     return;
   }
 
-  const toPlayer = new THREE.Vector2(player.position.x - ball.position.x, player.position.z - ball.position.z);
-  if (toPlayer.lengthSq() < 0.001) return;
-  const direction = toPlayer.normalize();
-  const spread = selectedDifficulty === "master" ? 0.025 : 0.11 * difficulty.chaos;
-  direction.rotateAround(new THREE.Vector2(), (Math.random() - 0.5) * spread);
+  // Predict the player's short-term movement, then attack an offset lane.
+  // This makes the ball approach the player without travelling straight at them.
+  const leadTime = 0.22 + difficulty.chaos * 0.18;
+  const predictedPlayer = new THREE.Vector2(
+    player.position.x + playerVelocity.x * leadTime,
+    player.position.z + playerVelocity.z * leadTime
+  );
+  const toPredictedPlayer = predictedPlayer.clone().sub(new THREE.Vector2(ball.position.x, ball.position.z));
+  if (toPredictedPlayer.lengthSq() < 0.001) return;
+  const distance = toPredictedPlayer.length();
+  const directDirection = toPredictedPlayer.normalize();
+  const sideDirection = new THREE.Vector2(-directDirection.y, directDirection.x);
+  const side = Math.random() < 0.5 ? -1 : 1;
+  const laneOffset = Math.min(2.25, 0.45 + distance * (0.08 + difficulty.chaos * 0.055));
+  const aimPoint = predictedPlayer.addScaledVector(sideDirection, side * laneOffset);
+  const direction = aimPoint.sub(new THREE.Vector2(ball.position.x, ball.position.z)).normalize();
+
+  // Occasional feints change the approach angle while keeping the player in danger.
+  const feintChance = 0.16 + difficulty.chaos * 0.09;
+  const feintAngle = 0.12 + difficulty.chaos * 0.2;
+  const angle = Math.random() < feintChance
+    ? side * feintAngle
+    : (Math.random() - 0.5) * (0.18 + difficulty.chaos * 0.28);
+  direction.rotateAround(new THREE.Vector2(), angle);
+
   ballVelocity.x = direction.x * currentSpeed;
   ballVelocity.z = direction.y * currentSpeed;
 }

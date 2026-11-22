@@ -21,7 +21,7 @@ Deno.serve(async (request: Request) => {
     if (body?.confirm !== "DELETE") return jsonResponse({ ok: false, error: "Deletion confirmation is required." }, 400);
 
     const authorization = request.headers.get("Authorization") || "";
-    const accessToken = authorization.replace(/^Bearer\\s+/i, "");
+    const accessToken = authorization.replace(/^Bearer\s+/i, "");
     if (!accessToken || accessToken === authorization) {
       return jsonResponse({ ok: false, error: "A signed-in session is required." }, 401);
     }

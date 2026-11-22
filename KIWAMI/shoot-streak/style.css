@@ -3291,7 +3291,8 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 
 /* DODGE CORE MOBILE UX — compact settings tabs, no long settings scroll */
 @media (max-width:800px) {
-  #menu-detail-content { max-height:calc(100dvh - 178px); overflow:hidden; overscroll-behavior:none; }
+  #menu-detail-content { max-height:calc(100dvh - 178px); overflow-y:auto; overscroll-behavior:contain; }
+  #menu-detail-content:has(#mobile-settings-panel) { overflow:hidden; }
   #mobile-settings-panel { margin:0; padding:10px; overflow:hidden; }
   .mobile-settings-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin:0 0 12px; padding:4px; border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(0,0,0,.32); }
   .mobile-settings-tabs button { min-height:38px; border:1px solid transparent; border-radius:6px; color:#9697a1; background:transparent; font:800 8px var(--display); letter-spacing:.8px; touch-action:manipulation; }
@@ -3317,6 +3318,7 @@ body.force-landscape #game-shell #touch-controls #beta-fire-button{right:calc(22
 }
 @media (max-width:420px) {
   #menu-detail-content { max-height:calc(100dvh - 158px); }
+  #menu-detail-content:has(#mobile-settings-panel) { overflow:hidden; }
   #mobile-settings-panel { padding:8px; }
   .mobile-settings-tabs button { min-height:35px; font-size:7px; }
   #mobile-settings-panel .graphics-toggle-row { min-height:37px; padding:6px; }

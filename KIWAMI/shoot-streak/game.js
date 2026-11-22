@@ -46,7 +46,18 @@ recordChaseToast.textContent = "NEW PERSONAL BEST";
 shell.appendChild(recordChaseToast);
 let runRecordToastShown = false;
 recordChaseToast.addEventListener("animationend", () => recordChaseToast.classList.remove("is-visible"));
-const pulseHitMarker = document.createElement("div");
+
+// JUST MISS — cinematic single-player slow-motion and player aura.
+const justMissOverlay = document.createElement("div");
+justMissOverlay.className = "just-miss-overlay";
+justMissOverlay.setAttribute("aria-hidden", "true");
+justMissOverlay.innerHTML = '<div class="just-miss-vignette"></div><div class="just-miss-flare"></div><div class="just-miss-streaks"></div><div class="just-miss-caption">JUST MISSED</div>';
+shell.appendChild(justMissOverlay);
+let justMissTimer = 0;
+let justMissArmed = true;
+let justMissAura = null;
+let justMissAuraLight = null;
+\nconst pulseHitMarker = document.createElement("div");
 pulseHitMarker.className = "pulse-hit-marker";
 pulseHitMarker.setAttribute("aria-hidden", "true");
 pulseHitMarker.innerHTML = "<span></span><span></span><span></span><span></span><i></i>";
@@ -960,7 +971,60 @@ blasterPart(new THREE.BoxGeometry(0.025, 0.055, 0.13), blasterGlowMaterial, [0.1
 pulseBlasterModel.position.set(0.39, -0.34, -0.58);
 pulseBlasterModel.rotation.set(-0.035, -0.08, -0.035);
 pulseBlasterModel.visible = false;
+
 camera.add(pulseBlasterModel);
+
+// Camera-space energy rings create a visible first-person aura without hiding the arena.
+justMissAura = new THREE.Group();
+justMissAura.position.set(0, -0.08, -1.75);
+justMissAura.visible = false;
+const justMissRingMaterials = [
+  new THREE.MeshBasicMaterial({ color: 0xff173f, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
+  new THREE.MeshBasicMaterial({ color: 0xffb5c4, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })
+];
+const justMissRingA = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.018, 8, 72), justMissRingMaterials[0]);
+const justMissRingB = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.009, 8, 72), justMissRingMaterials[1]);
+justMissRingB.rotation.z = Math.PI * 0.22;
+justMissAura.add(justMissRingA, justMissRingB);
+const justMissCore = new THREE.Mesh(
+  new THREE.SphereGeometry(0.48, 24, 18),
+  new THREE.MeshBasicMaterial({ color: 0xff123c, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthWrite: false, toneMapped: false })
+);
+justMissAura.add(justMissCore);
+camera.add(justMissAura);
+justMissAuraLight = new THREE.PointLight(0xff244d, 0, 5);
+camera.add(justMissAuraLight);
+
+function triggerJustMiss() {
+  if (justMissTimer > 0.18 || state !== "playing") return;
+  justMissTimer = 0.92;
+  justMissOverlay.classList.remove("is-active");
+  void justMissOverlay.offsetWidth;
+  justMissOverlay.classList.add("is-active");
+  if (justMissAura) justMissAura.visible = true;
+  triggerCameraShake(0.075, 0.2);
+}
+function updateJustMissVisual(realDelta) {
+  if (justMissTimer > 0) {
+    justMissTimer = Math.max(0, justMissTimer - realDelta);
+    const strength = Math.min(1, justMissTimer / 0.22, (0.92 - justMissTimer) / 0.10 + 1);
+    if (justMissAura) {
+      justMissAura.visible = true;
+      justMissAura.rotation.z += realDelta * 1.35;
+      const pulse = 1 + Math.sin((0.92 - justMissTimer) * 18) * 0.055;
+      justMissAura.scale.setScalar(pulse * (0.92 + strength * 0.18));
+      justMissAura.children[0].material.opacity = 0.45 + strength * 0.5;
+      justMissAura.children[1].material.opacity = 0.35 + strength * 0.42;
+      justMissAura.children[2].material.opacity = 0.04 + strength * 0.13;
+    }
+    if (justMissAuraLight) justMissAuraLight.intensity = 8 + strength * 34;
+  } else {
+    if (justMissAura) justMissAura.visible = false;
+    if (justMissAuraLight) justMissAuraLight.intensity = 0;
+    justMissOverlay.classList.remove("is-active");
+  }
+}
+
 camera.position.set(0, 1.65, CONFIG.player.startZ);
 camera.lookAt(0, 1.65, CONFIG.player.startZ - 12);
 
@@ -1937,6 +2001,11 @@ function resetRun() {
   cameraPitch = 0;
   cameraMotionTime = 0;
   landingKick = 0;
+  justMissTimer = 0;
+  justMissArmed = true;
+  justMissOverlay.classList.remove("is-active");
+  if (justMissAura) justMissAura.visible = false;
+  if (justMissAuraLight) justMissAuraLight.intensity = 0;
   ball.position.set(1.5, 2.1, -5.5);
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const startAngle = Math.random() * Math.PI * 2;
@@ -2596,7 +2665,19 @@ function updateBall(delta) {
   ballVerticalVelocity = THREE.MathUtils.clamp(ballVerticalVelocity, -16, 16);
 
   const distance = ball.position.distanceTo(new THREE.Vector3(player.position.x, 0.9 + jumpHeight, player.position.z));
-  if (distance < CONFIG.ball.radius + CONFIG.player.radius + 0.22) endRun();
+  const collisionDistance = CONFIG.ball.radius + CONFIG.player.radius + 0.22;
+  if (distance < collisionDistance) {
+    endRun();
+    return;
+  }
+  // Trigger once as the ball crosses the danger envelope, then re-arm after it clears.
+  const nearMissDistance = collisionDistance + 1.05;
+  if (justMissArmed && distance < nearMissDistance && distance > collisionDistance + 0.08) {
+    justMissArmed = false;
+    triggerJustMiss();
+  } else if (!justMissArmed && distance > nearMissDistance + 1.15) {
+    justMissArmed = true;
+  }
 }
 
 let cameraMotionTime = 0;
@@ -2669,12 +2750,14 @@ function animate() {
     }
   }
   if (state === "playing") {
-    elapsed += delta;
-    updatePlayer(delta);
-    updateBall(delta);
-    updatePulseProjectiles(delta);
-    updateArenaEvents(delta);
-    updateCamera(delta);
+    const gameDelta = delta * (justMissTimer > 0 ? 0.34 : 1);
+    elapsed += gameDelta;
+    updatePlayer(gameDelta);
+    updateBall(gameDelta);
+    updatePulseProjectiles(gameDelta);
+    updateArenaEvents(gameDelta);
+    updateCamera(gameDelta);
+    updateJustMissVisual(delta);
     score = elapsed * 10;
     if (score > best && !runRecordToastShown) {
       runRecordToastShown = true;
@@ -2696,6 +2779,10 @@ function animate() {
     ball.rotation.z += delta * 1.1;
     ballAura.rotation.y -= delta * 0.4;
   } else {
+    if (justMissTimer > 0) {
+      justMissTimer = 0;
+      updateJustMissVisual(0);
+    }
     updateArenaTheme(delta);
 
     ball.rotation.x += delta * 0.25;

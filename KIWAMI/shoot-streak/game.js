@@ -182,6 +182,7 @@ function renderAccountUI() {
   document.querySelectorAll("[data-account-settings-guest]").forEach(node => node.classList.toggle("hidden", signedIn));
   document.querySelectorAll("[data-account-settings-username]").forEach(node => node.textContent = signedIn ? currentUsername : "GUEST PLAYER");
   document.querySelectorAll("[data-account-settings-email]").forEach(node => node.textContent = signedIn ? (currentUser?.email || "") : "Not signed in");
+  document.querySelectorAll("[data-account-username-input]").forEach(node => { if (document.activeElement !== node) node.value = signedIn ? currentUsername : ""; });
   renderProgression();
   renderCash();
 }

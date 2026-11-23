@@ -1233,6 +1233,90 @@ const gridPositions=[],gridW=15.2,gridD=20.2,tile=2;
 for(let x=-gridW;x<=gridW;x+=tile)gridPositions.push(x,.012,-gridD,x,.012,gridD);
 for(let z=-gridD;z<=gridD;z+=tile)gridPositions.push(-gridW,.012,z,gridW,.012,z);
 const gridGeometry=new THREE.BufferGeometry();gridGeometry.setAttribute("position",new THREE.Float32BufferAttribute(gridPositions,3));hazardWorld.add(new THREE.LineSegments(gridGeometry,hazardGridMaterial));
+const hazardGridTiles=[];
+for(let tx=-14.2;tx<=14.21;tx+=2){
+  for(let tz=-19.2;tz<=19.21;tz+=2){
+    const material=new THREE.MeshStandardMaterial({color:0x10131c,emissive:0x000000,emissiveIntensity:0,roughness:.7,metalness:.12,transparent:true,opacity:.96});
+    const tileMesh=new THREE.Mesh(new THREE.PlaneGeometry(1.94,1.94),material);
+    tileMesh.rotation.x=-Math.PI/2;
+    tileMesh.position.set(tx,.025,tz);
+    tileMesh.visible=false;
+    hazardWorld.add(tileMesh);
+    hazardGridTiles.push({mesh:tileMesh,x:tx,z:tz,active:false});
+  }
+}
+let gridExplosionTiles=[];
+let gridExplosionTimer=0;
+let gridExplosionWave=0;
+function clearGridExplosionTiles(){
+  for(const tile of gridExplosionTiles){
+    tile.active=false;
+    tile.mesh.visible=false;
+    tile.mesh.material.emissive.setHex(0x000000);
+    tile.mesh.material.color.setHex(0x10131c);
+    tile.mesh.material.emissiveIntensity=0;
+  }
+  gridExplosionTiles=[];
+  gridExplosionTimer=0;
+  gridExplosionWave=0;
+}
+function startGridExplosionWave(){
+  clearGridExplosionTiles();
+  const pool=hazardGridTiles.slice();
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  gridExplosionTiles=pool.slice(0,6);
+  gridExplosionWave=1;
+  gridExplosionTimer=1.35;
+  for(const tile of gridExplosionTiles){
+    tile.active=true;
+    tile.mesh.visible=true;
+    tile.mesh.material.color.setHex(0xff1738);
+    tile.mesh.material.emissive.setHex(0xff0828);
+    tile.mesh.material.emissiveIntensity=2.8;
+  }
+}
+function updateGridExplosion(delta){
+  if(activeArenaEvent?.id!=="grid-explosion"||!gridExplosionTiles.length)return;
+  gridExplosionTimer-=delta;
+  const warningPulse=.72+Math.sin(performance.now()*.018)*.28;
+  for(const tile of gridExplosionTiles)tile.mesh.material.emissiveIntensity=gridExplosionTimer>0?2.2+warningPulse*2.4:5;
+  if(gridExplosionTimer<=0){
+    const playerX=player.position.x,playerZ=player.position.z;
+    const inBlast=gridExplosionTiles.some(tile=>Math.abs(playerX-tile.x)<1.05&&Math.abs(playerZ-tile.z)<1.05);
+    for(const tile of gridExplosionTiles){
+      tile.mesh.material.color.setHex(0xff5b24);
+      tile.mesh.material.emissive.setHex(0xff2400);
+      tile.mesh.material.emissiveIntensity=0;
+    }
+    if(inBlast){endRun();return;}
+    if(gridExplosionWave===1){
+      for(const tile of gridExplosionTiles){tile.active=false;tile.mesh.visible=false;}
+      gridExplosionTiles=[];
+      gridExplosionWave=2;
+      gridExplosionTimer=.55;
+    }else{
+      for(const tile of gridExplosionTiles){tile.active=false;tile.mesh.visible=false;}
+      gridExplosionTiles=[];
+      gridExplosionTimer=0;
+    }
+  }
+  if(gridExplosionWave===2&&gridExplosionTiles.length===0&&gridExplosionTimer>0){
+    gridExplosionTimer-=delta;
+    if(gridExplosionTimer<=0){
+      const pool=hazardGridTiles.filter(tile=>!tile.active);
+      for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+      gridExplosionTiles=pool.slice(0,6);
+      gridExplosionTimer=1.35;
+      for(const tile of gridExplosionTiles){
+        tile.active=true;tile.mesh.visible=true;
+        tile.mesh.material.color.setHex(0xff1738);
+        tile.mesh.material.emissive.setHex(0xff0828);
+        tile.mesh.material.emissiveIntensity=3.2;
+      }
+    }
+  }
+}
+
 // Open-top perimeter walls: glowing wireframe panels, with no ceiling.
 const hazardWallPositions=[],hazardWallHeight=17;
 for(let x=-gridW;x<=gridW;x+=tile){
@@ -1451,15 +1535,12 @@ function resetArenaTheme() {
 }
 
 const eventBanner = document.getElementById("event-banner");
+
 const ARENA_EVENTS = [
-  { id:"low-gravity", label:"LOW GRAVITY", description:"JUMPS STAY AIRBORNE LONGER", duration:7.5 },
-  { id:"fog-surge", label:"FOG SURGE", description:"VISIBILITY TEMPORARILY REDUCED", duration:7.5 },
-  { id:"ball-tempo", label:"BALL TEMPO", description:"THE BALL MOVES FASTER", duration:7.5 },
-  { id:"light-shift", label:"LIGHT SHIFT", description:"ARENA LIGHTING CHANGES", duration:7.5 },
-  { id:"ball-rush", label:"BALL RUSH", description:"THE BALL SURGES TO HIGH SPEED", duration:6.5 },
-  { id:"ball-drift", label:"SLOW-MOTION WINDOW", description:"THE BALL TEMPORARILY SLOWS DOWN", duration:7.5 },
-  { id:"xp-surge", label:"XP SURGE", description:"SUCCESSFUL PULSE HITS EARN DOUBLE XP", duration:8.0 },
-  { id:"giant-ball", label:"GIANT BALL", description:"THE BALL GROWS TO MASSIVE SIZE", duration:8.5, hazardOnly:true }
+  { id:"grid-explosion", label:"GRID EXPLOSION", description:"RED TILES DETONATE IN TWO WAVES", duration:9.5, hazardOnly:true },
+  { id:"bouncy-hunter", label:"BOUNCY HUNTER", description:"A FAST, HIGH-BOUNCE BALL HUNTS YOUR MOVEMENT", duration:9, hazardOnly:true },
+  { id:"giant-ball", label:"GIANT BALL", description:"THE BALL GROWS TO MASSIVE SIZE", duration:8.5, hazardOnly:true },
+  { id:"multi-ball", label:"MULTI-BALL", description:"THREE BALLS ARE NOW IN THE ARENA", duration:10, hazardOnly:true }
 ];
 let arenaEventXpMultiplier = 1;
 let activeArenaEvent = null;
@@ -1467,59 +1548,55 @@ let arenaEventRemaining = 0;
 let arenaEventCooldown = 18;
 function finishArenaEvent() {
   if (!activeArenaEvent) return;
-  if (activeArenaEvent.id === "fog-surge") { scene.fog.near = arenaMode==="hazard" ? 165 : 24; scene.fog.far = arenaMode==="hazard" ? 360 : 46; }
-  if (activeArenaEvent.id === "ball-tempo") { ballVelocity.multiplyScalar(1 / 1.15); }
-  if (activeArenaEvent.id === "ball-rush") { ballVelocity.multiplyScalar(1 / 1.24); }
-  if (activeArenaEvent.id === "ball-drift") { ballVelocity.multiplyScalar(1 / 0.82); }
-  if (activeArenaEvent.id === "light-shift") { ceilingLight.intensity = arenaMode==="hazard" ? 0 : 28; redRoomGlow.intensity = arenaMode==="hazard" ? 1.5 : 18; }
-  if (activeArenaEvent.id === "xp-surge") arenaEventXpMultiplier = 1;
   if(activeArenaEvent.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);}
+  if(activeArenaEvent.id==="grid-explosion")clearGridExplosionTiles();
+  if(activeArenaEvent.id==="multi-ball")clearExtraHazardBalls();
   activeArenaEvent = null;
   arenaEventRemaining = 0;
-  if (eventBanner) {
-    eventBanner.classList.remove("event-banner-show", "hazard-event-active");
-  }
+  if (eventBanner) eventBanner.classList.remove("event-banner-show", "hazard-event-active");
 }
 function startArenaEvent() {
-  const availableEvents=ARENA_EVENTS.filter(event=>!event.hazardOnly||arenaMode==="hazard");
+  const availableEvents=arenaMode==="hazard"?ARENA_EVENTS: [];
+  if(!availableEvents.length)return;
   const event=availableEvents[Math.floor(Math.random()*availableEvents.length)];
   activeArenaEvent = event;
   arenaEventRemaining = event.duration;
-  if (event.id === "fog-surge") { scene.fog.near = arenaMode==="hazard" ? 65 : 8; scene.fog.far = arenaMode==="hazard" ? 155 : 23; }
-  if (event.id === "ball-tempo") { ballVelocity.multiplyScalar(1.15); }
-  if (event.id === "ball-rush") { ballVelocity.multiplyScalar(1.24); }
-  if (event.id === "ball-drift") { ballVelocity.multiplyScalar(0.82); }
-  if (event.id === "xp-surge") arenaEventXpMultiplier = 2;
-  if(event.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS*1.7;ball.scale.setScalar(1.7);}
-  if (event.id === "light-shift") { ceilingLight.intensity = arenaMode==="hazard" ? 0 : 16; redRoomGlow.intensity = arenaMode==="hazard" ? 8 : 26; }
+  if(event.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS*1.85;ball.scale.setScalar(1.85);}
+  if(event.id==="grid-explosion")startGridExplosionWave();
+  if(event.id==="multi-ball")spawnExtraHazardBalls();
   if (eventBanner) {
-    eventBanner.textContent = "ARENA EVENT  /  " + event.label + " — " + event.description;
+    eventBanner.textContent = "HAZARD EVENT  /  " + event.label + " — " + event.description;
     eventBanner.classList.remove("event-banner-show");
     void eventBanner.offsetWidth;
-    eventBanner.classList.add("event-banner-show");
-    if (arenaMode === "hazard") eventBanner.classList.add("hazard-event-active");
+    eventBanner.classList.add("event-banner-show","hazard-event-active");
   }
 }
 function updateArenaEvents(delta) {
-  if (activeArenaEvent) {
-    arenaEventRemaining -= delta;
-    if (arenaEventRemaining <= 0) {
+  if(arenaMode!=="hazard"){
+    if(activeArenaEvent)finishArenaEvent();
+    arenaEventCooldown=22+Math.random()*8;
+    return;
+  }
+  if(activeArenaEvent){
+    arenaEventRemaining-=delta;
+    if(activeArenaEvent.id==="grid-explosion")updateGridExplosion(delta);
+    if(activeArenaEvent.id==="multi-ball")updateExtraHazardBalls(delta);
+    if(arenaEventRemaining<=0){
       finishArenaEvent();
-      if (arenaMode === "hazard") arenaEventCooldown = 1.0 + Math.random() * 1.5;
+      arenaEventCooldown=1+Math.random()*1.5;
     }
     return;
   }
-  arenaEventCooldown -= delta;
-  if (arenaEventCooldown <= 0) {
-    startArenaEvent();
-    if (arenaMode !== "hazard") arenaEventCooldown = 22 + Math.random() * 8;
-  }
+  arenaEventCooldown-=delta;
+  if(arenaEventCooldown<=0)startArenaEvent();
 }
 function resetArenaEvents() {
   finishArenaEvent();
-  arenaEventXpMultiplier = 1;
-  arenaEventCooldown = arenaMode === "hazard" ? 1.5 + Math.random() * 1.5 : 18;
-  if (eventBanner) eventBanner.classList.remove("event-banner-show", "hazard-event-active");
+  arenaEventXpMultiplier=1;
+  clearGridExplosionTiles();
+  clearExtraHazardBalls();
+  arenaEventCooldown=arenaMode==="hazard"?1.5+Math.random()*1.5:18;
+  if(eventBanner)eventBanner.classList.remove("event-banner-show","hazard-event-active");
 }
 
 let ballVelocity = new THREE.Vector3(-4.8, 1.6, 6.2);
@@ -2562,7 +2639,7 @@ function aimBallAtPlayer(difficulty) {
 
   // The ball makes a steering decision on impacts, not a continuous lock-on.
   // Its aim probability rises with difficulty, but it still sometimes breaks away.
-  const pressureChance = Math.min(0.94, difficulty.aim + 0.08);
+  const pressureChance = Math.min(0.98, difficulty.aim + (activeArenaEvent?.id==="bouncy-hunter" ? 0.2 : 0.08));
   if (Math.random() >= pressureChance) {
     const randomAngle = Math.random() * Math.PI * 2;
     ballVelocity.x = Math.cos(randomAngle) * currentSpeed;
@@ -2572,7 +2649,7 @@ function aimBallAtPlayer(difficulty) {
 
   // Predict the player's short-term movement, then attack an offset lane.
   // This makes the ball approach the player without travelling straight at them.
-  const leadTime = 0.22 + difficulty.chaos * 0.18;
+  const leadTime = (activeArenaEvent?.id==="bouncy-hunter" ? 0.48 : 0.22) + difficulty.chaos * 0.18;
   const predictedPlayer = new THREE.Vector2(
     player.position.x + playerVelocity.x * leadTime,
     player.position.z + playerVelocity.z * leadTime
@@ -2781,7 +2858,8 @@ function updateBall(delta) {
   ball.position.y += ballVerticalVelocity * delta;
 
   // Wall impacts preserve more energy at higher difficulties and add a random deflection.
-  const wallBounce = Math.min(1.32, CONFIG.ball.bounce * difficulty.bounce);
+  const hunterMode=activeArenaEvent?.id==="bouncy-hunter";
+  const wallBounce = Math.min(hunterMode?1.52:1.32, CONFIG.ball.bounce * difficulty.bounce * (hunterMode?1.3:1));
   if (ball.position.x > roomBounds.x) {
     ball.position.x = roomBounds.x;
     ballVelocity.x = -Math.abs(ballVelocity.x) * wallBounce;
@@ -2808,7 +2886,7 @@ function updateBall(delta) {
   // Floor and ceiling bounces vary slightly each time, changing the next arc.
   if (ball.position.y < CONFIG.ball.radius) {
     ball.position.y = CONFIG.ball.radius;
-    const floorRestitution = Math.min(1.42, 0.96 * difficulty.bounce);
+    const floorRestitution = Math.min(hunterMode?1.55:1.42, 0.96 * difficulty.bounce * (hunterMode?1.35:1));
     ballVerticalVelocity = Math.min(
       20,
       Math.abs(ballVerticalVelocity) * floorRestitution + 2.4 + Math.random() * (1.4 + difficulty.chaos)
@@ -2827,8 +2905,8 @@ function updateBall(delta) {
   // Accelerate toward a difficulty-scaled target, with a hard cap for stable physics.
   const hazardSpeedMultiplier = arenaMode === "hazard" ? 1.75 : 1;
   const targetSpeed = Math.min(
-    (CONFIG.ball.speed + Math.min(elapsed * (arenaMode === "hazard" ? 0.15 : 0.09) * difficulty.ramp, (arenaMode === "hazard" ? 9 : 5.5) * difficulty.ramp)) * difficulty.speed * hazardSpeedMultiplier * (activeArenaEvent?.id === "ball-tempo" ? 1.15 : 1),
-    arenaMode === "hazard" ? 38 : CONFIG.ball.maxSpeed
+    (CONFIG.ball.speed + Math.min(elapsed * (arenaMode === "hazard" ? 0.15 : 0.09) * difficulty.ramp, (arenaMode === "hazard" ? 9 : 5.5) * difficulty.ramp)) * difficulty.speed * hazardSpeedMultiplier * (activeArenaEvent?.id === "bouncy-hunter" ? 1.58 : 1),
+    arenaMode === "hazard" ? (activeArenaEvent?.id === "bouncy-hunter" ? 48 : 38) : CONFIG.ball.maxSpeed
   );
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
   if (currentSpeed < targetSpeed) {

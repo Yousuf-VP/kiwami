@@ -4372,3 +4372,80 @@ body { position:fixed; inset:0; }
   .shop-panel .shop-item-preview { width:42px; height:42px; }
   .leaderboard-row { padding:8px; }
 }
+
+
+/* LEADERBOARD PROFILE IDENTITY — avatar image inside the player's equipped frame */
+.leaderboard-avatar-frame {
+  flex:0 0 48px;
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  padding:3px;
+  border:2px solid #8b929f;
+  border-radius:9px;
+  background:rgba(8,9,14,.96);
+  overflow:hidden;
+}
+.leaderboard-avatar {
+  position:relative;
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:5px;
+  color:#fff;
+  background:linear-gradient(145deg,#8c2539,#101116);
+  font:900 20px/1 Impact,'Arial Black',var(--display);
+}
+.leaderboard-avatar img,
+.menu-player-avatar-image {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+}
+.menu-player-avatar { position:relative; overflow:hidden; }
+.leaderboard-row { align-items:center; }
+.leaderboard-player { gap:10px; }
+.leaderboard-player-copy { flex:1 1 auto; }
+@media(max-width:800px) {
+  .leaderboard-avatar-frame { flex-basis:42px; width:42px; height:42px; }
+  .leaderboard-avatar { font-size:17px; }
+}
+
+/* SHOP ART — enlarge the preview, not the text or buttons */
+.shop-panel .shop-item-card {
+  grid-template-columns:clamp(82px,10vw,112px) minmax(0,1fr);
+  column-gap:14px;
+  padding:14px;
+}
+.shop-panel .shop-item-preview {
+  width:clamp(82px,10vw,112px);
+  height:clamp(82px,10vw,112px);
+  grid-row:1 / span 3;
+}
+.shop-panel .shop-preview-orb { transform:scale(1.28); }
+.shop-panel .shop-preview-ring { transform:scale(1.22); }
+.shop-panel .shop-blaster-barrel { transform:scale(1.18); }
+.shop-panel .shop-blaster-body { transform:scale(1.18); }
+.shop-panel .shop-blaster-grip { transform:scale(1.18); }
+.shop-panel .shop-blaster-core { transform:scale(1.18); }
+@media(max-width:800px) {
+  .shop-panel .shop-item-card {
+    grid-template-columns:clamp(76px,23vw,96px) minmax(0,1fr);
+    column-gap:10px;
+    padding:10px;
+  }
+  .shop-panel .shop-item-preview {
+    width:clamp(76px,23vw,96px);
+    height:clamp(76px,23vw,96px);
+  }
+}
+@media(max-height:600px) {
+  .shop-panel .shop-item-card { grid-template-columns:70px minmax(0,1fr); padding:8px; }
+  .shop-panel .shop-item-preview { width:70px; height:70px; }
+}

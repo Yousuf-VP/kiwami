@@ -1532,6 +1532,16 @@ function resetArenaTheme() {
 
 const eventBanner = document.getElementById("event-banner");
 
+
+const CLASSIC_ARENA_EVENTS = [
+  { id:"low-gravity", label:"LOW GRAVITY", description:"JUMPS STAY AIRBORNE LONGER", duration:7.5 },
+  { id:"fog-surge", label:"FOG SURGE", description:"VISIBILITY TEMPORARILY REDUCED", duration:7.5 },
+  { id:"ball-tempo", label:"BALL TEMPO", description:"THE BALL MOVES FASTER", duration:7.5 },
+  { id:"light-shift", label:"LIGHT SHIFT", description:"ARENA LIGHTING CHANGES", duration:7.5 },
+  { id:"ball-rush", label:"BALL RUSH", description:"THE BALL SURGES TO HIGH SPEED", duration:6.5 },
+  { id:"ball-drift", label:"SLOW-MOTION WINDOW", description:"THE BALL TEMPORARILY SLOWS DOWN", duration:7.5 },
+  { id:"xp-surge", label:"XP SURGE", description:"SUCCESSFUL PULSE HITS EARN DOUBLE XP", duration:8.0 }
+];
 const ARENA_EVENTS = [
   { id:"grid-explosion", label:"GRID EXPLOSION", description:"RED TILES DETONATE IN TWO WAVES", duration:9.5, hazardOnly:true },
   { id:"bouncy-hunter", label:"BOUNCY HUNTER", description:"A FAST, HIGH-BOUNCE BALL HUNTS YOUR MOVEMENT", duration:9, hazardOnly:true },
@@ -1544,42 +1554,50 @@ let arenaEventRemaining = 0;
 let arenaEventCooldown = 18;
 function finishArenaEvent() {
   if (!activeArenaEvent) return;
+  if(activeArenaEvent.id==="fog-surge"){scene.fog.near=arenaMode==="hazard"?165:24;scene.fog.far=arenaMode==="hazard"?360:46;}
+  if(activeArenaEvent.id==="ball-tempo")ballVelocity.multiplyScalar(1/1.15);
+  if(activeArenaEvent.id==="ball-rush")ballVelocity.multiplyScalar(1/1.24);
+  if(activeArenaEvent.id==="ball-drift")ballVelocity.multiplyScalar(1/.82);
+  if(activeArenaEvent.id==="light-shift"){ceilingLight.intensity=arenaMode==="hazard"?0:28;redRoomGlow.intensity=arenaMode==="hazard"?1.5:18;}
+  if(activeArenaEvent.id==="xp-surge")arenaEventXpMultiplier=1;
   if(activeArenaEvent.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);}
   if(activeArenaEvent.id==="grid-explosion")clearGridExplosionTiles();
   if(activeArenaEvent.id==="multi-ball")clearExtraHazardBalls();
-  activeArenaEvent = null;
-  arenaEventRemaining = 0;
-  if (eventBanner) eventBanner.classList.remove("event-banner-show", "hazard-event-active");
+  activeArenaEvent=null;
+  arenaEventRemaining=0;
+  if(eventBanner)eventBanner.classList.remove("event-banner-show","hazard-event-active");
 }
 function startArenaEvent() {
-  const availableEvents=arenaMode==="hazard"?ARENA_EVENTS: [];
-  if(!availableEvents.length)return;
+  const availableEvents=arenaMode==="hazard"?ARENA_EVENTS:CLASSIC_ARENA_EVENTS;
   const event=availableEvents[Math.floor(Math.random()*availableEvents.length)];
-  activeArenaEvent = event;
-  arenaEventRemaining = event.duration;
+  activeArenaEvent=event;
+  arenaEventRemaining=event.duration;
+  if(event.id==="fog-surge"){scene.fog.near=arenaMode==="hazard"?65:8;scene.fog.far=arenaMode==="hazard"?155:23;}
+  if(event.id==="ball-tempo")ballVelocity.multiplyScalar(1.15);
+  if(event.id==="ball-rush")ballVelocity.multiplyScalar(1.24);
+  if(event.id==="ball-drift")ballVelocity.multiplyScalar(.82);
+  if(event.id==="xp-surge")arenaEventXpMultiplier=2;
   if(event.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS*1.85;ball.scale.setScalar(1.85);}
+  if(event.id==="light-shift"){ceilingLight.intensity=arenaMode==="hazard"?8:16;redRoomGlow.intensity=arenaMode==="hazard"?8:26;}
   if(event.id==="grid-explosion")startGridExplosionWave();
   if(event.id==="multi-ball")spawnExtraHazardBalls();
-  if (eventBanner) {
-    eventBanner.textContent = "HAZARD EVENT  /  " + event.label + " — " + event.description;
+  if(eventBanner){
+    eventBanner.textContent=(arenaMode==="hazard"?"HAZARD EVENT":"ARENA EVENT")+"  /  "+event.label+" — "+event.description;
     eventBanner.classList.remove("event-banner-show");
     void eventBanner.offsetWidth;
-    eventBanner.classList.add("event-banner-show","hazard-event-active");
+    eventBanner.classList.add("event-banner-show");
+    if(arenaMode==="hazard")eventBanner.classList.add("hazard-event-active");
   }
 }
 function updateArenaEvents(delta) {
-  if(arenaMode!=="hazard"){
-    if(activeArenaEvent)finishArenaEvent();
-    arenaEventCooldown=22+Math.random()*8;
-    return;
-  }
   if(activeArenaEvent){
     arenaEventRemaining-=delta;
-    if(activeArenaEvent.id==="grid-explosion")updateGridExplosion(delta);
-    if(activeArenaEvent.id==="multi-ball")updateExtraHazardBalls(delta);
+    if(arenaMode==="hazard"&&activeArenaEvent.id==="grid-explosion")updateGridExplosion(delta);
+    if(arenaMode==="hazard"&&activeArenaEvent.id==="multi-ball")updateExtraHazardBalls(delta);
     if(arenaEventRemaining<=0){
+      const wasHazard=arenaMode==="hazard";
       finishArenaEvent();
-      arenaEventCooldown=1+Math.random()*1.5;
+      arenaEventCooldown=wasHazard?1+Math.random()*1.5:22+Math.random()*8;
     }
     return;
   }

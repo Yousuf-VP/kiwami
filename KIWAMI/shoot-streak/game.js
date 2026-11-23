@@ -273,7 +273,7 @@ async function loadCloudProgression(user) {
   renderShop();
   currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
   currentProfileImageUrl = String(data?.profile_image_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || "").trim();
-  if (data?.equipped_frame && SHOP_ITEMS.some(item => item.id === data.equipped_frame && item.category === "frame")) {
+  if (data?.equipped_frame && data.equipped_frame !== "default-frame" && SHOP_ITEMS.some(item => item.id === data.equipped_frame && item.category === "frame")) {
     shopInventory.owned = [...new Set([...shopInventory.owned, data.equipped_frame])];
     shopInventory.equippedFrame = data.equipped_frame;
     saveShopInventory();

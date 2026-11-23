@@ -1260,56 +1260,62 @@ function clearGridExplosionTiles(){
   gridExplosionTimer=0;
   gridExplosionWave=0;
 }
-function startGridExplosionWave(){
-  clearGridExplosionTiles();
-  const pool=hazardGridTiles.slice();
-  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
-  gridExplosionTiles=pool.slice(0,6);
-  gridExplosionWave=1;
-  gridExplosionTimer=1.35;
+function chooseGridExplosionBatch(){
+  const px=player.position.x,pz=player.position.z;
+  const nearby=hazardGridTiles
+    .filter(tile=>Math.hypot(tile.x-px,tile.z-pz)<=10.5)
+    .sort(()=>Math.random()-.5);
+  const closest=nearby.slice().sort((a,b)=>Math.hypot(a.x-px,a.z-pz)-Math.hypot(b.x-px,b.z-pz));
+  const batch=closest.slice(0,5);
+  for(const tile of nearby){
+    if(batch.length>=18)break;
+    if(!batch.includes(tile))batch.push(tile);
+  }
+  return batch;
+}
+function armGridExplosionBatch(){
+  gridExplosionTiles=chooseGridExplosionBatch();
+  gridExplosionWave++;
+  gridExplosionTimer=.82;
   for(const tile of gridExplosionTiles){
     tile.active=true;
     tile.mesh.visible=true;
     tile.mesh.material.color.setHex(0xff1738);
     tile.mesh.material.emissive.setHex(0xff0828);
-    tile.mesh.material.emissiveIntensity=2.8;
+    tile.mesh.material.emissiveIntensity=3.2;
   }
+}
+function startGridExplosionWave(){
+  clearGridExplosionTiles();
+  armGridExplosionBatch();
 }
 function updateGridExplosion(delta){
   if(activeArenaEvent?.id!=="grid-explosion")return;
   if(!gridExplosionTiles.length){
-    if(gridExplosionWave!==2||gridExplosionTimer<=0)return;
     gridExplosionTimer-=delta;
-    if(gridExplosionTimer<=0){
-      const pool=hazardGridTiles.filter(tile=>!tile.active);
-      for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
-      gridExplosionTiles=pool.slice(0,6);
-      gridExplosionTimer=1.35;
-      for(const tile of gridExplosionTiles){
-        tile.active=true;tile.mesh.visible=true;
-        tile.mesh.material.color.setHex(0xff1738);
-        tile.mesh.material.emissive.setHex(0xff0828);
-        tile.mesh.material.emissiveIntensity=3.2;
-      }
-    }
+    if(gridExplosionTimer<=0)armGridExplosionBatch();
     return;
   }
   gridExplosionTimer-=delta;
   const warningPulse=.72+Math.sin(performance.now()*.018)*.28;
-  for(const tile of gridExplosionTiles)tile.mesh.material.emissiveIntensity=gridExplosionTimer>0?2.2+warningPulse*2.4:5;
+  for(const tile of gridExplosionTiles)tile.mesh.material.emissiveIntensity=gridExplosionTimer>0?3.0+warningPulse*3.4:5.8;
   if(gridExplosionTimer<=0){
     const playerX=player.position.x,playerZ=player.position.z;
-    const inBlast=gridExplosionTiles.some(tile=>Math.abs(playerX-tile.x)<1.05&&Math.abs(playerZ-tile.z)<1.05);
+    const inBlast=gridExplosionTiles.some(tile=>Math.abs(playerX-tile.x)<1.34&&Math.abs(playerZ-tile.z)<1.34);
     for(const tile of gridExplosionTiles){
       tile.mesh.material.color.setHex(0xff5b24);
       tile.mesh.material.emissive.setHex(0xff2400);
       tile.mesh.material.emissiveIntensity=0;
     }
+    triggerCameraShake(.24,.32);
     if(inBlast){endRun();return;}
-    for(const tile of gridExplosionTiles){tile.active=false;tile.mesh.visible=false;}
+    for(const tile of gridExplosionTiles){
+      tile.active=false;tile.mesh.visible=false;
+      tile.mesh.material.emissive.setHex(0x000000);
+      tile.mesh.material.color.setHex(0x10131c);
+    }
     gridExplosionTiles=[];
-    if(gridExplosionWave===1){gridExplosionWave=2;gridExplosionTimer=.55;}
-    else gridExplosionTimer=0;
+    gridExplosionTimer=.16;
   }
 }
 
@@ -1607,15 +1613,88 @@ const CLASSIC_ARENA_EVENTS = [
   { id:"xp-surge", label:"XP SURGE", description:"SUCCESSFUL PULSE HITS EARN DOUBLE XP", duration:8.0 }
 ];
 const ARENA_EVENTS = [
-  { id:"grid-explosion", label:"GRID EXPLOSION", description:"RED TILES DETONATE IN TWO WAVES", duration:9.5, hazardOnly:true },
-  { id:"bouncy-hunter", label:"BOUNCY HUNTER", description:"A FAST, HIGH-BOUNCE BALL HUNTS YOUR MOVEMENT", duration:9, hazardOnly:true },
-  { id:"giant-ball", label:"GIANT BALL", description:"THE BALL GROWS TO MASSIVE SIZE", duration:8.5, hazardOnly:true },
-  { id:"multi-ball", label:"MULTI-BALL", description:"THREE BALLS ARE NOW IN THE ARENA", duration:10, hazardOnly:true }
+  { id:"grid-explosion", label:"GRID EXPLOSION", description:"A DENSE FIELD OF PLAYER-TRACKING BLAST ZONES", duration:60, hazardOnly:true },
+  { id:"bouncy-hunter", label:"BOUNCY HUNTER", description:"A FAST, HIGH-BOUNCE BALL HUNTS YOUR MOVEMENT", duration:60, hazardOnly:true },
+  { id:"giant-ball", label:"GIANT BALL", description:"A MASSIVE, HIGH-ENERGY BALL DOMINATES THE ARENA", duration:60, hazardOnly:true },
+  { id:"multi-ball", label:"MULTI-BALL", description:"THREE GLOWING BALLS PRESSURE THE ARENA", duration:60, hazardOnly:true }
 ];
 let arenaEventXpMultiplier = 1;
 let activeArenaEvent = null;
 let arenaEventRemaining = 0;
 let arenaEventCooldown = 18;
+let lastHazardEventId = null;
+const hazardEventFxGroup = new THREE.Group();
+scene.add(hazardEventFxGroup);
+let hazardEventFxTime = 0;
+let hazardEventFxId = null;
+function clearHazardEventVisuals() {
+  while (hazardEventFxGroup.children.length) {
+    const node = hazardEventFxGroup.children[0];
+    hazardEventFxGroup.remove(node);
+    node.geometry?.dispose();
+    node.material?.dispose();
+  }
+  hazardEventFxId = null;
+}
+function startHazardEventVisuals(eventId) {
+  clearHazardEventVisuals();
+  hazardEventFxId = eventId;
+  hazardEventFxTime = 0;
+  const makeRing = (radius, tube, color, opacity) => {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, tube, 10, 72),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false, toneMapped:false })
+    );
+    hazardEventFxGroup.add(ring);
+    return ring;
+  };
+  if (eventId === "grid-explosion") {
+    for (const [radius, tube, color, opacity] of [[1.5,.075,0xff183d,.88],[2.1,.035,0xff6b32,.55]]) {
+      const ring = makeRing(radius,tube,color,opacity);
+      ring.rotation.x = -Math.PI/2;
+    }
+  } else if (eventId === "bouncy-hunter") {
+    makeRing(1.05,.055,0xff173d,.9);
+    makeRing(1.28,.025,0xffa12b,.72);
+    makeRing(1.48,.018,0xffffff,.48);
+  } else if (eventId === "giant-ball") {
+    makeRing(1.65,.07,0xff6a25,.9);
+    makeRing(1.92,.035,0xffe0a1,.75);
+    makeRing(2.2,.02,0xff183d,.58);
+  } else if (eventId === "multi-ball") {
+    makeRing(1.15,.045,0xff1748,.86);
+    makeRing(1.45,.025,0xff8a32,.65);
+    makeRing(1.7,.018,0xffffff,.42);
+  }
+}
+function updateHazardEventVisuals(delta) {
+  if (!hazardEventFxId) return;
+  hazardEventFxTime += delta;
+  const pulse = .78 + Math.sin(hazardEventFxTime * 7.5) * .22;
+  const followsPlayer = hazardEventFxId === "grid-explosion";
+  hazardEventFxGroup.position.set(
+    followsPlayer ? player.position.x : ball.position.x,
+    followsPlayer ? .075 : ball.position.y,
+    followsPlayer ? player.position.z : ball.position.z
+  );
+  hazardEventFxGroup.rotation.y += delta * (hazardEventFxId === "multi-ball" ? 2.8 : 1.6);
+  hazardEventFxGroup.children.forEach((ring,index) => {
+    ring.rotation.z += delta * (index % 2 ? 1.8 : -1.35);
+    ring.scale.setScalar(pulse * (1 + index * .13));
+    ring.material.opacity = (.42 + index * .12) * pulse;
+  });
+  if (hazardEventFxId === "bouncy-hunter") {
+    ballAura.material.opacity = .24 + .16 * pulse;
+    ballLight.intensity = 62 + 26 * pulse;
+    if (Math.random() < delta * 1.5) triggerCameraShake(.035,.12);
+  } else if (hazardEventFxId === "giant-ball") {
+    ballAura.material.opacity = .28 + .2 * pulse;
+    ballLight.intensity = 82 + 38 * pulse;
+  } else if (hazardEventFxId === "multi-ball") {
+    ballAura.material.opacity = .26 + .16 * pulse;
+    ballLight.intensity = 70 + 28 * pulse;
+  }
+}
 function finishArenaEvent() {
   if (!activeArenaEvent) return;
   if(activeArenaEvent.id==="fog-surge"){scene.fog.near=arenaMode==="hazard"?165:24;scene.fog.far=arenaMode==="hazard"?360:46;}
@@ -1627,13 +1706,22 @@ function finishArenaEvent() {
   if(activeArenaEvent.id==="giant-ball"){CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);}
   if(activeArenaEvent.id==="grid-explosion")clearGridExplosionTiles();
   if(activeArenaEvent.id==="multi-ball")clearExtraHazardBalls();
+  if(["bouncy-hunter","giant-ball","multi-ball"].includes(activeArenaEvent.id)){
+    ballAura.material.opacity=.2;
+    ballLight.intensity=62;
+  }
+  clearHazardEventVisuals();
   activeArenaEvent=null;
   arenaEventRemaining=0;
   if(eventBanner)eventBanner.classList.remove("event-banner-show","hazard-event-active");
 }
 function startArenaEvent() {
   const availableEvents=arenaMode==="hazard"?ARENA_EVENTS:CLASSIC_ARENA_EVENTS;
-  const event=availableEvents[Math.floor(Math.random()*availableEvents.length)];
+  const choices=arenaMode==="hazard"&&lastHazardEventId
+    ?availableEvents.filter(candidate=>candidate.id!==lastHazardEventId)
+    :availableEvents;
+  const event=choices[Math.floor(Math.random()*choices.length)];
+  if(arenaMode==="hazard")lastHazardEventId=event.id;
   activeArenaEvent=event;
   arenaEventRemaining=event.duration;
   if(event.id==="fog-surge"){scene.fog.near=arenaMode==="hazard"?65:8;scene.fog.far=arenaMode==="hazard"?155:23;}
@@ -1645,6 +1733,7 @@ function startArenaEvent() {
   if(event.id==="light-shift"){ceilingLight.intensity=arenaMode==="hazard"?8:16;redRoomGlow.intensity=arenaMode==="hazard"?8:26;}
   if(event.id==="grid-explosion")startGridExplosionWave();
   if(event.id==="multi-ball")spawnExtraHazardBalls();
+  if(arenaMode==="hazard")startHazardEventVisuals(event.id);
   if(eventBanner){
     eventBanner.textContent=(arenaMode==="hazard"?"HAZARD EVENT":"ARENA EVENT")+"  /  "+event.label+" — "+event.description;
     eventBanner.classList.remove("event-banner-show");
@@ -1661,7 +1750,11 @@ function updateArenaEvents(delta) {
     if(arenaEventRemaining<=0){
       const wasHazard=arenaMode==="hazard";
       finishArenaEvent();
-      arenaEventCooldown=wasHazard?1+Math.random()*1.5:22+Math.random()*8;
+      if(wasHazard){
+        startArenaEvent();
+      }else{
+        arenaEventCooldown=22+Math.random()*8;
+      }
     }
     return;
   }
@@ -1673,7 +1766,9 @@ function resetArenaEvents() {
   arenaEventXpMultiplier=1;
   clearGridExplosionTiles();
   clearExtraHazardBalls();
+  lastHazardEventId=null;
   arenaEventCooldown=arenaMode==="hazard"?1.5+Math.random()*1.5:18;
+  clearHazardEventVisuals();
   if(eventBanner)eventBanner.classList.remove("event-banner-show","hazard-event-active");
 }
 
@@ -3100,6 +3195,7 @@ function animate() {
     updateBall(gameDelta);
     updatePulseProjectiles(gameDelta);
     updateArenaEvents(gameDelta);
+    updateHazardEventVisuals(gameDelta);
     updateCamera(gameDelta);
     updateJustMissVisual(delta);
     if(arenaMode==="hazard") updateHazardCosmos(delta);

@@ -284,7 +284,7 @@ async function loadCloudProgression(user) {
   renderCareerStats();
   renderProgression();
   syncMenuProgression();
-  if (!data || totalXP > cloudXP || cashBalance > cloudCash) await syncCloudProgression();
+  if (!data || totalXP > cloudXP || cashBalance > cloudCash || (data?.equipped_frame || "default-frame") !== shopInventory.equippedFrame || String(data?.profile_image_url || "") !== currentProfileImageUrl) await syncCloudProgression();
 }
 async function initializeCloudAccount() {
   if (!supabase) {
@@ -2085,7 +2085,7 @@ function renderLeaderboardRows(rows, metric) {
     const playerName = String(row.username || "PLAYER");
     avatar.textContent = Array.from(playerName.trim() || "P")[0].toLocaleUpperCase();
     const imageUrl = String(row.profile_image_url || "").trim();
-    if (/^https?:\\/\\//i.test(imageUrl)) {
+    if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://")) {
       const image = document.createElement("img");
       image.src = imageUrl;
       image.alt = "";
@@ -3321,7 +3321,7 @@ function updateKiwamiPlayerBadge(){
   document.querySelectorAll("[data-player-avatar]").forEach(node=>{
     node.textContent = initial;
     node.querySelectorAll(".menu-player-avatar-image").forEach(image => image.remove());
-    if (/^https?:\\/\\//i.test(currentProfileImageUrl)) {
+    if (currentProfileImageUrl.startsWith("https://") || currentProfileImageUrl.startsWith("http://")) {
       const image = document.createElement("img");
       image.className = "menu-player-avatar-image";
       image.src = currentProfileImageUrl;

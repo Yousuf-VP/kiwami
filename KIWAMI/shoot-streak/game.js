@@ -229,8 +229,9 @@ async function syncCloudProgression() {
   const cashSnapshot = cashBalance;
   cloudSaveInFlight = cloudSaveInFlight.catch(() => {}).then(async () => {
     if (!currentUser || currentUser.id !== userId) return;
+    const profileImage = String(currentProfileImageUrl || currentUser?.user_metadata?.avatar_url || currentUser?.user_metadata?.picture || "").trim();
     const { error } = await supabase.from("player_profiles")
-      .update({ total_xp: xpSnapshot, cash_balance: cashSnapshot, username: currentUsername })
+      .update({ total_xp: xpSnapshot, cash_balance: cashSnapshot, username: currentUsername, equipped_frame: shopInventory.equippedFrame, profile_image_url: profileImage || null })
       .eq("id", userId);
     if (error) throw error;
   });
@@ -246,7 +247,7 @@ async function loadCloudProgression(user) {
   let localOwner = null;
   try { localOwner = localStorage.getItem(PROGRESSION_OWNER_KEY); } catch {}
   const { data, error } = await supabase.from("player_profiles")
-    .select("username,total_xp,cash_balance").eq("id", user.id).maybeSingle();
+    .select("username,total_xp,cash_balance,equipped_frame,profile_image_url").eq("id", user.id).maybeSingle();
   if (error) {
     setAccountMessage("Could not load cloud profile: " + error.message, true);
     return;
@@ -271,6 +272,14 @@ async function loadCloudProgression(user) {
   loadShopInventory();
   renderShop();
   currentUsername = data?.username || user.user_metadata?.username || user.email?.split("@")[0] || "PLAYER";
+  currentProfileImageUrl = String(data?.profile_image_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || "").trim();
+  if (data?.equipped_frame && SHOP_ITEMS.some(item => item.id === data.equipped_frame && item.category === "frame")) {
+    shopInventory.owned = [...new Set([...shopInventory.owned, data.equipped_frame])];
+    shopInventory.equippedFrame = data.equipped_frame;
+    saveShopInventory();
+    applyEquippedPlayerFrame();
+  }
+  updateKiwamiPlayerBadge();
   saveProgression();
   renderCareerStats();
   renderProgression();
@@ -578,6 +587,7 @@ const SHOP_ITEMS = [
 ];
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
 let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame", equippedBeta:null };
+let currentProfileImageUrl = "";
 let activeShopFilter = "all";
 
 function shopStorageKey() {
@@ -709,6 +719,7 @@ function purchaseOrEquipShopItem(itemId) {
   else if (item.category === "aura") shopInventory.equippedAura = item.id;
   else if (item.category === "beta") shopInventory.equippedBeta = item.id;
   saveShopInventory();
+  if (currentUser && item.category === "frame") syncCloudProgression();
   applyEquippedAuraEffect();
   applyEquippedPlayerFrame();
   renderCash();
@@ -2062,14 +2073,37 @@ function renderLeaderboardRows(rows, metric) {
     const rank = document.createElement("strong");
     rank.className = "leaderboard-rank";
     rank.textContent = "#" + Number(row.rank_position).toLocaleString();
+    const identityVisual = document.createElement("span");
+    identityVisual.className = "leaderboard-avatar-frame";
+    const equippedFrame = SHOP_ITEMS.find(entry => entry.id === row.equipped_frame && entry.category === "frame") || SHOP_ITEMS.find(entry => entry.id === "default-frame");
+    if (equippedFrame) {
+      identityVisual.style.borderColor = equippedFrame.color;
+      identityVisual.style.boxShadow = equippedFrame.id === "default-frame" ? "none" : "0 0 14px " + equippedFrame.glow + "66";
+    }
+    const avatar = document.createElement("span");
+    avatar.className = "leaderboard-avatar";
+    const playerName = String(row.username || "PLAYER");
+    avatar.textContent = Array.from(playerName.trim() || "P")[0].toLocaleUpperCase();
+    const imageUrl = String(row.profile_image_url || "").trim();
+    if (/^https?:\\/\\//i.test(imageUrl)) {
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = "";
+      image.loading = "lazy";
+      image.referrerPolicy = "no-referrer";
+      image.addEventListener("error", () => image.remove(), { once:true });
+      avatar.append(image);
+      avatar.classList.add("has-image");
+    }
+    identityVisual.append(avatar);
     const details = document.createElement("span");
     details.className = "leaderboard-player-copy";
     const name = document.createElement("b");
-    name.textContent = row.username || "PLAYER";
+    name.textContent = playerName;
     const meta = document.createElement("small");
     meta.textContent = "LEVEL " + Number(row.player_level || 0).toLocaleString() + (row.is_current_player ? " · YOU" : "");
     details.append(name, meta);
-    identity.append(rank, details);
+    identity.append(rank, identityVisual, details);
     const value = document.createElement("strong");
     value.className = "leaderboard-value";
     value.textContent = formatLeaderboardValue(row, metric);
@@ -3286,6 +3320,16 @@ function updateKiwamiPlayerBadge(){
   const color = palette[hash % palette.length];
   document.querySelectorAll("[data-player-avatar]").forEach(node=>{
     node.textContent = initial;
+    node.querySelectorAll(".menu-player-avatar-image").forEach(image => image.remove());
+    if (/^https?:\\/\\//i.test(currentProfileImageUrl)) {
+      const image = document.createElement("img");
+      image.className = "menu-player-avatar-image";
+      image.src = currentProfileImageUrl;
+      image.alt = "";
+      image.referrerPolicy = "no-referrer";
+      image.addEventListener("error", () => image.remove(), { once:true });
+      node.append(image);
+    }
     node.setAttribute("aria-label", name + " avatar");
     node.setAttribute("data-initial", initial);
     node.style.background = "linear-gradient(145deg, "+color+", #101116)";

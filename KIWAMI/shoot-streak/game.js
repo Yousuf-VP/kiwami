@@ -1228,8 +1228,8 @@ box(0.045, 0.055, 5.5, mats.trim, 7.34, 4.65, -3.8);
 const hazardWorld=new THREE.Group(); hazardWorld.name="hazard-grounds-world"; scene.add(hazardWorld);
 const hazardGroundMaterial=new THREE.MeshStandardMaterial({color:0x080b14,roughness:.82,metalness:.18});
 const hazardGridMaterial=new THREE.LineBasicMaterial({color:0xff2447,transparent:true,opacity:.78,toneMapped:false});
-const hazardGround=new THREE.Mesh(new THREE.PlaneGeometry(64,88),hazardGroundMaterial); hazardGround.rotation.x=-Math.PI/2; hazardGround.position.y=-.01; hazardGround.receiveShadow=true; hazardWorld.add(hazardGround);
-const gridPositions=[],gridW=32,gridD=44,tile=4;
+const hazardGround=new THREE.Mesh(new THREE.PlaneGeometry(30.4,40.4),hazardGroundMaterial); hazardGround.rotation.x=-Math.PI/2; hazardGround.position.y=-.01; hazardGround.receiveShadow=true; hazardWorld.add(hazardGround);
+const gridPositions=[],gridW=15.2,gridD=20.2,tile=2;
 for(let x=-gridW;x<=gridW;x+=tile)gridPositions.push(x,.012,-gridD,x,.012,gridD);
 for(let z=-gridD;z<=gridD;z+=tile)gridPositions.push(-gridW,.012,z,gridW,.012,z);
 const gridGeometry=new THREE.BufferGeometry();gridGeometry.setAttribute("position",new THREE.Float32BufferAttribute(gridPositions,3));hazardWorld.add(new THREE.LineSegments(gridGeometry,hazardGridMaterial));
@@ -1611,7 +1611,7 @@ try {
 camera.fov = savedFov;
 camera.updateProjectionMatrix();
 const roomBounds={x:6.65,z:9.05},playerBounds={x:6.7,z:8.95};
-function setArenaMode(mode){arenaMode=mode==="hazard"?"hazard":"classic";const hazard=arenaMode==="hazard";originalArenaMeshes.forEach(mesh=>mesh.visible=!hazard);hazardWorld.visible=hazard;roomBounds.x=hazard?27.5:6.65;roomBounds.z=hazard?39:9.05;playerBounds.x=hazard?27:6.7;playerBounds.z=hazard?38:8.95;CONFIG.player.startZ=hazard?24:5.8;scene.background.set(hazard?0x02030a:0x030407);scene.fog.color.set(hazard?0x02030a:0x030407);scene.fog.near=hazard?165:28;scene.fog.far=hazard?360:52;ceilingLight.intensity=hazard?0:28;redRoomGlow.intensity=hazard?1.5:18;document.body.classList.toggle("hazard-grounds-active",hazard);if(modeLabel)modeLabel.textContent=hazard?"HAZARD GROUNDS":"CLASSIC ARENA";}
+function setArenaMode(mode){arenaMode=mode==="hazard"?"hazard":"classic";const hazard=arenaMode==="hazard";originalArenaMeshes.forEach(mesh=>mesh.visible=!hazard);hazardWorld.visible=hazard;roomBounds.x=hazard?13.3:6.65;roomBounds.z=hazard?18.1:9.05;playerBounds.x=hazard?13:6.7;playerBounds.z=hazard?17.8:8.95;CONFIG.player.startZ=hazard?12:5.8;scene.background.set(hazard?0x02030a:0x030407);scene.fog.color.set(hazard?0x02030a:0x030407);scene.fog.near=hazard?165:28;scene.fog.far=hazard?360:52;ceilingLight.intensity=hazard?0:28;redRoomGlow.intensity=hazard?1.5:18;document.body.classList.toggle("hazard-grounds-active",hazard);if(modeLabel)modeLabel.textContent=hazard?"HAZARD GROUNDS":"CLASSIC ARENA";}
 
 function resize() {
   const width = shell.clientWidth || window.innerWidth;
@@ -2162,7 +2162,7 @@ function resetRun() {
   if (justMissAura) justMissAura.visible = false;
   if (justMissAuraLight) justMissAuraLight.intensity = 0;
   CONFIG.ball.radius=BASE_BALL_RADIUS;ball.scale.setScalar(1);
-  ball.position.set(arenaMode==="hazard"?0:1.5,arenaMode==="hazard"?3.2:2.1,arenaMode==="hazard"?-23:-5.5);
+  ball.position.set(arenaMode==="hazard"?0:1.5,arenaMode==="hazard"?3.2:2.1,arenaMode==="hazard"?-12:-5.5);
   const difficulty = DIFFICULTIES[selectedDifficulty];
   const startAngle = Math.random() * Math.PI * 2;
   const startSpeed = CONFIG.ball.speed * difficulty.speed * (arenaMode === "hazard" ? 1.75 : 1);

@@ -1276,31 +1276,9 @@ function startGridExplosionWave(){
   }
 }
 function updateGridExplosion(delta){
-  if(activeArenaEvent?.id!=="grid-explosion"||!gridExplosionTiles.length)return;
-  gridExplosionTimer-=delta;
-  const warningPulse=.72+Math.sin(performance.now()*.018)*.28;
-  for(const tile of gridExplosionTiles)tile.mesh.material.emissiveIntensity=gridExplosionTimer>0?2.2+warningPulse*2.4:5;
-  if(gridExplosionTimer<=0){
-    const playerX=player.position.x,playerZ=player.position.z;
-    const inBlast=gridExplosionTiles.some(tile=>Math.abs(playerX-tile.x)<1.05&&Math.abs(playerZ-tile.z)<1.05);
-    for(const tile of gridExplosionTiles){
-      tile.mesh.material.color.setHex(0xff5b24);
-      tile.mesh.material.emissive.setHex(0xff2400);
-      tile.mesh.material.emissiveIntensity=0;
-    }
-    if(inBlast){endRun();return;}
-    if(gridExplosionWave===1){
-      for(const tile of gridExplosionTiles){tile.active=false;tile.mesh.visible=false;}
-      gridExplosionTiles=[];
-      gridExplosionWave=2;
-      gridExplosionTimer=.55;
-    }else{
-      for(const tile of gridExplosionTiles){tile.active=false;tile.mesh.visible=false;}
-      gridExplosionTiles=[];
-      gridExplosionTimer=0;
-    }
-  }
-  if(gridExplosionWave===2&&gridExplosionTiles.length===0&&gridExplosionTimer>0){
+  if(activeArenaEvent?.id!=="grid-explosion")return;
+  if(!gridExplosionTiles.length){
+    if(gridExplosionWave!==2||gridExplosionTimer<=0)return;
     gridExplosionTimer-=delta;
     if(gridExplosionTimer<=0){
       const pool=hazardGridTiles.filter(tile=>!tile.active);
@@ -1314,6 +1292,24 @@ function updateGridExplosion(delta){
         tile.mesh.material.emissiveIntensity=3.2;
       }
     }
+    return;
+  }
+  gridExplosionTimer-=delta;
+  const warningPulse=.72+Math.sin(performance.now()*.018)*.28;
+  for(const tile of gridExplosionTiles)tile.mesh.material.emissiveIntensity=gridExplosionTimer>0?2.2+warningPulse*2.4:5;
+  if(gridExplosionTimer<=0){
+    const playerX=player.position.x,playerZ=player.position.z;
+    const inBlast=gridExplosionTiles.some(tile=>Math.abs(playerX-tile.x)<1.05&&Math.abs(playerZ-tile.z)<1.05);
+    for(const tile of gridExplosionTiles){
+      tile.mesh.material.color.setHex(0xff5b24);
+      tile.mesh.material.emissive.setHex(0xff2400);
+      tile.mesh.material.emissiveIntensity=0;
+    }
+    if(inBlast){endRun();return;}
+    for(const tile of gridExplosionTiles){tile.active=false;tile.mesh.visible=false;}
+    gridExplosionTiles=[];
+    if(gridExplosionWave===1){gridExplosionWave=2;gridExplosionTimer=.55;}
+    else gridExplosionTimer=0;
   }
 }
 
@@ -2916,8 +2912,9 @@ function updateBall(delta) {
       : new THREE.Vector2(1, 0);
     ballVelocity.x = direction.x * boosted;
     ballVelocity.z = direction.y * boosted;
-  } else if (currentSpeed > CONFIG.ball.maxSpeed) {
-    const scale = CONFIG.ball.maxSpeed / currentSpeed;
+  } else if (currentSpeed > (arenaMode === "hazard" ? (activeArenaEvent?.id === "bouncy-hunter" ? 48 : 38) : CONFIG.ball.maxSpeed)) {
+    const maxHorizontalSpeed = arenaMode === "hazard" ? (activeArenaEvent?.id === "bouncy-hunter" ? 48 : 38) : CONFIG.ball.maxSpeed;
+    const scale = maxHorizontalSpeed / currentSpeed;
     ballVelocity.x *= scale;
     ballVelocity.z *= scale;
   }

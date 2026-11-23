@@ -16,6 +16,10 @@ create table if not exists public.player_profiles (
 alter table public.player_profiles
   add column if not exists cash_balance bigint not null default 0 check (cash_balance >= 0);
 
+alter table public.player_profiles
+  add column if not exists profile_image_url text,
+  add column if not exists equipped_frame text not null default 'default-frame';
+
 alter table public.player_profiles enable row level security;
 
 -- Grant only the browser operations the game actually needs.
@@ -166,6 +170,8 @@ begin
 end;
 $$;
 
+drop function if exists public.get_dodge_core_leaderboard(text,integer);
+
 create or replace function public.get_dodge_core_leaderboard(
   p_metric text default 'score',
   p_limit integer default 100
@@ -178,7 +184,9 @@ returns table (
   player_level integer,
   total_xp bigint,
   achieved_at timestamptz,
-  is_current_player boolean
+  is_current_player boolean,
+  profile_image_url text,
+  equipped_frame text
 )
 language plpgsql
 stable
@@ -203,6 +211,8 @@ begin
       coalesce(s.best_survival_ms, 0)::bigint as survival_value,
       floor(sqrt(greatest(p.total_xp, 0)::numeric / 100))::integer as level_value,
       p.total_xp::bigint as xp_value,
+      p.profile_image_url,
+      p.equipped_frame,
       s.achieved_at,
       row_number() over (
         order by
@@ -225,7 +235,9 @@ begin
     r.level_value,
     r.xp_value,
     r.achieved_at,
-    (r.player_id = v_player)
+    (r.player_id = v_player),
+    r.profile_image_url,
+    r.equipped_frame
   from ranked r
   where r.rank_value <= v_limit or r.player_id = v_player
   order by r.rank_value;

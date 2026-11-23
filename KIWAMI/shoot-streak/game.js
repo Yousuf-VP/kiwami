@@ -229,9 +229,14 @@ async function syncCloudProgression() {
   const cashSnapshot = cashBalance;
   cloudSaveInFlight = cloudSaveInFlight.catch(() => {}).then(async () => {
     if (!currentUser || currentUser.id !== userId) return;
-    const profileImage = String(currentProfileImageUrl || currentUser?.user_metadata?.avatar_url || currentUser?.user_metadata?.picture || "").trim();
+    const profileUpdate = { total_xp: xpSnapshot, cash_balance: cashSnapshot, username: currentUsername };
+    if (cloudCosmeticsSchemaReady) {
+      const profileImage = String(currentProfileImageUrl || currentUser?.user_metadata?.avatar_url || currentUser?.user_metadata?.picture || "").trim();
+      profileUpdate.equipped_frame = shopInventory.equippedFrame;
+      profileUpdate.profile_image_url = profileImage || null;
+    }
     const { error } = await supabase.from("player_profiles")
-      .update({ total_xp: xpSnapshot, cash_balance: cashSnapshot, username: currentUsername, equipped_frame: shopInventory.equippedFrame, profile_image_url: profileImage || null })
+      .update(profileUpdate)
       .eq("id", userId);
     if (error) throw error;
   });
@@ -246,8 +251,19 @@ async function loadCloudProgression(user) {
   if (!supabase || !user) return;
   let localOwner = null;
   try { localOwner = localStorage.getItem(PROGRESSION_OWNER_KEY); } catch {}
-  const { data, error } = await supabase.from("player_profiles")
+  let { data, error } = await supabase.from("player_profiles")
     .select("username,total_xp,cash_balance,equipped_frame,profile_image_url").eq("id", user.id).maybeSingle();
+  cloudCosmeticsSchemaReady = !error;
+  if (error) {
+    // Keep existing cloud progression working until the updated SQL migration is run.
+    const legacyProfile = await supabase.from("player_profiles")
+      .select("username,total_xp,cash_balance").eq("id", user.id).maybeSingle();
+    if (!legacyProfile.error) {
+      data = legacyProfile.data;
+      error = null;
+      cloudCosmeticsSchemaReady = false;
+    }
+  }
   if (error) {
     setAccountMessage("Could not load cloud profile: " + error.message, true);
     return;
@@ -284,7 +300,8 @@ async function loadCloudProgression(user) {
   renderCareerStats();
   renderProgression();
   syncMenuProgression();
-  if (!data || totalXP > cloudXP || cashBalance > cloudCash || (data?.equipped_frame || "default-frame") !== shopInventory.equippedFrame || String(data?.profile_image_url || "") !== currentProfileImageUrl) await syncCloudProgression();
+  if (!data || totalXP > cloudXP || cashBalance > cloudCash || (cloudCosmeticsSchemaReady && ((data?.equipped_frame || "default-frame") !== shopInventory.equippedFrame || String(data?.profile_image_url || "") !== currentProfileImageUrl))) await syncCloudProgression();
+  if (!cloudCosmeticsSchemaReady) setAccountMessage("Cloud progression loaded. Run the updated supabase-schema.sql to sync profile images and frames.");
 }
 async function initializeCloudAccount() {
   if (!supabase) {
@@ -588,6 +605,7 @@ const SHOP_ITEMS = [
 const SHOP_INVENTORY_PREFIX = "dodgeCoreShopInventory:";
 let shopInventory = { owned:["crimson-core","default-frame"], equippedAura:"crimson-core", equippedFrame:"default-frame", equippedBeta:null };
 let currentProfileImageUrl = "";
+let cloudCosmeticsSchemaReady = false;
 let activeShopFilter = "all";
 
 function shopStorageKey() {

@@ -1383,12 +1383,17 @@ function clearExtraHazardBalls() {
 }
 function spawnExtraHazardBalls() {
   clearExtraHazardBalls();
-  for (let i = 0; i < 2; i++) {
+  // Four additional balls plus the original ball make five active balls total.
+  const spawnOffsets = [
+    [-6, 5], [6, -5], [-6, -5], [6, 5]
+  ];
+  for (let i = 0; i < spawnOffsets.length; i++) {
     const mesh = new THREE.Mesh(ball.geometry, ball.material);
+    const [offsetX, offsetZ] = spawnOffsets[i];
     mesh.position.set(
-      THREE.MathUtils.clamp(ball.position.x + (i === 0 ? -5 : 5), -roomBounds.x + 1, roomBounds.x - 1),
+      THREE.MathUtils.clamp(ball.position.x + offsetX, -roomBounds.x + 1, roomBounds.x - 1),
       CONFIG.ball.radius + 2.5 + Math.random() * 2,
-      THREE.MathUtils.clamp(ball.position.z + (i === 0 ? 5 : -5), -roomBounds.z + 1, roomBounds.z - 1)
+      THREE.MathUtils.clamp(ball.position.z + offsetZ, -roomBounds.z + 1, roomBounds.z - 1)
     );
     mesh.add(ballAura.clone());
     scene.add(mesh);
@@ -1616,7 +1621,7 @@ const ARENA_EVENTS = [
   { id:"grid-explosion", label:"GRID EXPLOSION", description:"A DENSE FIELD OF PLAYER-TRACKING BLAST ZONES", duration:60, hazardOnly:true },
   { id:"bouncy-hunter", label:"BOUNCY HUNTER", description:"A FAST, HIGH-BOUNCE BALL HUNTS YOUR MOVEMENT", duration:60, hazardOnly:true },
   { id:"giant-ball", label:"GIANT BALL", description:"A MASSIVE, HIGH-ENERGY BALL DOMINATES THE ARENA", duration:60, hazardOnly:true },
-  { id:"multi-ball", label:"MULTI-BALL", description:"THREE GLOWING BALLS PRESSURE THE ARENA", duration:60, hazardOnly:true }
+  { id:"multi-ball", label:"MULTI-BALL", description:"FIVE GLOWING BALLS PRESSURE THE ARENA", duration:60, hazardOnly:true }
 ];
 let arenaEventXpMultiplier = 1;
 let activeArenaEvent = null;
@@ -2788,7 +2793,10 @@ function updatePlayer(delta) {
   if (side || forward) player.rotation.y = Math.atan2(playerVelocity.x, playerVelocity.z);
 
   if (!grounded) {
-    jumpVelocity -= CONFIG.player.jumpGravity * (activeArenaEvent?.id === "low-gravity" ? 0.72 : 1) * delta;
+    const hazardLowGravity = arenaMode === "hazard" &&
+      (activeArenaEvent?.id === "giant-ball" || activeArenaEvent?.id === "multi-ball");
+    const gravityScale = hazardLowGravity ? 0.45 : activeArenaEvent?.id === "low-gravity" ? 0.72 : 1;
+    jumpVelocity -= CONFIG.player.jumpGravity * gravityScale * delta;
     jumpHeight += jumpVelocity * delta;
     if (jumpHeight <= 0) {
       const landedFromHeight = jumpHeight < 0;
@@ -3081,9 +3089,13 @@ function updateBall(delta) {
 
   // Accelerate toward a difficulty-scaled target, with a hard cap for stable physics.
   const hazardSpeedMultiplier = arenaMode === "hazard" ? 1.75 : 1;
+  const giantBallMode = activeArenaEvent?.id === "giant-ball";
+  const bouncyHunterMode = activeArenaEvent?.id === "bouncy-hunter";
+  const eventSpeedMultiplier = bouncyHunterMode ? 1.58 : giantBallMode ? 1.42 : 1;
+  const hazardMaxSpeed = bouncyHunterMode ? 48 : giantBallMode ? 46 : 38;
   const targetSpeed = Math.min(
-    (CONFIG.ball.speed + Math.min(elapsed * (arenaMode === "hazard" ? 0.15 : 0.09) * difficulty.ramp, (arenaMode === "hazard" ? 9 : 5.5) * difficulty.ramp)) * difficulty.speed * hazardSpeedMultiplier * (activeArenaEvent?.id === "bouncy-hunter" ? 1.58 : 1),
-    arenaMode === "hazard" ? (activeArenaEvent?.id === "bouncy-hunter" ? 48 : 38) : CONFIG.ball.maxSpeed
+    (CONFIG.ball.speed + Math.min(elapsed * (arenaMode === "hazard" ? 0.15 : 0.09) * difficulty.ramp, (arenaMode === "hazard" ? 9 : 5.5) * difficulty.ramp)) * difficulty.speed * hazardSpeedMultiplier * eventSpeedMultiplier,
+    arenaMode === "hazard" ? hazardMaxSpeed : CONFIG.ball.maxSpeed
   );
   const currentSpeed = Math.hypot(ballVelocity.x, ballVelocity.z);
   if (currentSpeed < targetSpeed) {
@@ -3093,8 +3105,8 @@ function updateBall(delta) {
       : new THREE.Vector2(1, 0);
     ballVelocity.x = direction.x * boosted;
     ballVelocity.z = direction.y * boosted;
-  } else if (currentSpeed > (arenaMode === "hazard" ? (activeArenaEvent?.id === "bouncy-hunter" ? 48 : 38) : CONFIG.ball.maxSpeed)) {
-    const maxHorizontalSpeed = arenaMode === "hazard" ? (activeArenaEvent?.id === "bouncy-hunter" ? 48 : 38) : CONFIG.ball.maxSpeed;
+  } else if (currentSpeed > (arenaMode === "hazard" ? hazardMaxSpeed : CONFIG.ball.maxSpeed)) {
+    const maxHorizontalSpeed = arenaMode === "hazard" ? hazardMaxSpeed : CONFIG.ball.maxSpeed;
     const scale = maxHorizontalSpeed / currentSpeed;
     ballVelocity.x *= scale;
     ballVelocity.z *= scale;

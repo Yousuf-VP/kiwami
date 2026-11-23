@@ -947,8 +947,8 @@ h2 { margin:0; font:800 clamp(25px,5vw,34px) var(--display); letter-spacing:-1px
 .menu-detail-content-wrap {
   width:min(100%,760px);
   margin:auto;
-  padding:clamp(20px,5vh,54px) 0;
-  overflow-y:auto;
+  padding:clamp(14px,3vh,32px) 0;
+  overflow:hidden;
   scrollbar-width:thin;
   scrollbar-color:rgba(255,45,75,.5) rgba(255,255,255,.04);
 }
@@ -3741,3 +3741,35 @@ body.hazard-grounds-active #event-banner{
 .hazard-mode-button.hazard-locked:hover {
   transform:none;
 }
+
+/* KIWAMI UI FIT — keep every menu surface stationary on desktop and mobile. */
+html,body,#game-shell{overflow:hidden!important;overscroll-behavior:none}
+.overlay,.menu-detail-screen,.menu-detail-shell,.menu-detail-content-wrap,
+.menu-detail-content,.menu-panel-content,.mobile-menu-options,
+.desktop-settings-panel,.mobile-settings-panel,.leaderboard-panel,
+.shop-panel,.account-panel,.career-panel{overscroll-behavior:none;scrollbar-width:none}
+.overlay{overflow:hidden!important}
+.menu-detail-content-wrap,.menu-detail-content,.menu-panel-content,
+.mobile-menu-options,.shop-panel,.leaderboard-panel{overflow:hidden!important}
+.shop-grid{max-height:none!important;overflow:hidden!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+.leaderboard-rows,.leaderboard-table-wrap{max-height:none!important;overflow:hidden!important}
+.auth-gate{overflow:hidden!important}
+@media(max-width:800px){
+  .menu-detail-shell{padding:12px 12px}
+  .menu-detail-content-wrap{width:100%;padding:8px 0}
+  .menu-detail-content-wrap h2{margin-bottom:12px;font-size:clamp(24px,7vw,38px)}
+  .menu-detail-content{padding:12px}
+  .shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .shop-panel .shop-heading-row{gap:8px}
+  .shop-panel .shop-heading-row p,.shop-footnote,.shop-status{font-size:8px;line-height:1.35}
+  .leaderboard-row{min-height:42px;padding:6px 8px}
+}
+@media(max-height:720px){
+  .menu-detail-shell{padding-top:8px;padding-bottom:8px}
+  .menu-detail-content-wrap{padding:5px 0}
+  .menu-detail-content-wrap h2{margin-bottom:8px}
+  .menu-detail-content{padding:9px}
+  .menu-panel-content{padding:8px}
+}
+.grid-hazard-tile{filter:drop-shadow(0 0 14px #ff1738)}
+@media(prefers-reduced-motion:reduce){.grid-hazard-tile{filter:none}}

@@ -1368,6 +1368,70 @@ const ballAura = new THREE.Mesh(
 );
 ballAura.scale.setScalar(1.22);
 ball.add(ballAura);
+
+// HAZARD GROUNDS — additional balls used by the MULTI-BALL event.
+const extraHazardBalls = [];
+function clearExtraHazardBalls() {
+  for (const extra of extraHazardBalls) scene.remove(extra.mesh);
+  extraHazardBalls.length = 0;
+}
+function spawnExtraHazardBalls() {
+  clearExtraHazardBalls();
+  for (let i = 0; i < 2; i++) {
+    const mesh = new THREE.Mesh(ball.geometry, ball.material);
+    mesh.position.set(
+      THREE.MathUtils.clamp(ball.position.x + (i === 0 ? -5 : 5), -roomBounds.x + 1, roomBounds.x - 1),
+      CONFIG.ball.radius + 2.5 + Math.random() * 2,
+      THREE.MathUtils.clamp(ball.position.z + (i === 0 ? 5 : -5), -roomBounds.z + 1, roomBounds.z - 1)
+    );
+    mesh.add(ballAura.clone());
+    scene.add(mesh);
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 9 + Math.random() * 3;
+    extraHazardBalls.push({
+      mesh,
+      velocity: new THREE.Vector3(Math.cos(angle) * speed, 0, Math.sin(angle) * speed),
+      verticalVelocity: 2 + Math.random() * 2
+    });
+  }
+}
+function updateExtraHazardBalls(delta) {
+  if (arenaMode !== "hazard" || state !== "playing") return;
+  const playerCenter = new THREE.Vector3(player.position.x, 0.9 + jumpHeight, player.position.z);
+  for (const extra of extraHazardBalls) {
+    const p = extra.mesh.position;
+    p.x += extra.velocity.x * delta;
+    p.z += extra.velocity.z * delta;
+    extra.verticalVelocity -= CONFIG.ball.gravity * delta;
+    p.y += extra.verticalVelocity * delta;
+
+    if (p.x > roomBounds.x - CONFIG.ball.radius || p.x < -roomBounds.x + CONFIG.ball.radius) {
+      p.x = THREE.MathUtils.clamp(p.x, -roomBounds.x + CONFIG.ball.radius, roomBounds.x - CONFIG.ball.radius);
+      extra.velocity.x *= -1;
+    }
+    if (p.z > roomBounds.z - CONFIG.ball.radius || p.z < -roomBounds.z + CONFIG.ball.radius) {
+      p.z = THREE.MathUtils.clamp(p.z, -roomBounds.z + CONFIG.ball.radius, roomBounds.z - CONFIG.ball.radius);
+      extra.velocity.z *= -1;
+    }
+    if (p.y < CONFIG.ball.radius) {
+      p.y = CONFIG.ball.radius;
+      extra.verticalVelocity = Math.min(17, Math.abs(extra.verticalVelocity) * 0.94 + 2.2);
+      const towardPlayer = new THREE.Vector3(player.position.x - p.x, 0, player.position.z - p.z);
+      if (towardPlayer.lengthSq() > 0.001) {
+        towardPlayer.normalize();
+        extra.velocity.lerp(towardPlayer.multiplyScalar(10), 0.22);
+      }
+    }
+    const speed = Math.hypot(extra.velocity.x, extra.velocity.z);
+    if (speed > 15) extra.velocity.multiplyScalar(15 / speed);
+    extra.mesh.rotation.x += delta * 0.9;
+    extra.mesh.rotation.z += delta * 1.1;
+    if (p.distanceTo(playerCenter) < CONFIG.ball.radius + CONFIG.player.radius + 0.22) {
+      endRun();
+      return;
+    }
+  }
+}
 const ballLight = new THREE.PointLight(0xff123c, 62, 15);
 
 ball.add(ballLight);
@@ -2421,15 +2485,17 @@ function endRun() {
 
 
 /* DODGE CORE AUDIO — user-provided MP3 assets */
+// Optional MP3 assets are not present in the repository yet; skip requests until supplied.
+const AUDIO_ASSETS_AVAILABLE = false;
 const MUSIC_PREF_KEY = "dodgeCoreMusicEnabled";
 let musicEnabled = true;
 const backgroundTrack = new Audio(new URL("./bg.mp3", import.meta.url).href);
 backgroundTrack.loop = true;
-backgroundTrack.preload = "auto";
+backgroundTrack.preload = "none";
 backgroundTrack.volume = 0.42;
 
 const gameOverTrack = new Audio(new URL("./gameover.mp3", import.meta.url).href);
-gameOverTrack.preload = "auto";
+gameOverTrack.preload = "none";
 gameOverTrack.volume = 0.82;
 
 const buttonSoundUrl = new URL("./Button.mp3", import.meta.url).href;
@@ -2444,7 +2510,7 @@ function updateMusicControls() {
 }
 
 function startBackgroundMusic() {
-  if (!musicEnabled || document.hidden) return;
+  if (!AUDIO_ASSETS_AVAILABLE || !musicEnabled || document.hidden) return;
   gameOverTrack.pause();
   backgroundTrack.play().catch(() => {
     // Browsers may block playback until the next user interaction.
@@ -2464,6 +2530,7 @@ function setMusicEnabled(enabled) {
 }
 
 function playButtonSound() {
+  if (!AUDIO_ASSETS_AVAILABLE) return;
   const sound = new Audio(buttonSoundUrl);
   sound.preload = "auto";
   sound.volume = 0.48;
@@ -2473,6 +2540,7 @@ function playButtonSound() {
 }
 
 function playGameOverSound() {
+  if (!AUDIO_ASSETS_AVAILABLE) return;
   stopBackgroundMusic();
   gameOverTrack.currentTime = 0;
   gameOverTrack.play().catch(() => {

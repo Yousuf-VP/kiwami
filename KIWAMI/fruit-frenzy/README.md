@@ -9,8 +9,8 @@ Premium 3D fruit-slicing arcade game controlled with one hand through the player
 - Camera: Perspective 3D gameplay camera
 - Input: One hand, tracked locally in the browser
 - Menu cursor: Index fingertip
-- Menu selection: Point at a button to select it (point-to-click with a short repeat cooldown)
-- Gameplay slicing: Quick index-finger movement creates the energy-blade trail
+- Menu selection: Full open palm to click; index fingertip controls the cursor
+- Gameplay slicing: Fast index-fingertip movement draws the energy-blade trail and slices fruit
 - Art direction: Premium 3D, dark cinematic presentation, vivid fruit colors and warm orange energy accents
 - Platform: Desktop and mobile browsers with a camera
 
@@ -21,7 +21,7 @@ Premium 3D fruit-slicing arcade game controlled with one hand through the player
 3. Zen — Relaxed slicing without life pressure.
 4. Challenge — Complete objective-based rounds with rising difficulty.
 
-These modes are planned; they are not playable in Phase 1.
+Classic is the first playable mode. Time Attack, Zen and Challenge remain planned.
 
 ## Technical architecture
 
@@ -48,15 +48,16 @@ These modes are planned; they are not playable in Phase 1.
 - Mouse/touch accessibility fallback for interface buttons.
 - Camera starts only after user action; video is not uploaded by this code.
 
-## Phase 2 — Gameplay engine
+## Phase 2 — Classic Mode gameplay (implemented in this branch)
 
-- Index-finger velocity trail with smoothing and a minimum movement threshold.
-- 3D fruit launch/spawn system and perspective depth.
-- Swept-trail collision detection to reduce missed slices between frames.
-- Fruit split animation and cut surfaces.
-- Juice particles, blade glow, combo feedback and impact effects.
-- Classic mode with three lives, missed-fruit penalty and hazard objects.
-- Score, timer, pause and game-over flow.
+- Fast index-fingertip movement creates a short-lived glowing blade trail.
+- 3D fruit waves launch with gravity, spin and perspective-aware horizontal bounds.
+- Swept segment collision checks the full fingertip movement between tracking frames.
+- Fruit split into two animated halves with particle bursts.
+- Score, consecutive-slice combos and multipliers up to ×5.
+- Classic survival rules: three lives; missed fruit and sliced bombs cost one life.
+- Pause, resume, restart, return-to-menu and game-over flow.
+- Mouse/touch pointer movement is available as an input fallback.
 
 ## Phase 3+ — Modes and polish
 
@@ -80,9 +81,11 @@ The browser downloads Three.js and MediaPipe from CDNs. A network connection is 
 - The user can disconnect the camera at any time.
 - Browser camera access generally requires HTTPS or localhost.
 
-## Known Phase 1 limitations
+## Current limitations
 
-- No fruit slicing, scoring, lives, hazard logic or playable game modes yet.
+- Hand-tracking and slicing need physical webcam testing across different lighting, camera angles and devices.
+- Fruit physics and hit detection are initial gameplay tuning and may need balancing after playtesting.
+- Time Attack, Zen and Challenge are not implemented yet.
 - Hand tracking performance depends on device capability, lighting, browser support and CDN/model availability.
 - The first version uses a GPU delegate; a CPU fallback may be needed after real-device compatibility testing.
 - A short click cooldown prevents repeated activations while the index finger remains pointed at a button.

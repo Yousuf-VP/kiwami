@@ -54,7 +54,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     hud.querySelector("#ffRestart").addEventListener("click", start);
     hud.querySelector("#ffMenu").addEventListener("click", returnToMenu);
     addEventListener("pointermove", (event) => {
-      if (state === "playing" && event.pointerType !== "touch") setPointer(event.clientX, event.clientY, clockNow());
+      if (state === "playing") setPointer(event.clientX, event.clientY, clockNow());
     }, { passive: true });
     addEventListener("keydown", (event) => {
       if (event.key === "Escape" && state === "playing") pause();
@@ -182,8 +182,9 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     const count = 2 + Math.floor(Math.random() * 2) + (difficulty > 0.8 && Math.random() > 0.55 ? 1 : 0);
     const bombInWave = Math.random() < 0.13 + difficulty * 0.05;
     const positions = [];
+    const halfWidth = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(6, camera.position.z - 0.25) * camera.aspect;
     for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 8.4;
+      const x = (Math.random() - 0.5) * halfWidth * 1.55;
       positions.push(x);
     }
     positions.forEach((x, i) => {
@@ -225,7 +226,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     const horizontal = (Math.random() - 0.5) * 2.4;
     fruits.push({
       mesh, type: "fruit", name: type.name, radius,
-      velocity: new THREE.Vector3(horizontal, 7.3 + Math.random() * 1.5, (Math.random() - 0.5) * 0.25),
+      velocity: new THREE.Vector3(horizontal, 10.2 + Math.random() * 1.5, (Math.random() - 0.5) * 0.25),
       spin: (Math.random() - 0.5) * 2.8, age: 0
     });
   }
@@ -260,7 +261,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     scene.add(group);
     fruits.push({
       mesh: group, type: "bomb", name: "BOMB", radius: 0.55,
-      velocity: new THREE.Vector3((Math.random() - 0.5) * 2, 7.1 + Math.random() * 1.2, 0),
+      velocity: new THREE.Vector3((Math.random() - 0.5) * 2, 10 + Math.random() * 1.3, 0),
       spin: (Math.random() - 0.5) * 2, age: 0
     });
   }
@@ -378,7 +379,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
       for (let i = fruits.length - 1; i >= 0; i--) {
         const item = fruits[i];
         item.age += delta;
-        item.velocity.y -= 8.7 * delta;
+        item.velocity.y -= 8.2 * delta;
         item.mesh.position.addScaledVector(item.velocity, delta);
         item.mesh.rotation.x += delta * item.spin;
         item.mesh.rotation.y += delta * item.spin * 0.42;
@@ -394,7 +395,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     for (let i = fragments.length - 1; i >= 0; i--) {
       const part = fragments[i];
       part.life -= delta;
-      part.velocity.y -= 8.7 * delta;
+      part.velocity.y -= 8.2 * delta;
       part.mesh.position.addScaledVector(part.velocity, delta);
       part.mesh.rotation.x += delta * part.spin;
       part.mesh.rotation.z += delta * part.spin * 0.6;

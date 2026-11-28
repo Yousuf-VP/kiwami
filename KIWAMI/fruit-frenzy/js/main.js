@@ -6,7 +6,7 @@ const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cu
 let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null;
 let trackingActive = false, lastVideoTime = -1, hoveredTarget = null, hoverStartedAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let fpsFrames = 0, fpsStamp = performance.now();
-const floatingObjects = [], CLICK_DWELL_MS = 620, CLICK_COOLDOWN_MS = 900;
+const floatingObjects = [], CLICK_COOLDOWN_MS = 900;
 
 function showToast(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.classList.remove("show"),3000)}
 function setSystem(message,count="0 / 1"){$("systemState").textContent=message;$("handCount").textContent=count}
@@ -51,7 +51,13 @@ async function enableCamera(){
   video.srcObject=cameraStream;await video.play();$("cameraPreview").hidden=false;
   setCameraMessage("LOADING HAND TRACKER","Preparing the local hand-detection model.");
   const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.55});
+  const modelAssetPath="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+  try {
+   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.55});
+  } catch(gpuError) {
+   console.warn("GPU hand tracking unavailable; retrying with CPU.",gpuError);
+   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"CPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.55});
+  }
   trackingActive=true;button.textContent="CAMERA ENABLED";setCameraMessage("WAITING FOR YOUR HAND","Show one hand to the camera, palm facing forward.");setSystem("SCANNING");processHandFrames();showToast("Camera connected. Show one hand to begin calibration.");
  }catch(error){
   console.error("FRUIT FRENZY camera setup:",error);stopCamera();button.disabled=false;button.textContent="ENABLE CAMERA ↗";
@@ -64,7 +70,7 @@ function processHandFrames(){
  if(!trackingActive||!handLandmarker)return;
  if(video.readyState>=HTMLMediaElement.HAVE_CURRENT_DATA&&video.currentTime!==lastVideoTime){
   lastVideoTime=video.currentTime;const result=handLandmarker.detectForVideo(video,performance.now());const points=result.landmarks?.[0];
-  if(points){const tip=points[8],pointing=isIndexPointing(points);updateHandCursor((1-tip.x)*innerWidth,tip.y*innerHeight,pointing);setSystem(pointing?"HAND READY":"HAND DETECTED","1 / 1");setCameraMessage(pointing?"INDEX FINGER READY":"HAND DETECTED",pointing?"Point at a menu option and hold to select.":"Extend your index finger to control the cursor")}
+  if(points){const tip=points[8],pointing=isIndexPointing(points);updateHandCursor((1-tip.x)*innerWidth,tip.y*innerHeight,pointing);setSystem(pointing?"HAND READY":"HAND DETECTED","1 / 1");setCameraMessage(pointing?"INDEX FINGER READY":"HAND DETECTED",pointing?"Point at a menu option to select it.":"Extend your index finger to control the cursor")}
   else{cursor.classList.remove("visible","dwell");clearDwell();setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.")}
  }
  fpsFrames++;const now=performance.now();if(now-fpsStamp>=1000){$("cameraFps").textContent=Math.round(fpsFrames*1000/(now-fpsStamp))+" FPS";fpsFrames=0;fpsStamp=now}
@@ -76,9 +82,11 @@ function updateHandCursor(x,y,pointing){
  if(!pointing){clearDwell();return}
  const el=document.elementFromPoint(x,y),target=el?.closest("[data-hand-click]");
  if(!target||target.disabled||target.getAttribute("aria-disabled")==="true"){clearDwell();return}
- if(target!==hoveredTarget){clearDwell();hoveredTarget=target;hoverStartedAt=performance.now();target.classList.add("hand-hover");cursor.classList.add("dwell");return}
- const progress=Math.min(1,(performance.now()-hoverStartedAt)/CLICK_DWELL_MS);cursorProgress.style.opacity=String(progress);cursorProgress.style.transform="rotate("+(-45+progress*360)+"deg)";
- if(progress>=1&&performance.now()-lastHandClickAt>CLICK_COOLDOWN_MS){lastHandClickAt=performance.now();clearDwell();target.click()}
+ if(target!==hoveredTarget){
+  clearDwell();hoveredTarget=target;target.classList.add("hand-hover");cursor.classList.add("dwell");
+  if(performance.now()-lastHandClickAt>CLICK_COOLDOWN_MS){lastHandClickAt=performance.now();target.click()}
+  return;
+ }
 }
 function clearDwell(){if(hoveredTarget)hoveredTarget.classList.remove("hand-hover");hoveredTarget=null;hoverStartedAt=0;cursor.classList.remove("dwell");cursorProgress.style.opacity="0";cursorProgress.style.transform="rotate(-45deg)"}
 function stopCamera(){

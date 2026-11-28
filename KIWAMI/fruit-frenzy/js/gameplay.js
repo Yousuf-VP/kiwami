@@ -32,7 +32,8 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
   let score = 0;
   let lives = 3;
   let combo = 0;
-  let best = Number(localStorage.getItem("ff-classic-best") || 0);
+  let best = 0;
+  try { best = Number(localStorage.getItem("ff-classic-best") || 0); } catch (_) {}
   let elapsed = 0;
   let spawnClock = 0;
   let lastSliceAt = 0;
@@ -40,6 +41,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
   let lastPointerAt = 0;
   let lastHudAt = 0;
   let gameOverReason = "";
+  let runId = 0;
   let shake = 0;
   let hud;
 
@@ -103,6 +105,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
   }
 
   function start() {
+    runId++;
     clearObjects();
     score = 0;
     lives = 3;
@@ -178,6 +181,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
 
   function spawnWave() {
     if (state !== "playing") return;
+    const thisRun = runId;
     const difficulty = Math.min(1.8, elapsed / 65);
     const count = 2 + Math.floor(Math.random() * 2) + (difficulty > 0.8 && Math.random() > 0.55 ? 1 : 0);
     const bombInWave = Math.random() < 0.13 + difficulty * 0.05;
@@ -190,7 +194,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     positions.forEach((x, i) => {
       const delay = i * (0.12 + Math.random() * 0.1);
       setTimeout(() => {
-        if (state !== "playing") return;
+        if (state !== "playing" || thisRun !== runId) return;
         if (bombInWave && i === count - 1) createBomb(x);
         else createFruit(x);
       }, delay * 1000);

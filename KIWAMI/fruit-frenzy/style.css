@@ -41,3 +41,9 @@ h1{margin:24px 0 14px;font:900 clamp(58px,8vw,116px)/.82 Orbitron,sans-serif;let
 .cursor-ring{inset:4px;border:2px solid #ff9a5e;box-shadow:0 0 12px #ff7b35, inset 0 0 8px #ff7b3540}
 .hand-cursor.visible{opacity:1}
 @media(max-width:900px){.tracking-hud{top:78px;right:12px;min-width:160px;padding:9px 11px}}
+
+/* Smooth, low-latency hand pointer */
+.hand-cursor{transition:opacity .12s ease;will-change:left,top;transform:translate3d(-50%,-50%,0)}
+.hand-cursor.clicking .cursor-ring{border-color:#fff;box-shadow:0 0 24px #fff,0 0 42px var(--orange);transform:scale(.78)}
+.hand-hover{outline:1px solid rgba(255,153,94,.85)!important;outline-offset:3px;filter:brightness(1.16)}
+button.hand-hover,a.hand-hover,[role="button"].hand-hover{box-shadow:0 0 18px rgba(255,123,53,.2)}

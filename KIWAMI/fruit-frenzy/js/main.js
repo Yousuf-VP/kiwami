@@ -7,7 +7,7 @@ const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cu
 let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null, gameplay = null, dojoEnvironment = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
-let palmSince = 0, palmLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
+let palmSince = 0, palmLatched = false, palmAnchorX = null, palmAnchorY = null, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
 const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 16, GESTURE_CONFIRM_FRAMES = 3;
 
@@ -21,8 +21,22 @@ function setTrackingHUD(state,title,detail){
 
 function createDojoEnvironment(){
  const group=new THREE.Group(),wood=new THREE.MeshStandardMaterial({color:0x38251f,roughness:.82}),dark=new THREE.MeshStandardMaterial({color:0x1b1517,roughness:.9}),paper=new THREE.MeshStandardMaterial({color:0xd9c6a4,roughness:.95,transparent:true,opacity:.22,side:THREE.DoubleSide}),trim=new THREE.MeshStandardMaterial({color:0x8a4c32,roughness:.72}),glow=new THREE.MeshStandardMaterial({color:0xffa65c,emissive:0xff6a2a,emissiveIntensity:2.1});
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(28,22),new THREE.MeshStandardMaterial({color:0x30211e,roughness:.72}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-3.48,-2);group.add(floor);
- for(let i=0;i<15;i++){const seam=new THREE.Mesh(new THREE.BoxGeometry(.025,.012,19),dark);seam.position.set(-13+i*1.85,-3.465,-2);group.add(seam)}
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(28,22),new THREE.MeshStandardMaterial({color:0x211613,roughness:.94}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-3.48,-2);group.add(floor);
+ // Individual warm timber boards with staggered joints, dark seams and subtle grain.
+ const plankGeometry=new THREE.BoxGeometry(1.78,.065,1.68);
+ const grainGeometry=new THREE.BoxGeometry(.018,.008,1.42);
+ const plankMaterials=[0x68402c,0x754832,0x805039,0x5f3929,0x89563a].map(color=>new THREE.MeshStandardMaterial({color,roughness:.88}));
+ const grainMaterial=new THREE.MeshStandardMaterial({color:0xb27a51,roughness:1,transparent:true,opacity:.2});
+ for(let row=0;row<13;row++){
+  const stagger=row%2?.9:0;
+  for(let col=0;col<15;col++){
+   const x=-12.6+col*1.8+stagger,z=-11.45+row*1.72;
+   const board=new THREE.Mesh(plankGeometry,plankMaterials[(row*7+col*3)%plankMaterials.length]);
+   board.position.set(x,-3.43,z);group.add(board);
+   const grain=new THREE.Mesh(grainGeometry,grainMaterial);
+   grain.position.set(x+(col%2?.42:-.42),-3.391,z);group.add(grain);
+  }
+ }
  const rear=new THREE.Mesh(new THREE.PlaneGeometry(27,13),dark);rear.position.set(0,2.8,-8.5);group.add(rear);
  const paperWall=new THREE.Mesh(new THREE.PlaneGeometry(22,8.8),paper);paperWall.position.set(0,2.9,-8.42);group.add(paperWall);
  for(let x=-10;x<=10;x+=2){const post=new THREE.Mesh(new THREE.BoxGeometry(.13,9.5,.18),trim);post.position.set(x,1.7,-8.25);group.add(post)}
@@ -104,12 +118,18 @@ function processHandFrames(){
   lastVideoTime=video.currentTime;lastInferenceAt=now;
   const result=handLandmarker.detectForVideo(video,now);const points=result.landmarks?.[0];
   if(points){
-   // Landmark 8 is the index fingertip. Track it on every detected frame,
-   // independently of gesture classification, so quick movement never waits for a pose label.
+   // Lock the pointer at the last index-finger position as soon as the palm starts opening.
+   // This prevents the index tip rising away from a menu button during the click gesture.
+   const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
+   const pointerBeforePalmX=smoothedX,pointerBeforePalmY=smoothedY;
+   if(!openPalm){palmAnchorX=null;palmAnchorY=null}
    updateIndexCursor(points[8],now);
+   if(openPalm&&palmAnchorX===null){
+    palmAnchorX=pointerBeforePalmX??smoothedX;palmAnchorY=pointerBeforePalmY??smoothedY;
+    if(palmAnchorX!==null&&palmAnchorY!==null)moveHandCursor(palmAnchorX,palmAnchorY);
+   }
    const pointing=isIndexPointing(points),fist=isFist(points);
    if(gameplay&&isPlayMode())gameplay.setPointer(smoothedX,smoothedY,now);
-   const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
    const playingNow=!!gameplay?.isPlaying?.();
    const rawGesture=twoFingerBack&&!playingNow?"back":(openPalm&&!playingNow)?"palm":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;
@@ -143,7 +163,7 @@ function processHandFrames(){
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor; show your full open palm to click.");
    }
   }else{
-   cursor.classList.remove("visible","clicking");palmSince=0;palmLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
+   cursor.classList.remove("visible","clicking");palmSince=0;palmLatched=false;palmAnchorX=null;palmAnchorY=null;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
    if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");
   }
@@ -162,7 +182,7 @@ function updateIndexCursor(tip,now){
  if(smoothedX===null){smoothedX=rawX;smoothedY=rawY}
  else if(deltaPx>0.85){smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
  lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
- moveHandCursor(smoothedX,smoothedY);
+ moveHandCursor(palmAnchorX!==null&&palmAnchorY!==null?palmAnchorX:smoothedX,palmAnchorX!==null&&palmAnchorY!==null?palmAnchorY:smoothedY);
 }
 function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return Math.hypot(dx,dy,dz)}
 function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}
@@ -224,7 +244,8 @@ function triggerHandClick(){
  if(gameplay?.state==="playing")return;
  if(performance.now()-lastHandClickAt<CLICK_COOLDOWN_MS)return;
  lastHandClickAt=performance.now();
- const x=smoothedX,y=smoothedY;
+ const x=palmAnchorX!==null&&palmAnchorY!==null?palmAnchorX:smoothedX;
+ const y=palmAnchorX!==null&&palmAnchorY!==null?palmAnchorY:smoothedY;
  if(x===null||y===null)return;
  const hit=document.elementFromPoint(x,y);
  const backdrop=$("modalBackdrop");
@@ -236,7 +257,7 @@ function triggerHandClick(){
 }
 function stopCamera(){
  trackingActive=false;if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
- if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;palmSince=0;palmLatched=false;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backGestureLatched=false;$("cameraPreview").hidden=true;
+ if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;palmSince=0;palmLatched=false;palmAnchorX=null;palmAnchorY=null;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backGestureLatched=false;$("cameraPreview").hidden=true;
  $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");setTrackingHUD("off","TRACKING OFF","Enable camera to begin");
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}

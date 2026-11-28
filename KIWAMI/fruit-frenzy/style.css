@@ -69,3 +69,50 @@ button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
 @keyframes handPulse{0%{opacity:.75;transform:scale(.72)}100%{opacity:0;transform:scale(1.55)}}
 @keyframes trackingBeat{0%,100%{box-shadow:0 0 0 4px #8dff9b2b,0 0 12px #8dff9b}50%{box-shadow:0 0 0 7px #8dff9b18,0 0 20px #8dff9b}}
 @media(prefers-reduced-motion:reduce){.hand-cursor.visible::after,.tracking-hud[data-state="detected"] .tracking-indicator{animation:none}}
+
+
+/* =========================================
+   CLASSIC MODE — PLAY HUD & GAME STATES
+========================================= */
+.game-hud{display:none;position:fixed;z-index:24;inset:0;flex-direction:column;justify-content:space-between;padding:clamp(14px,3vw,34px);pointer-events:none;font-family:"DM Sans",sans-serif}
+body.is-playing .game-hud{display:flex}
+body.is-playing .topbar,body.is-playing .game-shell{display:none}
+body.is-playing .scene-vignette{background:radial-gradient(ellipse at 50% 45%,transparent 5%,rgba(5,5,9,.08) 55%,rgba(5,5,9,.48) 100%)}
+body.is-playing .tracking-hud{top:auto;right:auto;left:18px;bottom:18px;transform:scale(.86);transform-origin:bottom left}
+body.is-playing .hand-cursor{opacity:0!important}
+.game-hud-top{display:flex;align-items:flex-start;gap:clamp(16px,4vw,54px);pointer-events:none}
+.hud-stat{min-width:84px;padding:10px 14px;border:1px solid rgba(255,255,255,.13);background:rgba(9,9,14,.72);backdrop-filter:blur(12px);box-shadow:0 10px 32px #0005}
+.hud-stat small,.hud-stat strong{display:block}
+.hud-stat small{color:#aaa1a0;font:700 8px Orbitron,sans-serif;letter-spacing:.16em}
+.hud-stat strong{margin-top:6px;color:#fff;font:800 clamp(15px,2vw,22px) Orbitron,sans-serif;letter-spacing:.06em;text-shadow:0 0 18px #ff7b3540}
+.hud-lives strong{color:#ff775e;letter-spacing:.16em}
+.game-pause{margin-left:auto;width:42px;height:42px;border:1px solid rgba(255,255,255,.2);background:rgba(9,9,14,.78);color:#fff;font-size:17px;pointer-events:auto;cursor:pointer;backdrop-filter:blur(10px)}
+.game-pause:hover{border-color:#ff9b63;color:#ffb17e;box-shadow:0 0 20px #ff7b3530}
+.game-hud-bottom{display:flex;justify-content:space-between;align-items:center;color:#d9d0cc;font:700 9px Orbitron,sans-serif;letter-spacing:.17em;text-shadow:0 2px 10px #000}
+.game-hud-bottom span{padding:9px 12px;background:#09090dcc;border:1px solid #ffffff1c}
+.game-hud-bottom #ffCombo{color:#ffb17e}
+.game-center-message{position:absolute;top:22%;left:50%;max-width:90%;padding:10px 18px;color:#fff;font:800 clamp(12px,2vw,17px) Orbitron,sans-serif;letter-spacing:.13em;text-align:center;text-shadow:0 0 22px #ff743c,0 2px 12px #000;opacity:0;transform:translate(-50%,-8px);transition:opacity .18s,transform .18s;white-space:normal}
+.game-center-message.visible{opacity:1;transform:translate(-50%,0)}
+.game-overlay{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:rgba(5,5,9,.72);backdrop-filter:blur(13px);pointer-events:auto}
+.game-overlay[hidden]{display:none}
+.game-dialog{width:min(440px,100%);padding:clamp(24px,5vw,42px);border:1px solid rgba(255,255,255,.16);background:linear-gradient(145deg,rgba(30,25,28,.97),rgba(9,9,14,.98));box-shadow:0 30px 100px #000b;text-align:center}
+.game-dialog-kicker{color:#ff9b63;font:700 9px Orbitron,sans-serif;letter-spacing:.2em}
+.game-dialog h2{margin:18px 0 10px;color:#fff;font:900 clamp(28px,6vw,42px) Orbitron,sans-serif;letter-spacing:-.06em}
+.game-dialog p{margin:0 auto 25px;max-width:310px;color:#bdb5b3;font-size:13px;line-height:1.65}
+.game-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.game-dialog-actions button{min-height:46px;border:1px solid rgba(255,144,91,.58);background:linear-gradient(100deg,#ff7b35,#e84c35);color:#160e0c;font:800 9px Orbitron,sans-serif;letter-spacing:.12em;cursor:pointer}
+.game-dialog-actions button:hover{filter:brightness(1.12);box-shadow:0 0 22px #ff7b3550}
+.game-dialog-actions button.secondary{grid-column:1/-1;background:transparent;color:#d8d0cd;border-color:#ffffff35}
+.game-dialog-actions button[hidden]{display:none}
+@media(max-width:600px){
+ .game-hud{padding:12px}
+ .game-hud-top{gap:7px}
+ .hud-stat{min-width:0;flex:1;padding:9px 8px}
+ .hud-stat small{font-size:7px}
+ .hud-stat strong{font-size:14px}
+ .game-pause{width:38px;height:38px;flex:0 0 38px}
+ .game-hud-bottom{font-size:7px;letter-spacing:.1em}
+ .game-hud-bottom span{padding:8px}
+ body.is-playing .tracking-hud{left:10px;bottom:10px}
+ body.is-playing .camera-preview{right:10px;bottom:10px;width:104px}
+}

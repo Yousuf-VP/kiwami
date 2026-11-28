@@ -6,7 +6,7 @@ const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cu
 let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
-let fistSince = 0, fistLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
+let fistSince = 0, fistLatched = false, pauseGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
 const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 33, GESTURE_CONFIRM_FRAMES = 2;
 
@@ -80,12 +80,23 @@ function processHandFrames(){
   const result=handLandmarker.detectForVideo(video,now);const points=result.landmarks?.[0];
   if(points){
    const pointing=isIndexPointing(points),fist=isFist(points);
-   const rawGesture=pointing?"point":fist?"fist":"open";
+   const thumbsUp=isThumbsUp(points);
+   const rawGesture=thumbsUp?"thumbs-up":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;
    else{pendingGesture=rawGesture;pendingGestureFrames=1}
    if(pendingGestureFrames>=GESTURE_CONFIRM_FRAMES)activeGesture=rawGesture;
 
-   if(activeGesture==="point"){
+   if(activeGesture==="thumbs-up"){
+    if(!pauseGestureLatched){
+     triggerPauseGesture();
+     pauseGestureLatched=true;
+    }
+    fistSince=0;fistLatched=false;
+    setTrackingHUD("detected","THUMBS UP · PAUSE","Pause gesture detected · lower your thumb to reset");
+    setSystem("PAUSE GESTURE","1 / 1");
+    setCameraMessage("PAUSE GESTURE READY","Hold thumbs up briefly to request pause.");
+   }else if(activeGesture==="point"){
+    pauseGestureLatched=false;
     const tip=points[8],rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
     const elapsed=Math.max(1,now-lastRawAt);
     const speed=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY)/elapsed;
@@ -99,19 +110,20 @@ function processHandFrames(){
     setSystem("CURSOR ACTIVE","1 / 1");
     setCameraMessage("INDEX FINGER READY","Point at a control, then close your fist to click.");
    }else if(activeGesture==="fist"){
+    pauseGestureLatched=false;
     if(!fistSince)fistSince=now;
     if(!fistLatched&&now-fistSince>=85){triggerHandClick();fistLatched=true}
     setTrackingHUD("detected",fistLatched?"FIST · CLICKED":"FIST · READY","Fist detected · release to click again");
     setSystem("FIST GESTURE","1 / 1");
     setCameraMessage("FIST CLICK READY","Release your hand, point at another control, then make a fist.");
    }else{
-    fistSince=0;fistLatched=false;
-    setTrackingHUD("detected","HAND DETECTED","Point with index finger to move · fist to click");
+    pauseGestureLatched=false;fistSince=0;fistLatched=false;
+    setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · thumbs up to pause");
     setSystem("HAND DETECTED","1 / 1");
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor.");
    }
   }else{
-   cursor.classList.remove("visible","clicking");fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";
+   cursor.classList.remove("visible","clicking");fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";pauseGestureLatched=false;
    if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");
   }
@@ -124,6 +136,22 @@ function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return
 function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}
 function isIndexPointing(p){return fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18)}
 function isFist(p){return !fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18)}
+function isThumbsUp(p){
+ const otherFingersCurled=!fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18);
+ const thumbTip=p[4],thumbIp=p[3],thumbMcp=p[2];
+ const thumbPointsUp=thumbTip.y<thumbIp.y-.035&&distance3D(p[0],thumbTip)>distance3D(p[0],thumbMcp)*1.12;
+ return otherFingersCurled&&thumbPointsUp;
+}
+function triggerPauseGesture(){
+ const game=window.fruitFrenzyGame;
+ if(game&&typeof game.pause==="function"){
+  game.pause();
+  showToast("GAME PAUSED");
+ }else{
+  window.dispatchEvent(new CustomEvent("fruitfrenzy:pause"));
+  showToast("THUMBS UP DETECTED · PAUSE CONTROL READY");
+ }
+}
 function moveHandCursor(x,y){
  cursor.classList.add("visible");cursor.style.left=x+"px";cursor.style.top=y+"px";
  const underPointer=document.elementFromPoint(x,y);
@@ -150,7 +178,7 @@ function triggerHandClick(){
 }
 function stopCamera(){
  trackingActive=false;if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
- if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;fistSince=0;fistLatched=false;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";$("cameraPreview").hidden=true;
+ if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;fistSince=0;fistLatched=false;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";pauseGestureLatched=false;$("cameraPreview").hidden=true;
  $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");setTrackingHUD("off","TRACKING OFF","Enable camera to begin");
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}

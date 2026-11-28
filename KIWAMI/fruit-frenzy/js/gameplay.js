@@ -2,15 +2,17 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
   const clockNow = () => performance.now();
   const fruitGeometry = new THREE.SphereGeometry(1, 28, 22);
   const particleGeometry = new THREE.SphereGeometry(0.045, 8, 6);
-  const bladeMaterial = new THREE.LineBasicMaterial({ color: 0xffd5b4, transparent: true, opacity: 0.95 });
-  const bladeGlowMaterial = new THREE.LineBasicMaterial({ color: 0xff7138, transparent: true, opacity: 0.3 });
+  const bladeHaloMaterial = new THREE.LineBasicMaterial({ color: 0xff3d1a, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false });
+  const bladeGlowMaterial = new THREE.LineBasicMaterial({ color: 0xff7138, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false });
+  const bladeMaterial = new THREE.LineBasicMaterial({ color: 0xfff2df, transparent: true, opacity: 0.98, blending: THREE.AdditiveBlending, depthWrite: false });
   const bladeGeometry = new THREE.BufferGeometry();
+  const bladeHaloGeometry = new THREE.BufferGeometry();
   const bladeGlowGeometry = new THREE.BufferGeometry();
   const blade = new THREE.Line(bladeGeometry, bladeMaterial);
   const bladeGlow = new THREE.Line(bladeGlowGeometry, bladeGlowMaterial);
-  blade.frustumCulled = false;
-  bladeGlow.frustumCulled = false;
-  scene.add(bladeGlow, blade);
+  const bladeHalo = new THREE.Line(bladeHaloGeometry, bladeHaloMaterial);
+  for (const layer of [bladeHalo, bladeGlow, blade]) layer.frustumCulled = false;
+  scene.add(bladeHalo, bladeGlow, blade);
 
   const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.25);
   const raycaster = new THREE.Raycaster();
@@ -43,6 +45,8 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
   let gameOverReason = "";
   let runId = 0;
   let shake = 0;
+  let audioContext = null;
+  let lastJuiceSoundAt = 0;
   let hud;
 
   function makeUI() {
@@ -102,6 +106,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     trail.length = 0;
     bladeGeometry.setFromPoints([]);
     bladeGlowGeometry.setFromPoints([]);
+    bladeHaloGeometry.setFromPoints([]);
   }
 
   function start() {
@@ -317,9 +322,12 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
           burst(p, 0xff7548, 24);
           loseLife("BOMB HIT · LIFE LOST");
         } else {
+          const juiceColor = item.mesh.material?.color?.getHex?.() || 0xff9b28;
           scoreFruit(item, p);
           splitFruit(item, p);
-          burst(p, item.mesh.material?.color?.getHex?.() || 0xff9b28, 15);
+          burst(p, juiceColor, 15);
+          juiceSplash(p, juiceColor);
+          playJuiceSlurp();
         }
       }
     }
@@ -358,6 +366,87 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
         spin: (side === 0 ? -1 : 1) * (2 + Math.random() * 3),
         life: 0.72
       });
+    }
+  }
+
+  function juiceSplash(point, color) {
+    const juiceMaterial = new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.88,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const dropletGeometry = new THREE.SphereGeometry(0.055, 8, 6);
+    for (let i = 0; i < 18; i++) {
+      const mesh = new THREE.Mesh(dropletGeometry, juiceMaterial);
+      mesh.position.copy(point);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2.2 + Math.random() * 5.2;
+      const velocity = new THREE.Vector3(
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed + 1.1,
+        (Math.random() - 0.5) * 2.2
+      );
+      const life = 0.38 + Math.random() * 0.34;
+      mesh.scale.setScalar(0.65 + Math.random() * 1.5);
+      scene.add(mesh);
+      particles.push({ mesh, velocity, life, maxLife: life, juice: true });
+    }
+    juiceMaterial.userData.sharedDropletMaterial = true;
+  }
+
+  function playJuiceSlurp() {
+    const now = clockNow();
+    if (now - lastJuiceSoundAt < 85) return;
+    lastJuiceSoundAt = now;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      if (!audioContext) audioContext = new AudioContextClass();
+      if (audioContext.state === "suspended") audioContext.resume();
+      const ctx = audioContext;
+      const startAt = ctx.currentTime + 0.005;
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.0001, startAt);
+      master.gain.exponentialRampToValueAtTime(0.13, startAt + 0.025);
+      master.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.34);
+      master.connect(ctx.destination);
+
+      const tone = ctx.createOscillator();
+      const toneFilter = ctx.createBiquadFilter();
+      const toneGain = ctx.createGain();
+      tone.type = "sawtooth";
+      tone.frequency.setValueAtTime(460 + Math.random() * 90, startAt);
+      tone.frequency.exponentialRampToValueAtTime(105 + Math.random() * 25, startAt + 0.3);
+      toneFilter.type = "lowpass";
+      toneFilter.frequency.setValueAtTime(1250, startAt);
+      toneFilter.frequency.exponentialRampToValueAtTime(360, startAt + 0.3);
+      toneGain.gain.setValueAtTime(0.0001, startAt);
+      toneGain.gain.exponentialRampToValueAtTime(0.34, startAt + 0.035);
+      toneGain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.32);
+      tone.connect(toneFilter).connect(toneGain).connect(master);
+      tone.start(startAt);
+      tone.stop(startAt + 0.35);
+
+      const sampleCount = Math.floor(ctx.sampleRate * 0.28);
+      const noiseBuffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
+      const channel = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < sampleCount; i++) channel[i] = (Math.random() * 2 - 1) * (1 - i / sampleCount);
+      const noise = ctx.createBufferSource();
+      const noiseFilter = ctx.createBiquadFilter();
+      const noiseGain = ctx.createGain();
+      noise.buffer = noiseBuffer;
+      noiseFilter.type = "bandpass";
+      noiseFilter.frequency.setValueAtTime(780, startAt);
+      noiseFilter.frequency.exponentialRampToValueAtTime(230, startAt + 0.27);
+      noiseFilter.Q.value = 0.8;
+      noiseGain.gain.setValueAtTime(0.0001, startAt);
+      noiseGain.gain.exponentialRampToValueAtTime(0.16, startAt + 0.025);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.28);
+      noise.connect(noiseFilter).connect(noiseGain).connect(master);
+      noise.start(startAt);
+      noise.stop(startAt + 0.29);
+      master.gain.setValueAtTime(0.0001, startAt + 0.36);
+    } catch (_) {
+      // Audio is optional; slicing and visual effects must continue if audio is unavailable.
     }
   }
 
@@ -415,6 +504,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
       particle.velocity.y -= 5.5 * delta;
       particle.mesh.position.addScaledVector(particle.velocity, delta);
       particle.mesh.scale.setScalar(Math.max(0.01, particle.life));
+      if (particle.juice && particle.mesh.material) particle.mesh.material.opacity = Math.max(0, particle.life / (particle.maxLife || 1));
       if (particle.life <= 0) {
         scene.remove(particle.mesh);
         particles.splice(i, 1);
@@ -429,11 +519,15 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
     const points = trail.map(item => item.point);
     blade.visible = points.length > 1;
     bladeGlow.visible = points.length > 1;
+    bladeHalo.visible = points.length > 1;
     if (points.length > 1) {
       bladeGeometry.setFromPoints(points);
       bladeGlowGeometry.setFromPoints(points);
-      bladeMaterial.opacity = Math.max(0.12, Math.min(1, (now - trail[trail.length - 1].time) / -170 + 1));
-      bladeGlowMaterial.opacity = bladeMaterial.opacity * 0.32;
+      bladeHaloGeometry.setFromPoints(points);
+      const fade = Math.max(0.04, Math.min(1, (now - trail[trail.length - 1].time) / -190 + 1));
+      bladeMaterial.opacity = fade;
+      bladeGlowMaterial.opacity = fade * 0.48;
+      bladeHaloMaterial.opacity = fade * 0.2;
     }
   }
 

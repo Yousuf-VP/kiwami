@@ -154,3 +154,35 @@ body.is-playing.game-overlay-active .hand-cursor{pointer-events:none}
 .tutorial-start{display:block;width:100%;margin-top:22px;min-height:50px;cursor:pointer;font:800 9px Orbitron,sans-serif;letter-spacing:.1em}
 .modal-content .guide-row p{line-height:1.55}
 @media(max-width:600px){.tutorial-start{min-height:48px}}
+
+
+/* CINEMATIC FIRST-RUN TUTORIAL — tap anywhere to enter the game */
+.modal-backdrop.is-tutorial{z-index:80;padding:0;background:radial-gradient(ellipse at 50% 30%,rgba(110,49,28,.34),rgba(5,5,9,.96) 68%);backdrop-filter:blur(18px);cursor:pointer;overflow-y:auto}
+.modal-backdrop.is-tutorial .modal-card{width:100%;min-height:100svh;max-width:none;padding:clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:center;border:0;background:transparent;box-shadow:none;text-align:left;cursor:pointer}
+.modal-backdrop.is-tutorial .modal-card>.eyebrow,.modal-backdrop.is-tutorial .modal-card>.modal-footer,.modal-backdrop.is-tutorial .modal-close{display:none}
+.modal-backdrop.is-tutorial .modal-card h2{display:none}
+.modal-backdrop.is-tutorial .modal-content{width:min(1120px,100%);margin:0 auto}
+.ff-tutorial-screen{min-height:min(760px,92svh);display:flex;flex-direction:column;justify-content:center;position:relative;isolation:isolate}
+.ff-tutorial-screen:before{content:"";position:absolute;z-index:-1;left:4%;top:10%;width:34vw;height:34vw;max-width:440px;max-height:440px;border:1px solid rgba(255,151,91,.13);border-radius:50%;box-shadow:0 0 90px rgba(255,112,54,.09),inset 0 0 90px rgba(255,112,54,.06);animation:ffTutorialOrbit 16s linear infinite}
+.ff-tutorial-top{display:flex;justify-content:space-between;color:#9e8e86;font:700 9px Orbitron,sans-serif;letter-spacing:.2em}
+.ff-tutorial-hero{margin:clamp(24px,5vh,58px) 0 28px;animation:ffTutorialRise .7s cubic-bezier(.2,.8,.2,1) both}
+.ff-tutorial-eyebrow{display:flex;align-items:center;gap:10px;color:#ffb27c;font:700 9px Orbitron,sans-serif;letter-spacing:.2em}
+.ff-tutorial-eyebrow i{width:22px;height:1px;background:#ff8c50;box-shadow:0 0 12px #ff8c50}
+.ff-tutorial-hero h3{margin:17px 0 12px;color:#fff;font:900 clamp(54px,10vw,112px)/.83 Orbitron,sans-serif;letter-spacing:-.09em;text-shadow:0 8px 50px #000}
+.ff-tutorial-hero h3 em{color:#ff965c;font-style:normal;text-shadow:0 0 42px #ff743c55}
+.ff-tutorial-hero p{margin:18px 0 0;color:#c6b8b0;font-size:clamp(13px,1.5vw,17px);letter-spacing:.04em}
+.ff-tutorial-lessons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;animation:ffTutorialRise .8s .12s both}
+.ff-tutorial-lessons article{min-height:145px;padding:20px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(145deg,rgba(36,27,24,.88),rgba(10,10,15,.8));box-shadow:0 18px 55px #0004}
+.ff-tutorial-lessons article>b{display:block;margin-bottom:18px;color:#ff9c64;font:700 8px Orbitron,sans-serif;letter-spacing:.16em}
+.ff-tutorial-lessons article strong{color:#fff;font:800 12px Orbitron,sans-serif;letter-spacing:.08em}
+.ff-tutorial-lessons article p{margin:9px 0 0;color:#aaa1a0;font-size:12px;line-height:1.6}
+.ff-tutorial-lessons article.hazard{border-color:rgba(255,90,76,.3)}
+.ff-tutorial-lessons article.hazard>b{color:#ff746b}
+.ff-tutorial-bottom{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:clamp(26px,5vh,54px);color:#fff;font:800 9px Orbitron,sans-serif;letter-spacing:.16em;animation:ffTutorialRise .8s .2s both}
+.ff-tutorial-bottom>span:last-child{color:#827b7b;font-size:7px}
+.ff-tap-pulse{color:#ffad78;font-size:17px;animation:ffTapPulse 1.3s ease-in-out infinite}
+@keyframes ffTutorialRise{from{opacity:0;transform:translateY(22px);filter:blur(7px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes ffTapPulse{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1.2);text-shadow:0 0 20px #ff8c50}}
+@keyframes ffTutorialOrbit{to{transform:rotate(360deg)}}
+@media(max-width:680px){.modal-backdrop.is-tutorial .modal-card{padding:22px 18px}.ff-tutorial-screen{min-height:94svh}.ff-tutorial-top{font-size:7px;letter-spacing:.12em}.ff-tutorial-hero{margin:30px 0 22px}.ff-tutorial-hero h3{font-size:clamp(56px,17vw,84px)}.ff-tutorial-lessons{grid-template-columns:1fr;gap:8px}.ff-tutorial-lessons article{min-height:0;padding:13px 15px}.ff-tutorial-lessons article>b{margin-bottom:7px}.ff-tutorial-lessons article p{margin-top:5px;font-size:11px}.ff-tutorial-bottom{flex-wrap:wrap;gap:8px;margin-top:22px;font-size:8px}.ff-tutorial-bottom>span:last-child{width:100%;text-align:center}}
+@media(prefers-reduced-motion:reduce){.ff-tutorial-screen:before,.ff-tutorial-hero,.ff-tutorial-lessons,.ff-tutorial-bottom,.ff-tap-pulse{animation:none!important}}

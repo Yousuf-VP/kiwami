@@ -87,6 +87,7 @@ function processHandFrames(){
    // independently of gesture classification, so quick movement never waits for a pose label.
    updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
+   if(gameplay&&isPlayMode()&&pointing)gameplay.setPointer(smoothedX,smoothedY,now);
    const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
    const rawGesture=twoFingerBack?"back":(!isPlayMode()&&openPalm)?"palm":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;
@@ -139,7 +140,6 @@ function updateIndexCursor(tip,now){
  else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
  lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
  moveHandCursor(smoothedX,smoothedY);
- if(gameplay)gameplay.setPointer(smoothedX,smoothedY,now);
 }
 function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return Math.hypot(dx,dy,dz)}
 function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}

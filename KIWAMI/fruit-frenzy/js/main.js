@@ -88,13 +88,15 @@ function processHandFrames(){
 
    if(activeGesture==="thumbs-up"){
     if(!pauseGestureLatched){
-     triggerPauseGesture();
+     triggerContextualThumbsUp();
      pauseGestureLatched=true;
     }
     fistSince=0;fistLatched=false;
-    setTrackingHUD("detected","THUMBS UP · PAUSE","Pause gesture detected · lower your thumb to reset");
-    setSystem("PAUSE GESTURE","1 / 1");
-    setCameraMessage("PAUSE GESTURE READY","Hold thumbs up briefly to request pause.");
+    const context=getThumbsUpContext();
+    const actionLabel=context==="gameplay"?"PAUSE GAME":"GO BACK";
+    setTrackingHUD("detected",`THUMBS UP · ${actionLabel}`,context==="gameplay"?"Gameplay detected · thumbs up pauses the game":"Menu detected · thumbs up activates Back");
+    setSystem(context==="gameplay"?"PAUSE GESTURE":"BACK GESTURE","1 / 1");
+    setCameraMessage("THUMBS UP READY",context==="gameplay"?"Thumbs up pauses gameplay.":"Thumbs up activates the current menu's Back action.");
    }else if(activeGesture==="point"){
     pauseGestureLatched=false;
     const tip=points[8],rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
@@ -118,7 +120,7 @@ function processHandFrames(){
     setCameraMessage("FIST CLICK READY","Release your hand, point at another control, then make a fist.");
    }else{
     pauseGestureLatched=false;fistSince=0;fistLatched=false;
-    setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · thumbs up to pause");
+    setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · thumbs up: pause in-game · back in menus");
     setSystem("HAND DETECTED","1 / 1");
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor.");
    }
@@ -142,15 +144,49 @@ function isThumbsUp(p){
  const thumbPointsUp=thumbTip.y<thumbIp.y-.035&&distance3D(p[0],thumbTip)>distance3D(p[0],thumbMcp)*1.12;
  return otherFingersCurled&&thumbPointsUp;
 }
-function triggerPauseGesture(){
+function getThumbsUpContext(){
  const game=window.fruitFrenzyGame;
- if(game&&typeof game.pause==="function"){
-  game.pause();
-  showToast("GAME PAUSED");
- }else{
-  window.dispatchEvent(new CustomEvent("fruitfrenzy:pause"));
-  showToast("THUMBS UP DETECTED · PAUSE CONTROL READY");
+ if(game){
+  if(typeof game.isPlaying==="function"&&game.isPlaying())return "gameplay";
+  if(game.state==="playing"||game.state==="running"||game.isPaused===false)return "gameplay";
+  if(typeof game.isPaused==="function"&&game.isPaused())return "menu";
  }
+ return "menu";
+}
+function triggerContextualThumbsUp(){
+ const game=window.fruitFrenzyGame;
+ if(getThumbsUpContext()==="gameplay"){
+  if(game&&typeof game.pause==="function"){
+   game.pause();
+   showToast("GAME PAUSED");
+  }else{
+   window.dispatchEvent(new CustomEvent("fruitfrenzy:pause"));
+   showToast("PAUSE REQUEST SENT");
+  }
+  return;
+ }
+ // Prefer the active screen's explicit Back control.
+ const backButton=[...document.querySelectorAll("[data-back-button], .back-button, .menu-back")]
+  .find(el=>!el.disabled&&el.getAttribute("aria-disabled")!=="true"&&el.getClientRects().length);
+ if(backButton){
+  backButton.click();
+  showToast("BACK");
+  return;
+ }
+ if(game&&typeof game.back==="function"){
+  game.back();
+  showToast("BACK");
+  return;
+ }
+ // The current prototype uses a modal as its secondary menu screen.
+ if(!$("modalBackdrop").hidden){
+  closeModal();
+  showToast("BACK");
+  return;
+ }
+ // Future gameplay/menu screens can subscribe to this stable back event.
+ window.dispatchEvent(new CustomEvent("fruitfrenzy:back"));
+ showToast("BACK ACTION SENT");
 }
 function moveHandCursor(x,y){
  cursor.classList.add("visible");cursor.style.left=x+"px";cursor.style.top=y+"px";

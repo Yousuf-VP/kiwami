@@ -6,7 +6,7 @@ const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cu
 let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
-let fistSince = 0, fistLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
+let palmSince = 0, palmLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
 const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 16, GESTURE_CONFIRM_FRAMES = 2;
 
@@ -83,14 +83,14 @@ function processHandFrames(){
    // independently of gesture classification, so quick movement never waits for a pose label.
    updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
-   const twoFingerBack=isTwoFingerBack(points);
-   const rawGesture=twoFingerBack?"back":pointing?"point":fist?"fist":"open";
+   const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
+   const rawGesture=twoFingerBack?"back":openPalm?"palm":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;
    else{pendingGesture=rawGesture;pendingGestureFrames=1}
    if(pendingGestureFrames>=GESTURE_CONFIRM_FRAMES)activeGesture=rawGesture;
 
    if(activeGesture==="back"){
-    fistSince=0;fistLatched=false;
+    palmSince=0;palmLatched=false;
     if(!backSince)backSince=now;
     if(!backGestureLatched&&!isPlayMode()&&now-backSince>=350){triggerMenuBack();backGestureLatched=true}
     setTrackingHUD("detected","TWO FINGERS · BACK","Index + middle fingers extended · release to use again");
@@ -98,25 +98,25 @@ function processHandFrames(){
     setCameraMessage("BACK GESTURE READY","Hold index and middle fingers up to go back in menus.");
    }else if(activeGesture==="point"){
     backSince=0;backGestureLatched=false;
-    fistSince=0;fistLatched=false;
-    setTrackingHUD("detected","POINTING · CURSOR ACTIVE","Move index finger · make a fist to click");
+    palmSince=0;palmLatched=false;
+    setTrackingHUD("detected","POINTING · CURSOR ACTIVE","Move your index fingertip · open your palm to click");
     setSystem("CURSOR ACTIVE","1 / 1");
-    setCameraMessage("INDEX FINGER READY","Point at a control, then close your fist to click. Raise index + middle fingers to go back.");
-   }else if(activeGesture==="fist"){
+    setCameraMessage("INDEX FINGER READY","Point at a control, then show a full open palm to click. Raise index + middle fingers to go back.");
+   }else if(activeGesture==="palm"){
     backSince=0;backGestureLatched=false;
-    if(!fistSince)fistSince=now;
-    if(!fistLatched&&now-fistSince>=85){triggerHandClick();fistLatched=true}
-    setTrackingHUD("detected",fistLatched?"FIST · CLICKED":"FIST · READY","Fist detected · release to click again");
-    setSystem("FIST GESTURE","1 / 1");
-    setCameraMessage("FIST CLICK READY","Release your hand, point at another control, then make a fist.");
+    if(!palmSince)palmSince=now;
+    if(!palmLatched&&now-palmSince>=110){triggerHandClick();palmLatched=true}
+    setTrackingHUD("detected",palmLatched?"OPEN PALM · CLICKED":"OPEN PALM · READY","Full open palm detected · relax your hand to click again");
+    setSystem("PALM CLICK","1 / 1");
+    setCameraMessage("OPEN PALM CLICK READY","Hold all five fingers open over a control. Relax your hand to reset.");
    }else{
-    backSince=0;backGestureLatched=false;fistSince=0;fistLatched=false;
-    setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · two fingers to go back");
+    backSince=0;backGestureLatched=false;palmSince=0;palmLatched=false;
+    setTrackingHUD("detected","HAND DETECTED","Index fingertip moves · full open palm clicks · two fingers go back");
     setSystem("HAND DETECTED","1 / 1");
-    setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor.");
+    setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor; show your full open palm to click.");
    }
   }else{
-   cursor.classList.remove("visible","clicking");fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
+   cursor.classList.remove("visible","clicking");palmSince=0;palmLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
    if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");
   }
@@ -140,6 +140,11 @@ function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return
 function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}
 function isIndexPointing(p){return fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18)}
 function isFist(p){return !fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18)}
+function isOpenPalm(p){
+ const fingersOpen=fingerExtended(p,8,6)&&fingerExtended(p,12,10)&&fingerExtended(p,16,14)&&fingerExtended(p,20,18);
+ const thumbOpen=distance3D(p[4],p[5])>distance3D(p[3],p[5])*1.12;
+ return fingersOpen&&thumbOpen;
+}
 function isTwoFingerBack(p){
  return fingerExtended(p,8,6)&&fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18);
 }
@@ -200,7 +205,7 @@ function triggerHandClick(){
 }
 function stopCamera(){
  trackingActive=false;if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
- if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;fistSince=0;fistLatched=false;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backGestureLatched=false;$("cameraPreview").hidden=true;
+ if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;palmSince=0;palmLatched=false;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backGestureLatched=false;$("cameraPreview").hidden=true;
  $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");setTrackingHUD("off","TRACKING OFF","Enable camera to begin");
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}
@@ -208,7 +213,7 @@ function closeModal(){$("modalBackdrop").hidden=true}
 function bindInterface(){
  $("cameraButton").addEventListener("click",enableCamera);$("cameraClose").addEventListener("click",()=>{stopCamera();showToast("Camera disconnected.")});
  $("playButton").addEventListener("click",()=>openModal("THE FRENZY IS <em>LOADING</em>",'<div class="guide-row"><b>01</b><div><strong>HAND INPUT FOUNDATION READY</strong><p>Your hand-controlled menu is online. The 3D slicing engine, fruit physics, scoring and game modes are scheduled for Phase 2.</p></div></div><div class="guide-row"><b>02</b><div><strong>COMING NEXT</strong><p>Index-finger blade trail, fruit launches, slice detection, combos, lives and the first playable Classic mode.</p></div></div>'));
- $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Point with your index finger to move; close your fist to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. The slicing system arrives in Phase 2.</p></div></div>'));
+ $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Move your index fingertip to point; show a full open palm to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. The slicing system arrives in Phase 2.</p></div></div>'));
  $("settingsButton").addEventListener("click",()=>openModal("SYSTEM <em>SETTINGS</em>",'<div class="guide-row"><b>CAM</b><div><strong>CAMERA PRIVACY</strong><p>Camera access is optional and only starts after you press Enable Camera. Video is processed locally and is not uploaded by this prototype.</p></div></div><div class="guide-row"><b>TIP</b><div><strong>TRACKING ENVIRONMENT</strong><p>Use a well-lit space, keep your hand inside the frame and face your palm toward the camera.</p></div></div>'));
  $("modalClose").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});addEventListener("pagehide",stopCamera);
 }

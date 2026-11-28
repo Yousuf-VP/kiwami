@@ -108,7 +108,6 @@ function processHandFrames(){
    // independently of gesture classification, so quick movement never waits for a pose label.
    updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
-   if(gameplay?.isTrackingPaused?.())gameplay.resumeFromTracking();
    if(gameplay&&isPlayMode())gameplay.setPointer(smoothedX,smoothedY,now);
    const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
    const rawGesture=twoFingerBack?"back":(!isPlayMode()&&openPalm)?"palm":pointing?"point":fist?"fist":"open";
@@ -143,7 +142,6 @@ function processHandFrames(){
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor; show your full open palm to click.");
    }
   }else{
-   if(gameplay?.isPlaying?.())gameplay.pauseForTracking();
    cursor.classList.remove("visible","clicking");palmSince=0;palmLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
    if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");

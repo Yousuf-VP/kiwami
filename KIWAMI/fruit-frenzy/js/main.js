@@ -87,7 +87,7 @@ function processHandFrames(){
    // independently of gesture classification, so quick movement never waits for a pose label.
    updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
-   if(gameplay&&isPlayMode()&&pointing)gameplay.setPointer(smoothedX,smoothedY,now);
+   if(gameplay&&isPlayMode())gameplay.setPointer(smoothedX,smoothedY,now);
    const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
    const rawGesture=twoFingerBack?"back":(!isPlayMode()&&openPalm)?"palm":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;

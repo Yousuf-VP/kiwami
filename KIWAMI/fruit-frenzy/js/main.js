@@ -9,7 +9,7 @@ let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandCli
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
 let palmSince = 0, palmLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
-const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 16, GESTURE_CONFIRM_FRAMES = 2;
+const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 16, GESTURE_CONFIRM_FRAMES = 3;
 
 function showToast(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.classList.remove("show"),3000)}
 function setSystem(message,count="0 / 1"){$("systemState").textContent=message;$("handCount").textContent=count}
@@ -84,10 +84,10 @@ async function enableCamera(){
   const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   const modelAssetPath="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
   try {
-   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.42,minHandPresenceConfidence:.42,minTrackingConfidence:.35});
+   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.52,minHandPresenceConfidence:.52,minTrackingConfidence:.48});
   } catch(gpuError) {
    console.warn("GPU hand tracking unavailable; retrying with CPU.",gpuError);
-   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"CPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.42,minHandPresenceConfidence:.42,minTrackingConfidence:.35});
+   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"CPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.52,minHandPresenceConfidence:.52,minTrackingConfidence:.48});
   }
   trackingActive=true;button.textContent="CAMERA ENABLED";setCameraMessage("WAITING FOR YOUR HAND","Show one hand to the camera, palm facing forward.");setTrackingHUD("searching","SEARCHING FOR HAND","Camera is live · show one hand");setSystem("SCANNING");processHandFrames();showToast("Camera connected. Show one hand to begin calibration.");
  }catch(error){
@@ -208,7 +208,9 @@ function triggerMenuBack(){
  showToast("NO PREVIOUS MENU");
 }
 function moveHandCursor(x,y){
- cursor.classList.add("visible");cursor.style.left=x+"px";cursor.style.top=y+"px";
+ const showCursor=gameplay?.state!=="playing";
+ cursor.classList.toggle("visible",showCursor);cursor.style.left=x+"px";cursor.style.top=y+"px";
+ if(!showCursor){if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}return}
  const underPointer=document.elementFromPoint(x,y);
  const candidate=underPointer?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
  const target=candidate&&!candidate.disabled&&candidate.getAttribute("aria-disabled")!=="true"?candidate:null;
@@ -219,6 +221,7 @@ function moveHandCursor(x,y){
  }
 }
 function triggerHandClick(){
+ if(gameplay?.state==="playing")return;
  if(performance.now()-lastHandClickAt<CLICK_COOLDOWN_MS)return;
  lastHandClickAt=performance.now();
  const x=smoothedX,y=smoothedY;
@@ -238,10 +241,22 @@ function stopCamera(){
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}
 function closeModal(){$("modalBackdrop").hidden=true}
+function startFirstRunTutorial(){
+ const content='<div class="guide-row"><b>01</b><div><strong>GET YOUR HAND READY</strong><p>Enable the camera first and keep your hand clearly visible in good light. Tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>SLICE WITH YOUR INDEX FINGER</strong><p>Move your index fingertip through fruit. Your blade follows the movement; the cursor stays hidden during active gameplay.</p></div></div><div class="guide-row"><b>03</b><div><strong>BUILD COMBOS</strong><p>Slice several fruits quickly and catch multiple fruits from one launch for score bonuses and multipliers. Golden fruit is rare and worth extra points.</p></div></div><div class="guide-row"><b>04</b><div><strong>WATCH FOR BOMBS</strong><p>Do not slice bombs — one hit ends the run. Missed fruit does not cost a life in this version.</p></div></div><div class="guide-row"><b>05</b><div><strong>PAUSE ANYTIME</strong><p>Use the pause button or Escape. In the menu, pause screen and game-over screen, point with your index finger and show an open palm to select.</p></div></div><button class="camera-button tutorial-start" id="firstRunStart" type="button">GOT IT — START GAME ↗</button>';
+ openModal('FIRST RUN <em>BRIEFING</em>',content);
+ $("firstRunStart").addEventListener("click",()=>{
+  try{localStorage.setItem("ff-tutorial-complete","1")}catch(_){}
+  closeModal();if(gameplay)gameplay.start();else showToast("Game engine is still loading.");
+ });
+}
 function bindInterface(){
  $("cameraButton").addEventListener("click",enableCamera);$("cameraClose").addEventListener("click",()=>{stopCamera();showToast("Camera disconnected.")});
- $("playButton").addEventListener("click",()=>{if(gameplay)gameplay.start();else showToast("Game engine is still loading.");});
- $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Move your index fingertip to point; show a full open palm to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. Classic Mode is live: slice fruit, build combos, avoid bombs and protect your three lives.</p></div></div>'));
+ $("playButton").addEventListener("click",()=>{
+  if(!gameplay){showToast("Game engine is still loading.");return}
+  let seen=false;try{seen=localStorage.getItem("ff-tutorial-complete")==="1"}catch(_){}
+  if(seen)gameplay.start();else startFirstRunTutorial();
+ });
+ $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Your index fingertip controls the menu cursor. Show a full open palm to select; raise index and middle fingers to go Back. The cursor hides while you are actively slicing.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Move your index fingertip through fruit to slice. Build timed and same-wave combos, collect rare Golden Fruit and avoid bombs — slicing a bomb ends the run. Missed fruit has no life penalty.</p></div></div>'));
  $("settingsButton").addEventListener("click",()=>openModal("SYSTEM <em>SETTINGS</em>",'<div class="guide-row"><b>CAM</b><div><strong>CAMERA PRIVACY</strong><p>Camera access is optional and only starts after you press Enable Camera. Video is processed locally and is not uploaded by this prototype.</p></div></div><div class="guide-row"><b>TIP</b><div><strong>TRACKING ENVIRONMENT</strong><p>Use a well-lit space, keep your hand inside the frame and face your palm toward the camera.</p></div></div>'));
  $("modalClose").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});addEventListener("pagehide",stopCamera);
 }

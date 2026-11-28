@@ -179,7 +179,6 @@ function isPlayMode(){
  const game=window.fruitFrenzyGame;
  if(game){
   if(typeof game.isPlaying==="function"&&game.isPlaying())return true;
-  if(typeof game.isTrackingPaused==="function"&&game.isTrackingPaused())return true;
   if(["playing","running","active"].includes(String(game.state||game.mode||"").toLowerCase()))return true;
   if(game.playMode===true||game.isPlaying===true)return true;
  }

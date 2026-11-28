@@ -6,7 +6,7 @@ const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cu
 let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
-let fistSince = 0, fistLatched = false, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
+let fistSince = 0, fistLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
 const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 33, GESTURE_CONFIRM_FRAMES = 2;
 
@@ -88,16 +88,17 @@ function processHandFrames(){
 
    if(activeGesture==="back"){
     fistSince=0;fistLatched=false;
-    if(!backGestureLatched&&!isPlayMode()){triggerMenuBack();backGestureLatched=true}
+    if(!backSince)backSince=now;
+    if(!backGestureLatched&&!isPlayMode()&&now-backSince>=350){triggerMenuBack();backGestureLatched=true}
     setTrackingHUD("detected","TWO FINGERS · BACK","Index + middle fingers extended · release to use again");
     setSystem("BACK GESTURE","1 / 1");
     setCameraMessage("BACK GESTURE READY","Hold index and middle fingers up to go back in menus.");
    }else if(activeGesture==="point"){
-    backGestureLatched=false;
+    backSince=0;backGestureLatched=false;
     const tip=points[8],rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
     const elapsed=Math.max(1,now-lastRawAt);
     const speed=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY)/elapsed;
-    const alpha=Math.min(.82,Math.max(.34,.34+speed*.0014));
+    const alpha=Math.min(.98,Math.max(.72,.72+speed*.0025));
     if(smoothedX===null){smoothedX=rawX;smoothedY=rawY}
     else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
     lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
@@ -107,20 +108,20 @@ function processHandFrames(){
     setSystem("CURSOR ACTIVE","1 / 1");
     setCameraMessage("INDEX FINGER READY","Point at a control, then close your fist to click. Raise index + middle fingers to go back.");
    }else if(activeGesture==="fist"){
-    backGestureLatched=false;
+    backSince=0;backGestureLatched=false;
     if(!fistSince)fistSince=now;
     if(!fistLatched&&now-fistSince>=85){triggerHandClick();fistLatched=true}
     setTrackingHUD("detected",fistLatched?"FIST · CLICKED":"FIST · READY","Fist detected · release to click again");
     setSystem("FIST GESTURE","1 / 1");
     setCameraMessage("FIST CLICK READY","Release your hand, point at another control, then make a fist.");
    }else{
-    backGestureLatched=false;fistSince=0;fistLatched=false;
+    backSince=0;backGestureLatched=false;fistSince=0;fistLatched=false;
     setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · two fingers to go back");
     setSystem("HAND DETECTED","1 / 1");
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor.");
    }
   }else{
-   cursor.classList.remove("visible","clicking");fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backGestureLatched=false;
+   cursor.classList.remove("visible","clicking");fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
    if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");
   }
@@ -163,15 +164,9 @@ function triggerMenuBack(){
   showToast("BACK");
   return;
  }
- // On the main menu, Back returns to the KIWAMI studio homepage.
- const studioBack=document.querySelector("a.back-link, a.studio-mark");
- if(studioBack){
-  studioBack.click();
-  showToast("BACK TO STUDIO");
-  return;
- }
+ // The root menu has no Back destination. Never leave the game from a gesture.
  window.dispatchEvent(new CustomEvent("fruitfrenzy:back"));
- showToast("BACK");
+ showToast("NO PREVIOUS MENU");
 }
 function moveHandCursor(x,y){
  cursor.classList.add("visible");cursor.style.left=x+"px";cursor.style.top=y+"px";

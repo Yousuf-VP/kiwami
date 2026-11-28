@@ -28,7 +28,7 @@
 <button class="menu-action" id="settingsButton" data-hand-click><span class="action-icon">⚙</span><span><strong>SETTINGS</strong><small>CAMERA & ACCESSIBILITY</small></span><span class="action-arrow">↗</span></button>
 <div class="panel-divider"></div>
 <div class="camera-connect"><div class="camera-copy"><span class="camera-label">HAND TRACKING</span><strong id="cameraState">CAMERA NOT CONNECTED</strong><small id="cameraHint">Allow camera access to control the menu.</small></div><button class="camera-button" id="cameraButton" data-hand-click>ENABLE CAMERA <span>↗</span></button></div>
-<div class="panel-foot"><span>POINT TO MOVE</span><span>FIST TO CLICK</span></div>
+<div class="panel-foot"><span>POINT TO MOVE</span><span>FIST TO CLICK · THUMBS UP TO PAUSE</span></div>
 </section>
 <section class="status-strip" aria-label="Prototype status">
 <div><span class="status-label">SYSTEM</span><strong id="systemState">STANDBY</strong></div><div><span class="status-label">TRACKED HANDS</span><strong id="handCount">0 / 1</strong></div><div><span class="status-label">CAMERA</span><strong id="cameraFps">-- FPS</strong></div><div class="phase-note">PHASE 01 <span>·</span> HAND INPUT FOUNDATION</div>
@@ -38,7 +38,7 @@
 <div class="camera-preview" id="cameraPreview" hidden><video id="cameraVideo" playsinline muted></video><div class="preview-label"><span class="live-dot"></span> LOCAL CAMERA PREVIEW</div><button id="cameraClose" class="preview-close" aria-label="Hide camera preview">×</button></div>
 <div class="modal-backdrop" id="modalBackdrop" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
 <button class="modal-close" id="modalClose" aria-label="Close dialog" data-hand-click>×</button><div class="eyebrow"><span></span> FRUIT FRENZY / FIELD GUIDE</div><h2 id="modalTitle">HOW TO <em>PLAY</em></h2>
-<div id="modalContent" class="modal-content"><div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Point with your index finger to move the cursor. Close your fist to click buttons and controls.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. The slicing system arrives in Phase 2.</p></div></div></div>
+<div id="modalContent" class="modal-content"><div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Point with your index finger to move the cursor. Close your fist to click buttons and controls. Give a thumbs up to request pause during gameplay.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. The slicing system arrives in Phase 2.</p></div></div></div>
 <div class="modal-footer">ONE HAND. ONE BLADE. ENDLESS FRUIT.</div></section></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body></html>

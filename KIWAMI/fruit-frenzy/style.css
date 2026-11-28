@@ -47,3 +47,25 @@ h1{margin:24px 0 14px;font:900 clamp(58px,8vw,116px)/.82 Orbitron,sans-serif;let
 .hand-cursor.clicking .cursor-ring{border-color:#fff;box-shadow:0 0 24px #fff,0 0 42px var(--orange);transform:scale(.78)}
 .hand-hover{outline:1px solid rgba(255,153,94,.85)!important;outline-offset:3px;filter:brightness(1.16)}
 button.hand-hover,a.hand-hover,[role="button"].hand-hover{box-shadow:0 0 18px rgba(255,123,53,.2)}
+
+
+/* Precision tracking polish */
+.hand-cursor::after{
+ content:"";position:absolute;inset:-8px;border:1px solid rgba(255,151,91,.38);
+ border-radius:50%;opacity:0;transform:scale(.72);
+}
+.hand-cursor.visible::after{animation:handPulse 1.35s ease-out infinite}
+.hand-cursor.clicking::after{animation:none;opacity:1;transform:scale(1.12);border-color:#fff}
+.hand-cursor .cursor-ring{transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+.tracking-hud[data-state="detected"] .tracking-indicator{animation:trackingBeat 1.8s ease-in-out infinite}
+.menu-action.hand-hover,.camera-button.hand-hover,.modal-close.hand-hover{
+ outline:1px solid rgba(255,166,112,.95)!important;
+ outline-offset:3px;
+ box-shadow:0 0 0 3px rgba(255,123,53,.12),0 0 26px rgba(255,123,53,.22)!important;
+}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible{
+ outline:2px solid #ffad78;outline-offset:4px;
+}
+@keyframes handPulse{0%{opacity:.75;transform:scale(.72)}100%{opacity:0;transform:scale(1.55)}}
+@keyframes trackingBeat{0%,100%{box-shadow:0 0 0 4px #8dff9b2b,0 0 12px #8dff9b}50%{box-shadow:0 0 0 7px #8dff9b18,0 0 20px #8dff9b}}
+@media(prefers-reduced-motion:reduce){.hand-cursor.visible::after,.tracking-hud[data-state="detected"] .tracking-indicator{animation:none}}

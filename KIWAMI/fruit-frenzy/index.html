@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#09090d">
+<meta name="description" content="FRUIT FRENZY — a premium 3D fruit-slicing arcade game controlled by one hand.">
+<title>FRUIT FRENZY — KIWAMI STUDIOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"}}</script>
+<script type="module" src="./js/main.js"></script>
+</head><body>
+<div class="scene-host" id="sceneHost" aria-hidden="true"></div><div class="scene-vignette"></div><div class="grain"></div>
+<header class="topbar">
+<a class="studio-mark" href="../index.html" aria-label="Back to KIWAMI home"><span class="mark-symbol">K</span><span>KIWAMI <i>STUDIOS</i></span></a>
+<div class="topbar-center"><span class="live-dot"></span> HAND CONTROL PROTOTYPE</div><a class="back-link" href="../index.html">BACK TO STUDIO <span>↗</span></a>
+</header>
+<main class="game-shell">
+<section class="hero-copy" aria-labelledby="gameTitle">
+<div class="eyebrow"><span></span> KIWAMI ORIGINAL · PROJECT 002</div>
+<h1 id="gameTitle">FRUIT<br><em>FRENZY</em><sup>™</sup></h1>
+<p class="hero-description">Your hand. Your blade. A fruit-flying frenzy.</p>
+<div class="hero-meta"><span>3D ARCADE</span><b></b><span>ONE-HAND TRACKING</span><b></b><span>WEBCAM CONTROL</span></div>
+</section>
+<section class="menu-panel" aria-label="Main menu">
+<div class="panel-kicker">MAIN MENU <span>FF / 001</span></div>
+<button class="menu-action primary-action" id="playButton" data-hand-click><span class="action-icon">▶</span><span><strong>PLAY</strong><small>ENTER THE FRENZY</small></span><span class="action-arrow">↗</span></button>
+<button class="menu-action" id="howButton" data-hand-click><span class="action-icon">◎</span><span><strong>HOW TO PLAY</strong><small>LEARN THE HAND CONTROLS</small></span><span class="action-arrow">↗</span></button>
+<button class="menu-action" id="settingsButton" data-hand-click><span class="action-icon">⚙</span><span><strong>SETTINGS</strong><small>CAMERA & ACCESSIBILITY</small></span><span class="action-arrow">↗</span></button>
+<div class="panel-divider"></div>
+<div class="camera-connect"><div class="camera-copy"><span class="camera-label">HAND TRACKING</span><strong id="cameraState">CAMERA NOT CONNECTED</strong><small id="cameraHint">Allow camera access to control the menu.</small></div><button class="camera-button" id="cameraButton" data-hand-click>ENABLE CAMERA <span>↗</span></button></div>
+<div class="panel-foot"><span>POINT TO SELECT</span><span>INDEX FINGER CONTROL</span></div>
+</section>
+<section class="status-strip" aria-label="Prototype status">
+<div><span class="status-label">SYSTEM</span><strong id="systemState">STANDBY</strong></div><div><span class="status-label">TRACKED HANDS</span><strong id="handCount">0 / 1</strong></div><div><span class="status-label">CAMERA</span><strong id="cameraFps">-- FPS</strong></div><div class="phase-note">PHASE 01 <span>·</span> HAND INPUT FOUNDATION</div>
+</section></main>
+<div class="hand-cursor" id="handCursor" aria-hidden="true"><span class="cursor-core"></span><span class="cursor-ring"></span><span class="cursor-progress" id="cursorProgress"></span></div>
+<div class="camera-preview" id="cameraPreview" hidden><video id="cameraVideo" playsinline muted></video><div class="preview-label"><span class="live-dot"></span> LOCAL CAMERA PREVIEW</div><button id="cameraClose" class="preview-close" aria-label="Hide camera preview">×</button></div>
+<div class="modal-backdrop" id="modalBackdrop" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<button class="modal-close" id="modalClose" aria-label="Close dialog" data-hand-click>×</button><div class="eyebrow"><span></span> FRUIT FRENZY / FIELD GUIDE</div><h2 id="modalTitle">HOW TO <em>PLAY</em></h2>
+<div id="modalContent" class="modal-content"><div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Point at a button to select it.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. The slicing system arrives in Phase 2.</p></div></div></div>
+<div class="modal-footer">ONE HAND. ONE BLADE. ENDLESS FRUIT.</div></section></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body></html>

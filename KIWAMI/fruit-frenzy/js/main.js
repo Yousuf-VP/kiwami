@@ -122,7 +122,10 @@ function triggerHandClick(){
  lastHandClickAt=performance.now();
  const x=smoothedX,y=smoothedY;
  if(x===null||y===null)return;
- const target=document.elementFromPoint(x,y)?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
+ const hit=document.elementFromPoint(x,y);
+ const backdrop=$("modalBackdrop");
+ if(!backdrop.hidden&&hit===backdrop){closeModal();return}
+ const target=hit?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
  if(!target||target.disabled||target.getAttribute("aria-disabled")==="true")return;
  cursor.classList.add("clicking");setTimeout(()=>cursor.classList.remove("clicking"),150);
  target.click();

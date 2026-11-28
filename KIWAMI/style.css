@@ -2152,3 +2152,51 @@ a:focus-visible {
   z-index: 2;
   text-shadow: 0 2px 8px #000, 0 0 10px #000;
 }
+
+/* FRUIT FRENZY — GAME CARD ART */
+.game-card-pink:hover {
+  border-color: rgba(255, 116, 52, .52);
+  box-shadow: 0 25px 55px rgba(0,0,0,.32), 0 0 35px rgba(255,116,52,.1);
+}
+.fruit-art {
+  background:
+    radial-gradient(ellipse at 50% 54%, rgba(255,119,51,.2), transparent 49%),
+    linear-gradient(145deg, #24101a, #0b0b16 72%);
+}
+.fruit-glow {
+  position:absolute;width:190px;height:150px;border-radius:50%;
+  background:rgba(255,103,43,.15);filter:blur(35px);
+}
+.fruit-orbit {
+  position:absolute;width:185px;height:74px;border:1px solid rgba(255,157,104,.28);
+  border-radius:50%;transform:rotate(-25deg);
+}
+.fruit-orbit-two {width:220px;height:105px;border-color:rgba(255,80,118,.22);transform:rotate(35deg)}
+.fruit-shape {
+  position:absolute;z-index:1;border-radius:48% 48% 45% 45%;
+  box-shadow:inset -9px -10px 16px rgba(0,0,0,.25),0 12px 25px rgba(0,0,0,.28);
+}
+.fruit-apple {
+  width:61px;height:64px;left:calc(50% - 30px);top:calc(50% - 35px);
+  background:radial-gradient(circle at 30% 25%,#ffb18a,#f34a3c 48%,#9d182c);
+  transform:rotate(-13deg);
+}
+.fruit-apple::before {
+  content:"";position:absolute;width:5px;height:15px;left:29px;top:-11px;
+  border-radius:4px;background:#806044;transform:rotate(13deg);
+}
+.fruit-orange {
+  width:48px;height:48px;left:calc(50% + 38px);top:calc(50% - 2px);
+  border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffe09a,#ff9a27 55%,#d84c16);
+  transform:rotate(17deg);
+}
+.fruit-watermelon {
+  width:58px;height:47px;left:calc(50% - 83px);top:calc(50% + 10px);
+  border-radius:50% 50% 44% 44%;background:linear-gradient(135deg,#ff7773,#d92e55 70%);
+  transform:rotate(27deg);
+}
+.fruit-blade {
+  position:absolute;z-index:2;width:130px;height:2px;left:calc(50% - 65px);top:52%;
+  background:linear-gradient(90deg,transparent,#fff4df 25%,#ffad68 70%,transparent);
+  box-shadow:0 0 12px #ff8747,0 0 25px rgba(255,113,55,.7);transform:rotate(-32deg);
+}

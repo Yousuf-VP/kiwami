@@ -30,7 +30,7 @@ These modes are planned; they are not playable in Phase 1.
 | 3D rendering | Three.js 0.170.0 | Perspective scene, camera, lights and 3D environment |
 | Hand tracking | MediaPipe Tasks Vision / Hand Landmarker 0.10.14 | Single-hand landmark detection |
 | Camera | Browser getUserMedia | Explicit webcam permission and local video stream |
-| Input | JavaScript | Fingertip-to-screen mapping, pointing pose and dwell selection |
+| Input | JavaScript | Fingertip-to-screen mapping, pointing pose and point-to-click selection |
 | UI | HTML + CSS | Menu, status, calibration feedback and dialogs |
 
 ## Phase 1 — Hand input foundation
@@ -85,4 +85,4 @@ The browser downloads Three.js and MediaPipe from CDNs. A network connection is 
 - No fruit slicing, scoring, lives, hazard logic or playable game modes yet.
 - Hand tracking performance depends on device capability, lighting, browser support and CDN/model availability.
 - The first version uses a GPU delegate; a CPU fallback may be needed after real-device compatibility testing.
-- Dwell selection prevents accidental menu activation when the cursor merely crosses a button.
+- A short click cooldown prevents repeated activations while the index finger remains pointed at a button.

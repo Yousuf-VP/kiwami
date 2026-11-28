@@ -11,6 +11,10 @@ const floatingObjects = [], CLICK_COOLDOWN_MS = 900;
 function showToast(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.classList.remove("show"),3000)}
 function setSystem(message,count="0 / 1"){$("systemState").textContent=message;$("handCount").textContent=count}
 function setCameraMessage(title,hint){$("cameraState").textContent=title;$("cameraHint").textContent=hint}
+function setTrackingHUD(state,title,detail){
+ const hud=$("trackingHud");if(!hud)return;
+ hud.dataset.state=state;$("trackingTitle").textContent=title;$("trackingDetail").textContent=detail;
+}
 
 function initScene(){
  const host=$("sceneHost");scene=new THREE.Scene();scene.background=new THREE.Color(0x09090d);scene.fog=new THREE.FogExp2(0x09090d,.035);
@@ -49,7 +53,7 @@ async function enableCamera(){
  try{
   cameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}});
   video.srcObject=cameraStream;await video.play();$("cameraPreview").hidden=false;
-  setCameraMessage("LOADING HAND TRACKER","Preparing the local hand-detection model.");
+  setCameraMessage("LOADING HAND TRACKER","Preparing the local hand-detection model.");setTrackingHUD("searching","LOADING TRACKER","Starting hand detection…");
   const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   const modelAssetPath="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
   try {
@@ -58,12 +62,12 @@ async function enableCamera(){
    console.warn("GPU hand tracking unavailable; retrying with CPU.",gpuError);
    handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"CPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.55});
   }
-  trackingActive=true;button.textContent="CAMERA ENABLED";setCameraMessage("WAITING FOR YOUR HAND","Show one hand to the camera, palm facing forward.");setSystem("SCANNING");processHandFrames();showToast("Camera connected. Show one hand to begin calibration.");
+  trackingActive=true;button.textContent="CAMERA ENABLED";setCameraMessage("WAITING FOR YOUR HAND","Show one hand to the camera, palm facing forward.");setTrackingHUD("searching","SEARCHING FOR HAND","Camera is live · show one hand");setSystem("SCANNING");processHandFrames();showToast("Camera connected. Show one hand to begin calibration.");
  }catch(error){
   console.error("FRUIT FRENZY camera setup:",error);stopCamera();button.disabled=false;button.textContent="ENABLE CAMERA ↗";
   const denied=error?.name==="NotAllowedError"||error?.name==="PermissionDeniedError";
   setCameraMessage(denied?"CAMERA PERMISSION BLOCKED":"TRACKER COULD NOT START",denied?"Allow camera access in browser site settings, then retry.":"Check your connection and reload the page.");
-  setSystem("CAMERA ERROR");showToast(denied?"Camera permission was not granted.":"Could not initialize hand tracking. Check the console or reload.");
+  setSystem("CAMERA ERROR");setTrackingHUD("lost","TRACKER ERROR","Check camera permission and connection");showToast(denied?"Camera permission was not granted.":"Could not initialize hand tracking. Check the console or reload.");
  }
 }
 function processHandFrames(){
@@ -92,7 +96,7 @@ function clearDwell(){if(hoveredTarget)hoveredTarget.classList.remove("hand-hove
 function stopCamera(){
  trackingActive=false;if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
  if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell");$("cameraPreview").hidden=true;
- $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");clearDwell();
+ $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");setTrackingHUD("off","TRACKING OFF","Enable camera to begin");clearDwell();
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}
 function closeModal(){$("modalBackdrop").hidden=true}

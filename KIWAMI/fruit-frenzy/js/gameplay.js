@@ -35,15 +35,15 @@ export function createGameplay({THREE,scene,camera,renderer}){
  function hideOverlay(){hud.querySelector("#ffOverlay").hidden=true}
  function clearTrail(){trail.length=0;lastPointer=null;lastPointerAt=0;blades.forEach(b=>{b.visible=false;b.geometry.dispose();b.geometry=new THREE.BufferGeometry()})}
  function clearAll(){fruits.forEach(f=>scene.remove(f.mesh));parts.forEach(p=>scene.remove(p.mesh));particles.forEach(p=>scene.remove(p.mesh));fruits.length=0;parts.length=0;particles.length=0;waveHits.clear();clearTrail()}
- function start(){clearAll();score=0;combo=0;bestCombo=0;sliced=0;elapsed=0;spawn=.85;lastSlice=0;wave=0;state="playing";document.body.classList.add("is-playing");document.body.dataset.playMode="true";hideOverlay();updateHud(true);spawnWave();message("SLICE FRUIT · AVOID THE BOMBS",1600)}
- function pause(){if(state!=="playing")return;state="paused";document.body.dataset.playMode="false";clearTrail();overlay("CLASSIC MODE · DOJO","PAUSED","Your run is on hold. Resume when you're ready.",true)}
- function resume(){if(state!=="paused")return;state="playing";document.body.dataset.playMode="true";clearTrail();hideOverlay()}
- function returnToMenu(){state="menu";document.body.classList.remove("is-playing");document.body.dataset.playMode="false";hideOverlay();clearAll();updateHud(true)}
- function endGame(reason){if(state!=="playing")return;cinematicImpact(1.35);state="gameover";document.body.dataset.playMode="false";clearTrail();if(score>best){best=score;try{localStorage.setItem("ff-classic-best",String(best))}catch(_){}}
+ function start(){clearAll();score=0;combo=0;bestCombo=0;sliced=0;elapsed=0;spawn=.85;lastSlice=0;wave=0;state="playing";document.body.classList.add("is-playing");document.body.classList.remove("game-overlay-active");document.body.dataset.playMode="true";hideOverlay();updateHud(true);spawnWave();message("SLICE FRUIT · AVOID THE BOMBS",1600)}
+ function pause(){if(state!=="playing")return;state="paused";document.body.classList.add("game-overlay-active");document.body.dataset.playMode="false";clearTrail();overlay("CLASSIC MODE · DOJO","PAUSED","Your run is on hold. Resume when you're ready.",true)}
+ function resume(){if(state!=="paused")return;state="playing";document.body.classList.remove("game-overlay-active");document.body.dataset.playMode="true";clearTrail();hideOverlay()}
+ function returnToMenu(){state="menu";document.body.classList.remove("is-playing","game-overlay-active");document.body.dataset.playMode="false";hideOverlay();clearAll();updateHud(true)}
+ function endGame(reason){if(state!=="playing")return;cinematicImpact(1.35);state="gameover";document.body.classList.add("game-overlay-active");document.body.dataset.playMode="false";clearTrail();if(score>best){best=score;try{localStorage.setItem("ff-classic-best",String(best))}catch(_){}}
   updateHud(true);overlay("RUN COMPLETE · "+timeText(),"GAME OVER",reason+" Final score: "+score+" · Fruits sliced: "+sliced+" · Best combo: "+bestCombo+".",false)}
  function spawnWave(){
-  if(state!=="playing")return;const waveId=++wave,diff=Math.min(1,elapsed/100),count=2+Math.floor(Math.random()*2)+(diff>.58&&Math.random()>.58?1:0);
-  const bomb=Math.random()<.08+diff*.08,gold=!bomb&&Math.random()<.035,width=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*Math.max(6,camera.position.z-.25)*camera.aspect;
+  if(state!=="playing")return;const waveId=++wave,diff=Math.min(1,elapsed/100),count=3+Math.floor(Math.random()*3)+(diff>.55&&Math.random()>.48?1:0);
+  const bomb=Math.random()<.09+diff*.07,gold=!bomb&&Math.random()<.035,width=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*Math.max(6,camera.position.z-.25)*camera.aspect;
   Array.from({length:count},(_,i)=>(Math.random()-.5)*width*1.35).forEach((x,i)=>setTimeout(()=>{if(state!=="playing")return;if(bomb&&i===count-1)createBomb(x,waveId);else createFruit(x,waveId,gold&&i===Math.floor(count/2))},i*(.1+Math.random()*.11)*1000));
   for(const k of waveHits.keys())if(k<wave-8)waveHits.delete(k);
  }

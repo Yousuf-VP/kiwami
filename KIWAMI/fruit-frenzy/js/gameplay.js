@@ -122,5 +122,5 @@ export function createGameplay({THREE,scene,camera,renderer}){
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt;p.velocity.y-=8.2*dt;p.mesh.position.addScaledVector(p.velocity,dt);p.mesh.rotation.x+=dt*p.spin;p.mesh.rotation.z+=dt*p.spin*.6;p.mesh.scale.setScalar(Math.max(.01,p.life/p.max));if(p.life<=0){scene.remove(p.mesh);parts.splice(i,1)}}
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.velocity.y-=5.5*dt;p.mesh.position.addScaledVector(p.velocity,dt);p.mesh.scale.setScalar(Math.max(.01,p.life));if(p.mesh.material)p.mesh.material.opacity=Math.max(0,p.life/(p.max||1));if(p.life<=0){scene.remove(p.mesh);particles.splice(i,1)}}}
  makeUI();updateHud(true);
- return {start,pause,resume,returnToMenu,update,setPointer,pauseForTracking,resumeFromTracking,isPlaying:()=>state==="playing",isSessionActive:()=>["playing","paused","gameover"].includes(state),get state(){return state},get score(){return score}};
+ return {start,pause,resume,returnToMenu,update,setPointer,isPlaying:()=>state==="playing",isSessionActive:()=>["playing","paused","gameover"].includes(state),get state(){return state},get score(){return score}};
 }

@@ -50,7 +50,7 @@ function initScene(){
  addEventListener("resize",resizeScene);animateScene();
 }
 function resizeScene(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4))}
-function animateScene(){requestAnimationFrame(animateScene);const delta=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;floatingObjects.forEach((o,i)=>{if(!document.body.classList.contains("is-playing")){o.position.y=o.userData.baseY+Math.sin(t*.72+o.userData.phase)*.22;o.rotation.y+=.002+i*.00025;o.rotation.x=Math.sin(t*.35+o.userData.phase)*.08}});if(gameplay)gameplay.update(delta,t);camera.position.x=document.body.classList.contains("is-playing")?0:Math.sin(t*.12)*.16;camera.lookAt(0,.2,-.2);renderer.render(scene,camera)}
+function animateScene(){requestAnimationFrame(animateScene);const delta=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;floatingObjects.forEach((o,i)=>{o.visible=!document.body.classList.contains("is-playing");if(o.visible){o.position.y=o.userData.baseY+Math.sin(t*.72+o.userData.phase)*.22;o.rotation.y+=.002+i*.00025;o.rotation.x=Math.sin(t*.35+o.userData.phase)*.08}});if(gameplay)gameplay.update(delta,t);camera.position.x=document.body.classList.contains("is-playing")?0:Math.sin(t*.12)*.16;camera.lookAt(0,.2,-.2);renderer.render(scene,camera)}
 
 async function enableCamera(){
  const button=$("cameraButton");

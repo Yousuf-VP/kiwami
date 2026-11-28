@@ -36,8 +36,6 @@ export function createGameplay({THREE,scene,camera,renderer}){
  function clearAll(){fruits.forEach(f=>scene.remove(f.mesh));parts.forEach(p=>scene.remove(p.mesh));particles.forEach(p=>scene.remove(p.mesh));fruits.length=0;parts.length=0;particles.length=0;waveHits.clear();clearTrail()}
  function start(){clearAll();score=0;combo=0;bestCombo=0;sliced=0;elapsed=0;spawn=.85;lastSlice=0;wave=0;state="playing";document.body.classList.add("is-playing");document.body.dataset.playMode="true";hideOverlay();updateHud(true);spawnWave();message("SLICE FRUIT · AVOID THE BOMBS",1600)}
  function pause(){if(state!=="playing")return;state="paused";document.body.dataset.playMode="false";clearTrail();overlay("CLASSIC MODE · DOJO","PAUSED","Your run is on hold. Resume when you're ready.",true)}
- function pauseForTracking(){if(state!=="playing")return;state="trackingPaused";document.body.dataset.playMode="false";clearTrail();overlay("HAND TRACKING LOST","GAME PAUSED","Show your index fingertip again. Your run will resume automatically.",false)}
- function resumeFromTracking(){if(state!=="trackingPaused")return;state="playing";document.body.dataset.playMode="true";clearTrail();hideOverlay()}
  function resume(){if(state!=="paused")return;state="playing";document.body.dataset.playMode="true";clearTrail();hideOverlay()}
  function returnToMenu(){state="menu";document.body.classList.remove("is-playing");document.body.dataset.playMode="false";hideOverlay();clearAll();updateHud(true)}
  function endGame(reason){if(state!=="playing")return;state="gameover";document.body.dataset.playMode="false";clearTrail();if(score>best){best=score;try{localStorage.setItem("ff-classic-best",String(best))}catch(_){}}
@@ -124,5 +122,5 @@ export function createGameplay({THREE,scene,camera,renderer}){
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.life-=dt;p.velocity.y-=8.2*dt;p.mesh.position.addScaledVector(p.velocity,dt);p.mesh.rotation.x+=dt*p.spin;p.mesh.rotation.z+=dt*p.spin*.6;p.mesh.scale.setScalar(Math.max(.01,p.life/p.max));if(p.life<=0){scene.remove(p.mesh);parts.splice(i,1)}}
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.velocity.y-=5.5*dt;p.mesh.position.addScaledVector(p.velocity,dt);p.mesh.scale.setScalar(Math.max(.01,p.life));if(p.mesh.material)p.mesh.material.opacity=Math.max(0,p.life/(p.max||1));if(p.life<=0){scene.remove(p.mesh);particles.splice(i,1)}}}
  makeUI();updateHud(true);
- return {start,pause,resume,returnToMenu,update,setPointer,pauseForTracking,resumeFromTracking,isPlaying:()=>state==="playing",isTrackingPaused:()=>state==="trackingPaused",isSessionActive:()=>["playing","paused","trackingPaused","gameover"].includes(state),get state(){return state},get score(){return score}};
+ return {start,pause,resume,returnToMenu,update,setPointer,isPlaying:()=>state==="playing",isSessionActive:()=>["playing","paused","gameover"].includes(state),get state(){return state},get score(){return score}};
 }

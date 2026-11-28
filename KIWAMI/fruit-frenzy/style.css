@@ -116,3 +116,13 @@ body.is-playing .hand-cursor{opacity:0!important}
  body.is-playing .tracking-hud{left:10px;bottom:10px}
  body.is-playing .camera-preview{right:10px;bottom:10px;width:104px}
 }
+
+/* FRUIT FRENZY — rebuilt Classic Dojo gameplay HUD */
+.game-hud{padding:clamp(12px,2.5vw,30px)}.game-hud-top{align-items:flex-start;gap:clamp(8px,1.6vw,20px)}
+.hud-stat{min-width:clamp(82px,10vw,130px);padding:11px 15px;border-color:rgba(255,205,153,.2);background:linear-gradient(145deg,rgba(28,19,18,.84),rgba(8,8,13,.78))}
+.hud-stat strong{font-size:clamp(15px,1.8vw,23px)}.hud-combo-stat strong{color:#ffd16b;text-shadow:0 0 18px #ffb12d66}
+.game-hud-bottom{font-size:clamp(7px,.8vw,10px)}.game-hud-bottom #ffCombo{color:#ffd18a}.game-center-message{color:#fff2d4;text-shadow:0 0 22px #ff9b3d,0 2px 12px #000}
+.game-dialog{border-color:rgba(255,180,111,.3);background:linear-gradient(145deg,rgba(39,25,20,.97),rgba(9,9,14,.98))}.game-dialog-kicker{color:#ffd16b}
+.game-dialog-actions button{background:linear-gradient(100deg,#ffd16b,#ff813e);border-color:#ffd16b}
+@media(max-width:600px){.game-hud{padding:10px}.game-hud-top{gap:6px}.hud-stat{min-width:0;flex:1;padding:8px 7px}.hud-stat small{font-size:6px;letter-spacing:.1em}.hud-stat strong{font-size:12px}.game-pause{width:36px;height:36px;flex:0 0 36px}.game-hud-bottom{font-size:6px;letter-spacing:.07em}.game-hud-bottom span{padding:7px 8px}}
+@media(orientation:portrait) and (max-width:700px){.game-hud-top{gap:5px}.hud-stat{padding:8px 5px}.hud-stat small{font-size:5.5px}.hud-stat strong{font-size:11px;letter-spacing:.02em}.game-pause{width:34px;height:34px;flex-basis:34px}.game-hud-bottom{align-items:flex-end}.game-hud-bottom span{max-width:72%;line-height:1.35}}

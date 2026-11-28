@@ -5,9 +5,10 @@ const $ = (id) => document.getElementById(id);
 const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cursorProgress"), toast = $("toast");
 let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
-let smoothedX = null, smoothedY = null, lastPointing = false, fistSince = 0, fistLatched = false;
+let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
+let fistSince = 0, fistLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
-const floatingObjects = [], CLICK_COOLDOWN_MS = 650, INFERENCE_INTERVAL_MS = 40, CURSOR_SMOOTHING = 0.38;
+const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 33, GESTURE_CONFIRM_FRAMES = 2;
 
 function showToast(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.classList.remove("show"),3000)}
 function setSystem(message,count="0 / 1"){$("systemState").textContent=message;$("handCount").textContent=count}
@@ -79,25 +80,39 @@ function processHandFrames(){
   const result=handLandmarker.detectForVideo(video,now);const points=result.landmarks?.[0];
   if(points){
    const pointing=isIndexPointing(points),fist=isFist(points);
-   if(pointing){
+   const rawGesture=pointing?"point":fist?"fist":"open";
+   if(rawGesture===pendingGesture)pendingGestureFrames++;
+   else{pendingGesture=rawGesture;pendingGestureFrames=1}
+   if(pendingGestureFrames>=GESTURE_CONFIRM_FRAMES)activeGesture=rawGesture;
+
+   if(activeGesture==="point"){
     const tip=points[8],rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
+    const elapsed=Math.max(1,now-lastRawAt);
+    const speed=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY)/elapsed;
+    const alpha=Math.min(.82,Math.max(.34,.34+speed*.0014));
     if(smoothedX===null){smoothedX=rawX;smoothedY=rawY}
-    else{smoothedX+=(rawX-smoothedX)*CURSOR_SMOOTHING;smoothedY+=(rawY-smoothedY)*CURSOR_SMOOTHING}
+    else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
+    lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
     moveHandCursor(smoothedX,smoothedY);
-   }
-   if(fist){
+    fistSince=0;fistLatched=false;
+    setTrackingHUD("detected","POINTING · CURSOR ACTIVE","Move index finger · make a fist to click");
+    setSystem("CURSOR ACTIVE","1 / 1");
+    setCameraMessage("INDEX FINGER READY","Point at a control, then close your fist to click.");
+   }else if(activeGesture==="fist"){
     if(!fistSince)fistSince=now;
-    if(!fistLatched&&now-fistSince>=110){triggerHandClick();fistLatched=true}
-    setTrackingHUD("detected",fistLatched?"FIST · CLICKED":"FIST · READY","Close your hand to click");
+    if(!fistLatched&&now-fistSince>=85){triggerHandClick();fistLatched=true}
+    setTrackingHUD("detected",fistLatched?"FIST · CLICKED":"FIST · READY","Fist detected · release to click again");
     setSystem("FIST GESTURE","1 / 1");
+    setCameraMessage("FIST CLICK READY","Release your hand, point at another control, then make a fist.");
    }else{
     fistSince=0;fistLatched=false;
-    setTrackingHUD("detected",pointing?"POINTING · CURSOR ACTIVE":"HAND DETECTED",pointing?"Move index finger · make a fist to click":"Point with index finger to move");
-    setSystem(pointing?"CURSOR ACTIVE":"HAND DETECTED","1 / 1");
+    setTrackingHUD("detected","HAND DETECTED","Point with index finger to move · fist to click");
+    setSystem("HAND DETECTED","1 / 1");
+    setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor.");
    }
-   setCameraMessage(pointing?"INDEX FINGER READY":fist?"FIST CLICK READY":"HAND DETECTED",pointing?"Make a fist to click any control.":"Point with your index finger to move the cursor.");
   }else{
-   cursor.classList.remove("visible","clicking");lastPointing=false;fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;
+   cursor.classList.remove("visible","clicking");fistSince=0;fistLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";
+   if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");
   }
   fpsFrames++;
@@ -106,16 +121,19 @@ function processHandFrames(){
  requestAnimationFrame(processHandFrames);
 }
 function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return Math.hypot(dx,dy,dz)}
-function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.18}
+function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}
 function isIndexPointing(p){return fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18)}
 function isFist(p){return !fingerExtended(p,8,6)&&!fingerExtended(p,12,10)&&!fingerExtended(p,16,14)&&!fingerExtended(p,20,18)}
 function moveHandCursor(x,y){
  cursor.classList.add("visible");cursor.style.left=x+"px";cursor.style.top=y+"px";
  const underPointer=document.elementFromPoint(x,y);
- const target=underPointer?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
- document.querySelectorAll(".hand-hover").forEach(el=>el.classList.remove("hand-hover"));
- if(target&&!target.disabled&&target.getAttribute("aria-disabled")!=="true")target.classList.add("hand-hover");
- lastPointing=true;
+ const candidate=underPointer?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
+ const target=candidate&&!candidate.disabled&&candidate.getAttribute("aria-disabled")!=="true"?candidate:null;
+ if(target!==hoveredTarget){
+  if(hoveredTarget)hoveredTarget.classList.remove("hand-hover");
+  hoveredTarget=target;
+  if(hoveredTarget)hoveredTarget.classList.add("hand-hover");
+ }
 }
 function triggerHandClick(){
  if(performance.now()-lastHandClickAt<CLICK_COOLDOWN_MS)return;
@@ -127,12 +145,12 @@ function triggerHandClick(){
  if(!backdrop.hidden&&hit===backdrop){closeModal();return}
  const target=hit?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
  if(!target||target.disabled||target.getAttribute("aria-disabled")==="true")return;
- cursor.classList.add("clicking");setTimeout(()=>cursor.classList.remove("clicking"),150);
+ cursor.classList.add("clicking");setTimeout(()=>cursor.classList.remove("clicking"),170);
  target.click();
 }
 function stopCamera(){
  trackingActive=false;if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}
- if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");document.querySelectorAll(".hand-hover").forEach(el=>el.classList.remove("hand-hover"));smoothedX=null;smoothedY=null;fistSince=0;fistLatched=false;$("cameraPreview").hidden=true;
+ if(handLandmarker){handLandmarker.close();handLandmarker=null}video.srcObject=null;cursor.classList.remove("visible","dwell","clicking");if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;fistSince=0;fistLatched=false;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";$("cameraPreview").hidden=true;
  $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");setTrackingHUD("off","TRACKING OFF","Enable camera to begin");
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}

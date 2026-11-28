@@ -27,3 +27,17 @@ h1{margin:24px 0 14px;font:900 clamp(58px,8vw,116px)/.82 Orbitron,sans-serif;let
 @media(max-width:900px){html,body{overflow:auto}.game-shell{min-height:calc(100svh - 68px);grid-template-columns:1fr;grid-template-rows:auto auto 1fr;gap:24px;padding-top:6vh}.hero-copy{padding:0}h1{font-size:clamp(58px,14vw,94px)}.menu-panel{width:min(480px,100%);justify-self:start}.status-strip{margin-top:12px;flex-wrap:wrap;gap:16px 25px}.phase-note{width:100%;margin:0}.topbar{height:68px;padding:0 20px}.topbar-center{display:none}.camera-preview{width:140px;right:12px;bottom:12px}}
 @media(max-width:480px){.back-link{font-size:7px}.game-shell{padding:34px 18px 24px}.hero-meta{gap:8px;font-size:7px;margin-top:23px}.menu-panel{padding:17px}.camera-connect{align-items:flex-start;flex-direction:column}.camera-button{width:100%}.panel-foot{font-size:6px}.status-strip{gap:13px 20px}.status-strip strong{font-size:8px}.modal-card{padding:26px 20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* High-visibility hand tracking feedback */
+.tracking-hud{position:fixed;z-index:21;top:94px;right:clamp(16px,4vw,56px);display:flex;align-items:center;gap:11px;min-width:190px;padding:11px 14px;border:1px solid rgba(255,255,255,.16);background:rgba(8,8,13,.88);box-shadow:0 10px 34px #0008;backdrop-filter:blur(14px);pointer-events:none}
+.tracking-indicator{width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#777;box-shadow:0 0 0 4px #7772}
+.tracking-hud strong,.tracking-hud small{display:block}
+.tracking-hud strong{font:700 9px Orbitron,sans-serif;letter-spacing:.12em;color:#e9e5e3}
+.tracking-hud small{margin-top:4px;font-size:10px;color:#aaa6ad}
+.tracking-hud[data-state="searching"] .tracking-indicator{background:#ffb34e;box-shadow:0 0 0 4px #ffb34e2b,0 0 14px #ffb34e}
+.tracking-hud[data-state="detected"] .tracking-indicator{background:#8dff9b;box-shadow:0 0 0 4px #8dff9b2b,0 0 16px #8dff9b}
+.tracking-hud[data-state="lost"] .tracking-indicator{background:#ff665f;box-shadow:0 0 0 4px #ff665f2b,0 0 14px #ff665f}
+.hand-cursor{width:48px;height:48px}
+.cursor-core{inset:18px;width:12px;height:12px;background:#fff;box-shadow:0 0 10px #fff,0 0 22px #ff7b35,0 0 38px #ff7b35}
+.cursor-ring{inset:4px;border:2px solid #ff9a5e;box-shadow:0 0 12px #ff7b35, inset 0 0 8px #ff7b3540}
+.hand-cursor.visible{opacity:1}
+@media(max-width:900px){.tracking-hud{top:78px;right:12px;min-width:160px;padding:9px 11px}}

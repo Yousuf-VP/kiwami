@@ -33,6 +33,7 @@
 <section class="status-strip" aria-label="Prototype status">
 <div><span class="status-label">SYSTEM</span><strong id="systemState">STANDBY</strong></div><div><span class="status-label">TRACKED HANDS</span><strong id="handCount">0 / 1</strong></div><div><span class="status-label">CAMERA</span><strong id="cameraFps">-- FPS</strong></div><div class="phase-note">PHASE 01 <span>·</span> HAND INPUT FOUNDATION</div>
 </section></main>
+<div class="tracking-hud" id="trackingHud" data-state="off"><span class="tracking-indicator"></span><span><strong id="trackingTitle">TRACKING OFF</strong><small id="trackingDetail">Enable camera to begin</small></span></div>
 <div class="hand-cursor" id="handCursor" aria-hidden="true"><span class="cursor-core"></span><span class="cursor-ring"></span><span class="cursor-progress" id="cursorProgress"></span></div>
 <div class="camera-preview" id="cameraPreview" hidden><video id="cameraVideo" playsinline muted></video><div class="preview-label"><span class="live-dot"></span> LOCAL CAMERA PREVIEW</div><button id="cameraClose" class="preview-close" aria-label="Hide camera preview">×</button></div>
 <div class="modal-backdrop" id="modalBackdrop" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">

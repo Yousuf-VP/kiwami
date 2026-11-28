@@ -66,8 +66,23 @@ export function createGameplay({THREE,scene,camera,renderer}){
  }
  function screenToWorld(x,y){ndc.set(x/innerWidth*2-1,-y/innerHeight*2+1);ray.setFromCamera(ndc,camera);return ray.ray.intersectPlane(plane,hitPoint)?hitPoint.clone():null}
  function setPointer(x,y,t=now()){if(state!=="playing")return;const p=screenToWorld(x,y);if(!p)return;
-  if(lastPointer){const d=Math.hypot(p.x-lastPointer.x,p.y-lastPointer.y);if(d>.003){trail.push({point:p.clone(),time:t});if(trail.length>64)trail.shift();cutAlong(lastPointer,p)}}else trail.push({point:p.clone(),time:t});
-  lastPointer=p.clone();lastPointerAt=t}
+  // Keep the last emitted blade point as the anchor. Tiny landmark jitter is ignored,
+  // while small real movements accumulate until they form a visible slice segment.
+  if(!lastPointer){lastPointer=p.clone();lastPointerAt=t;return}
+  const d=Math.hypot(p.x-lastPointer.x,p.y-lastPointer.y);
+  const worldPerPixel=(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*Math.max(6,camera.position.z-.25))/innerHeight;
+  const movementGate=Math.max(.004,worldPerPixel*1.35);
+  if(d<movementGate)return;
+  const from=lastPointer.clone(),distance=d;
+  const steps=Math.min(8,Math.max(1,Math.ceil(distance/.075)));
+  for(let i=1;i<=steps;i++){
+   const point=from.clone().lerp(p,i/steps);
+   trail.push({point,time:t-(steps-i)*2.2});
+   if(trail.length>48)trail.shift();
+  }
+  cutAlong(from,p);
+  lastPointer=p.clone();lastPointerAt=t;
+ }
  function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l)):0;return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
  function cutAlong(a,b){if(state!=="playing")return;for(let i=fruits.length-1;i>=0;i--){const f=fruits[i],p=f.mesh.position;if(segDist(p.x,p.y,a.x,a.y,b.x,b.y)>f.radius*.92)continue;fruits.splice(i,1);scene.remove(f.mesh);
   if(f.type==="bomb"){burst(p,0xff7548,30);endGame("BOMB SLICED · THE RUN ENDS.");return}
@@ -83,9 +98,26 @@ export function createGameplay({THREE,scene,camera,renderer}){
   const osc=c.createOscillator(),filter=c.createBiquadFilter(),gain=c.createGain();osc.type="sawtooth";osc.frequency.setValueAtTime(460+Math.random()*90,s);osc.frequency.exponentialRampToValueAtTime(105+Math.random()*25,s+.3);filter.type="lowpass";filter.frequency.setValueAtTime(1250,s);filter.frequency.exponentialRampToValueAtTime(360,s+.3);gain.gain.setValueAtTime(.0001,s);gain.gain.exponentialRampToValueAtTime(.34,s+.035);gain.gain.exponentialRampToValueAtTime(.0001,s+.32);osc.connect(filter).connect(gain).connect(master);osc.start(s);osc.stop(s+.35);
   const n=Math.floor(c.sampleRate*.28),buf=c.createBuffer(1,n,c.sampleRate),data=buf.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);const src=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();src.buffer=buf;f.type="bandpass";f.frequency.setValueAtTime(780,s);f.frequency.exponentialRampToValueAtTime(230,s+.27);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.16,s+.025);g.gain.exponentialRampToValueAtTime(.0001,s+.28);src.connect(f).connect(g).connect(master);src.start(s);src.stop(s+.29);master.gain.setValueAtTime(.0001,s+.36)}catch(_){}}
  function burst(p,color,count){const mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false});for(let i=0;i<count;i++){const mesh=new THREE.Mesh(particleGeo,mat);mesh.position.copy(p);const vel=new THREE.Vector3((Math.random()-.5)*7,Math.random()*6,(Math.random()-.5)*2);scene.add(mesh);particles.push({mesh,velocity:vel,life:.45+Math.random()*.4,max:.85})}}
- function tube(mesh,curve,radius,segments){const old=mesh.geometry;mesh.geometry=new THREE.TubeGeometry(curve,segments,radius,8,false);old.dispose()}
- function updateBlade(){const t=now();while(trail.length&&t-trail[0].time>320)trail.shift();const pts=trail.map(x=>x.point),show=pts.length>1;blades.forEach(b=>b.visible=show);if(!show)return;
-  const curve=new THREE.CatmullRomCurve3(pts),seg=Math.max(10,Math.min(120,pts.length*5));tube(blades[0],curve,.145,seg);tube(blades[1],curve,.082,seg);tube(blades[2],curve,.032,seg);const fade=Math.max(.08,Math.min(1,1-(t-trail[0].time)/360));mats[2].opacity=fade;mats[1].opacity=fade*.52;mats[0].opacity=fade*.23}
+ function taperedSlashGeometry(points,width,zOffset){
+  const curve=points.length>2?new THREE.CatmullRomCurve3(points):new THREE.LineCurve3(points[0],points[points.length-1]);
+  const count=Math.max(12,Math.min(72,points.length*5)),sampled=curve.getPoints(count),positions=[],indices=[];
+  for(let i=0;i<sampled.length;i++){
+   const p=sampled[i],prev=sampled[Math.max(0,i-1)],next=sampled[Math.min(sampled.length-1,i+1)];
+   const dx=next.x-prev.x,dy=next.y-prev.y,len=Math.hypot(dx,dy)||1,nx=-dy/len,ny=dx/len;
+   const t=i/(sampled.length-1),taper=Math.pow(Math.sin(Math.PI*t),.78),half=width*(.025+.975*taper);
+   positions.push(p.x+nx*half,p.y+ny*half,p.z+zOffset,p.x-nx*half,p.y-ny*half,p.z+zOffset);
+   if(i<sampled.length-1){const a=i*2,b=a+1,c=a+2,d=a+3;indices.push(a,b,c,b,d,c)}
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+ }
+ function updateBlade(){const t=now();while(trail.length&&t-trail[0].time>165)trail.shift();
+  const pts=trail.map(x=>x.point),show=pts.length>1;
+  blades.forEach(b=>b.visible=show);if(!show)return;
+  const age=Math.max(0,t-trail[trail.length-1].time),fade=Math.max(0,1-age/165);
+  const widths=[.19,.095,.034],z=[-.035,-.018,0];
+  blades.forEach((blade,i)=>{const old=blade.geometry;blade.geometry=taperedSlashGeometry(pts,widths[i],z[i]);old.dispose()});
+  mats[2].opacity=.98*fade;mats[1].opacity=.62*fade;mats[0].opacity=.3*fade;
+ }
  function update(dt){if(state==="playing"){elapsed+=dt;spawn-=dt;if(spawn<=0){spawnWave();spawn=Math.max(.68,1.5-elapsed*.006)}
   for(let i=fruits.length-1;i>=0;i--){const f=fruits[i];f.velocity.y-=8.6*dt;f.mesh.position.addScaledVector(f.velocity,dt);f.mesh.rotation.x+=dt*f.spin;f.mesh.rotation.y+=dt*f.spin*.42;if(f.mesh.position.y< -7.8&&f.velocity.y<0){fruits.splice(i,1);scene.remove(f.mesh)}}
   updateBlade();updateHud()}

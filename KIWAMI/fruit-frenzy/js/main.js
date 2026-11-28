@@ -87,16 +87,16 @@ function processHandFrames(){
    if(pendingGestureFrames>=GESTURE_CONFIRM_FRAMES)activeGesture=rawGesture;
 
    if(activeGesture==="thumbs-up"){
+    const context=getThumbsUpContext();
     if(!pauseGestureLatched){
-     triggerContextualThumbsUp();
+     triggerContextualThumbsUp(context);
      pauseGestureLatched=true;
     }
     fistSince=0;fistLatched=false;
-    const context=getThumbsUpContext();
     const actionLabel=context==="gameplay"?"PAUSE GAME":"GO BACK";
-    setTrackingHUD("detected",`THUMBS UP · ${actionLabel}`,context==="gameplay"?"Gameplay detected · thumbs up pauses the game":"Menu detected · thumbs up activates Back");
+    setTrackingHUD("detected",`THUMBS UP · ${actionLabel}`,context==="gameplay"?"Play Mode detected · thumbs up pauses the game":"Not in Play Mode · thumbs up goes Back");
     setSystem(context==="gameplay"?"PAUSE GESTURE":"BACK GESTURE","1 / 1");
-    setCameraMessage("THUMBS UP READY",context==="gameplay"?"Thumbs up pauses gameplay.":"Thumbs up activates the current menu's Back action.");
+    setCameraMessage("THUMBS UP READY",context==="gameplay"?"Thumbs up pauses gameplay.":"Thumbs up performs Back navigation.");
    }else if(activeGesture==="point"){
     pauseGestureLatched=false;
     const tip=points[8],rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
@@ -120,7 +120,7 @@ function processHandFrames(){
     setCameraMessage("FIST CLICK READY","Release your hand, point at another control, then make a fist.");
    }else{
     pauseGestureLatched=false;fistSince=0;fistLatched=false;
-    setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · thumbs up: pause in-game · back in menus");
+    setTrackingHUD("detected","HAND DETECTED","Point to move · fist to click · thumbs up: pause in Play Mode · back otherwise");
     setSystem("HAND DETECTED","1 / 1");
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor.");
    }
@@ -146,16 +146,20 @@ function isThumbsUp(p){
 }
 function getThumbsUpContext(){
  const game=window.fruitFrenzyGame;
+ // Play Mode must be explicitly active. Every other screen/state is menu context.
  if(game){
   if(typeof game.isPlaying==="function"&&game.isPlaying())return "gameplay";
-  if(game.state==="playing"||game.state==="running"||game.isPaused===false)return "gameplay";
-  if(typeof game.isPaused==="function"&&game.isPaused())return "menu";
+  if(["playing","running","active"].includes(String(game.state||game.mode||"").toLowerCase()))return "gameplay";
+  if(game.playMode===true||game.isPlaying===true)return "gameplay";
  }
+ if(document.body.dataset.playMode==="true"||document.documentElement.dataset.playMode==="true")return "gameplay";
+ const activeGameScreen=document.querySelector('[data-screen="game"].is-active, .game-screen.is-active, #gameScreen.is-active');
+ if(activeGameScreen)return "gameplay";
  return "menu";
 }
-function triggerContextualThumbsUp(){
+function triggerContextualThumbsUp(context=getThumbsUpContext()){
  const game=window.fruitFrenzyGame;
- if(getThumbsUpContext()==="gameplay"){
+ if(context==="gameplay"){
   if(game&&typeof game.pause==="function"){
    game.pause();
    showToast("GAME PAUSED");
@@ -165,28 +169,31 @@ function triggerContextualThumbsUp(){
   }
   return;
  }
- // Prefer the active screen's explicit Back control.
- const backButton=[...document.querySelectorAll("[data-back-button], .back-button, .menu-back")]
-  .find(el=>!el.disabled&&el.getAttribute("aria-disabled")!=="true"&&el.getClientRects().length);
+ // In menus, first use the current screen's explicit Back control.
+ const backButton=[...document.querySelectorAll(
+  "[data-back-button], #backButton, .back-button, .menu-back, .modal-close"
+ )].find(el=>!el.disabled&&el.getAttribute("aria-disabled")!=="true"&&el.getClientRects().length);
  if(backButton){
   backButton.click();
   showToast("BACK");
   return;
  }
- if(game&&typeof game.back==="function"){
-  game.back();
-  showToast("BACK");
-  return;
- }
- // The current prototype uses a modal as its secondary menu screen.
- if(!$("modalBackdrop").hidden){
+ // The prototype's secondary menu screens are dialogs; close them like Back.
+ const modal=$("modalBackdrop");
+ if(modal&&!modal.hidden){
   closeModal();
   showToast("BACK");
   return;
  }
- // Future gameplay/menu screens can subscribe to this stable back event.
+ // On the main menu, Back returns to the KIWAMI studio homepage.
+ const studioBack=document.querySelector("a.back-link, a.studio-mark");
+ if(studioBack){
+  studioBack.click();
+  showToast("BACK TO STUDIO");
+  return;
+ }
  window.dispatchEvent(new CustomEvent("fruitfrenzy:back"));
- showToast("BACK ACTION SENT");
+ showToast("BACK");
 }
 function moveHandCursor(x,y){
  cursor.classList.add("visible");cursor.style.left=x+"px";cursor.style.top=y+"px";

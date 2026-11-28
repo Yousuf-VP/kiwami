@@ -128,7 +128,7 @@ function processHandFrames(){
     palmSince=0;palmLatched=false;
     setTrackingHUD("detected","POINTING · CURSOR ACTIVE","Move your index fingertip · open your palm to click");
     setSystem("CURSOR ACTIVE","1 / 1");
-    setCameraMessage("INDEX FINGER READY","Move your index fingertip quickly through fruit to slice. Avoid bombs. A sliced bomb ends the run. Full open palm selects menu controls; two fingers go Back.");
+    setCameraMessage("INDEX FINGER READY","Move your index fingertip quickly through fruit to slice. Avoid bombs and do not let fruit fall. Full open palm selects menu controls; two fingers go Back.");
    }else if(activeGesture==="palm"){
     backSince=0;backGestureLatched=false;
     if(!palmSince)palmSince=now;
@@ -242,7 +242,7 @@ function closeModal(){$("modalBackdrop").hidden=true}
 function bindInterface(){
  $("cameraButton").addEventListener("click",enableCamera);$("cameraClose").addEventListener("click",()=>{stopCamera();showToast("Camera disconnected.")});
  $("playButton").addEventListener("click",()=>{if(gameplay)gameplay.start();else showToast("Game engine is still loading.");});
- $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Move your index fingertip to point; show a full open palm to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. Classic Mode is live: slice fruit, build combos, collect rare Golden Fruit and avoid bombs. A sliced bomb ends the run.</p></div></div>'));
+ $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Move your index fingertip to point; show a full open palm to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. Classic Mode is live: slice fruit, build combos, avoid bombs and protect your three lives.</p></div></div>'));
  $("settingsButton").addEventListener("click",()=>openModal("SYSTEM <em>SETTINGS</em>",'<div class="guide-row"><b>CAM</b><div><strong>CAMERA PRIVACY</strong><p>Camera access is optional and only starts after you press Enable Camera. Video is processed locally and is not uploaded by this prototype.</p></div></div><div class="guide-row"><b>TIP</b><div><strong>TRACKING ENVIRONMENT</strong><p>Use a well-lit space, keep your hand inside the frame and face your palm toward the camera.</p></div></div>'));
  $("modalClose").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});addEventListener("pagehide",stopCamera);
 }

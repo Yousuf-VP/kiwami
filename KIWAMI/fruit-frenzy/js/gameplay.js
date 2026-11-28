@@ -291,9 +291,9 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
       const distance = Math.hypot(dx, dy);
       const dt = Math.max(0.008, (now - lastPointerAt) / 1000);
       const speed = distance / dt;
-      if (distance > 0.018 && speed > 0.72) {
+      if (distance > 0.006) {
         trail.push({ point: point.clone(), time: now });
-        if (trail.length > 18) trail.shift();
+        if (trail.length > 36) trail.shift();
         cutAlong(lastPointer, point);
       }
     } else {
@@ -515,7 +515,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
 
   function updateBlade() {
     const now = clockNow();
-    while (trail.length && now - trail[0].time > 170) trail.shift();
+    while (trail.length && now - trail[0].time > 260) trail.shift();
     const points = trail.map(item => item.point);
     blade.visible = points.length > 1;
     bladeGlow.visible = points.length > 1;
@@ -524,7 +524,7 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
       bladeGeometry.setFromPoints(points);
       bladeGlowGeometry.setFromPoints(points);
       bladeHaloGeometry.setFromPoints(points);
-      const fade = Math.max(0.04, Math.min(1, (now - trail[trail.length - 1].time) / -190 + 1));
+      const fade = Math.max(0.12, Math.min(1, 1 - (now - trail[0].time) / 300));
       bladeMaterial.opacity = fade;
       bladeGlowMaterial.opacity = fade * 0.48;
       bladeHaloMaterial.opacity = fade * 0.2;

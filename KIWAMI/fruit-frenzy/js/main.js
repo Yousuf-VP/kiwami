@@ -4,7 +4,7 @@ import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@m
 
 const $ = (id) => document.getElementById(id);
 const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cursorProgress"), toast = $("toast");
-let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null, gameplay = null;
+let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null, gameplay = null, dojoEnvironment = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
 let palmSince = 0, palmLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
@@ -19,14 +19,35 @@ function setTrackingHUD(state,title,detail){
  hud.dataset.state=state;$("trackingTitle").textContent=title;$("trackingDetail").textContent=detail;
 }
 
+function createDojoEnvironment(){
+ const group=new THREE.Group(),wood=new THREE.MeshStandardMaterial({color:0x38251f,roughness:.82}),dark=new THREE.MeshStandardMaterial({color:0x1b1517,roughness:.9}),paper=new THREE.MeshStandardMaterial({color:0xd9c6a4,roughness:.95,transparent:true,opacity:.22,side:THREE.DoubleSide}),trim=new THREE.MeshStandardMaterial({color:0x8a4c32,roughness:.72}),glow=new THREE.MeshStandardMaterial({color:0xffa65c,emissive:0xff6a2a,emissiveIntensity:2.1});
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(28,22),new THREE.MeshStandardMaterial({color:0x30211e,roughness:.72}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-3.48,-2);group.add(floor);
+ for(let i=0;i<15;i++){const seam=new THREE.Mesh(new THREE.BoxGeometry(.025,.012,19),dark);seam.position.set(-13+i*1.85,-3.465,-2);group.add(seam)}
+ const rear=new THREE.Mesh(new THREE.PlaneGeometry(27,13),dark);rear.position.set(0,2.8,-8.5);group.add(rear);
+ const paperWall=new THREE.Mesh(new THREE.PlaneGeometry(22,8.8),paper);paperWall.position.set(0,2.9,-8.42);group.add(paperWall);
+ for(let x=-10;x<=10;x+=2){const post=new THREE.Mesh(new THREE.BoxGeometry(.13,9.5,.18),trim);post.position.set(x,1.7,-8.25);group.add(post)}
+ for(let y=-1.2;y<=6;y+=1.8){const rail=new THREE.Mesh(new THREE.BoxGeometry(22,.12,.2),trim);rail.position.set(0,y,-8.2);group.add(rail)}
+ const beam=new THREE.Mesh(new THREE.BoxGeometry(25,.34,.42),wood);beam.position.set(0,7.25,-8.1);group.add(beam);
+ for(const side of [-1,1]){
+  const pillar=new THREE.Mesh(new THREE.BoxGeometry(.42,10,.46),wood);pillar.position.set(side*11.7,1.5,-5.8);group.add(pillar);
+  const panel=new THREE.Mesh(new THREE.PlaneGeometry(5.2,8.8),paper);panel.position.set(side*9.1,1.7,-5.9);panel.rotation.y=side*Math.PI*.24;group.add(panel);
+  for(let i=0;i<3;i++){const lantern=new THREE.Group(),body=new THREE.Mesh(new THREE.BoxGeometry(.62,.92,.52),glow),cap=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.12,8),dark),base=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.12,8),dark);lantern.add(body);cap.position.y=.53;base.position.y=-.53;lantern.add(cap,base);lantern.position.set(side*(6.8+i*.5),2.35-(i%2)*1.35,-4.8-i*.7);group.add(lantern);const light=new THREE.PointLight(0xff8a48,18,9);light.position.copy(lantern.position);group.add(light)}
+ }
+ for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.28,6.8,.3),trim);leg.position.set(side*4.7,1.1,-7.65);group.add(leg)}
+ const torii=new THREE.Mesh(new THREE.BoxGeometry(10.8,.34,.5),wood);torii.position.set(0,4.65,-7.55);group.add(torii);
+ const cap=new THREE.Mesh(new THREE.BoxGeometry(11.8,.2,.62),trim);cap.position.set(0,4.95,-7.55);group.add(cap);
+ const count=95,positions=new Float32Array(count*3);for(let i=0;i<count;i++){positions[i*3]=(Math.random()-.5)*23;positions[i*3+1]=Math.random()*10-2;positions[i*3+2]=-Math.random()*12-1}
+ const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.BufferAttribute(positions,3));group.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xff9aa8,size:.055,transparent:true,opacity:.65,depthWrite:false})));
+ group.visible=false;scene.add(group);return group;
+}
 function initScene(){
  const host=$("sceneHost");scene=new THREE.Scene();scene.background=new THREE.Color(0x09090d);scene.fog=new THREE.FogExp2(0x09090d,.035);
- camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,.1,100);camera.position.set(0,1.1,12.8);camera.lookAt(0,.2,0);
+ camera=new THREE.PerspectiveCamera(innerWidth/innerHeight<.78?52:43,innerWidth/innerHeight,.1,100);camera.position.set(0,1.1,12.8);camera.lookAt(0,.2,0);
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:"high-performance"});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;host.appendChild(renderer.domElement);
  scene.add(new THREE.AmbientLight(0xffffff,1.35));
  const key=new THREE.PointLight(0xff8747,95,28);key.position.set(-4,4,5);scene.add(key);
  const rim=new THREE.PointLight(0x7d83ff,65,30);rim.position.set(5,1,-3);scene.add(rim);
- const floor=new THREE.Mesh(new THREE.CircleGeometry(13,96),new THREE.MeshStandardMaterial({color:0x111018,roughness:.82,metalness:.18}));floor.rotation.x=-Math.PI/2;floor.position.y=-3.5;scene.add(floor);
+ const floor=new THREE.Mesh(new THREE.CircleGeometry(13,96),new THREE.MeshStandardMaterial({color:0x111018,roughness:.82,metalness:.18}));floor.rotation.x=-Math.PI/2;floor.position.y=-3.5;scene.add(floor);dojoEnvironment=createDojoEnvironment();
  for(let i=0;i<3;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(3.8+i*1.5,.012,8,140),new THREE.MeshBasicMaterial({color:0xff7138,transparent:true,opacity:.25}));ring.position.set(1.8,-.5+i*.08,-4-i*.3);ring.rotation.x=Math.PI*.5;ring.rotation.z=i*.18;scene.add(ring)}
  const specs=[
  {color:0xe84343,scale:[.78,.82,.78],pos:[3.6,1.45,-1.8],leaf:0x5dba63},
@@ -49,8 +70,8 @@ function initScene(){
  window.fruitFrenzyGame=gameplay;
  addEventListener("resize",resizeScene);animateScene();
 }
-function resizeScene(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4))}
-function animateScene(){requestAnimationFrame(animateScene);const delta=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;floatingObjects.forEach((o,i)=>{o.visible=!document.body.classList.contains("is-playing");if(o.visible){o.position.y=o.userData.baseY+Math.sin(t*.72+o.userData.phase)*.22;o.rotation.y+=.002+i*.00025;o.rotation.x=Math.sin(t*.35+o.userData.phase)*.08}});if(gameplay)gameplay.update(delta,t);camera.position.x=document.body.classList.contains("is-playing")?0:Math.sin(t*.12)*.16;camera.lookAt(0,.2,-.2);renderer.render(scene,camera)}
+function resizeScene(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth/innerHeight<.78?52:43;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4))}
+function animateScene(){requestAnimationFrame(animateScene);const delta=Math.min(clock.getDelta(),.05),t=clock.elapsedTime,inGame=document.body.classList.contains("is-playing");floatingObjects.forEach((o,i)=>{o.visible=!inGame;if(o.visible){o.position.y=o.userData.baseY+Math.sin(t*.72+o.userData.phase)*.22;o.rotation.y+=.002+i*.00025;o.rotation.x=Math.sin(t*.35+o.userData.phase)*.08}});if(dojoEnvironment)dojoEnvironment.visible=inGame;if(gameplay)gameplay.update(delta,t);camera.position.x=inGame?0:Math.sin(t*.12)*.16;camera.lookAt(0,.2,-.2);renderer.render(scene,camera)}
 
 async function enableCamera(){
  const button=$("cameraButton");
@@ -87,6 +108,7 @@ function processHandFrames(){
    // independently of gesture classification, so quick movement never waits for a pose label.
    updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
+   if(gameplay?.isTrackingPaused?.())gameplay.resumeFromTracking();
    if(gameplay&&isPlayMode())gameplay.setPointer(smoothedX,smoothedY,now);
    const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
    const rawGesture=twoFingerBack?"back":(!isPlayMode()&&openPalm)?"palm":pointing?"point":fist?"fist":"open";
@@ -121,6 +143,7 @@ function processHandFrames(){
     setCameraMessage("HAND DETECTED","Extend your index finger to move the cursor; show your full open palm to click.");
    }
   }else{
+   if(gameplay?.isPlaying?.())gameplay.pauseForTracking();
    cursor.classList.remove("visible","clicking");palmSince=0;palmLatched=false;smoothedX=null;smoothedY=null;lastRawX=null;lastRawY=null;lastRawAt=0;pendingGesture="none";pendingGestureFrames=0;activeGesture="none";backSince=0;backGestureLatched=false;
    if(hoveredTarget){hoveredTarget.classList.remove("hand-hover");hoveredTarget=null}
    setSystem("SEARCHING FOR HAND");setCameraMessage("HAND NOT IN VIEW","Move your hand into the camera frame.");setTrackingHUD("lost","NO HAND DETECTED","Camera is live · move hand into frame");
@@ -157,6 +180,7 @@ function isPlayMode(){
  const game=window.fruitFrenzyGame;
  if(game){
   if(typeof game.isPlaying==="function"&&game.isPlaying())return true;
+  if(typeof game.isTrackingPaused==="function"&&game.isTrackingPaused())return true;
   if(["playing","running","active"].includes(String(game.state||game.mode||"").toLowerCase()))return true;
   if(game.playMode===true||game.isPlaying===true)return true;
  }

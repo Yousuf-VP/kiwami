@@ -156,11 +156,12 @@ function processHandFrames(){
 function updateIndexCursor(tip,now){
  const rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
  const elapsed=Math.max(1,now-lastRawAt);
- const speed=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY)/elapsed;
- // High alpha follows fast motion almost immediately; a small baseline filters idle jitter.
- const alpha=Math.min(1,Math.max(.88,.88+speed*.0028));
+ const deltaPx=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY);
+ const speed=deltaPx/elapsed;
+ // Suppress sub-pixel landmark shimmer; fast strokes receive almost no smoothing lag.
+ const alpha=Math.min(.995,Math.max(.76,.76+speed*.0032));
  if(smoothedX===null){smoothedX=rawX;smoothedY=rawY}
- else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
+ else if(deltaPx>0.85){smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
  lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
  moveHandCursor(smoothedX,smoothedY);
 }

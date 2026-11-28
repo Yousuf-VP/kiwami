@@ -110,7 +110,8 @@ function processHandFrames(){
    const pointing=isIndexPointing(points),fist=isFist(points);
    if(gameplay&&isPlayMode())gameplay.setPointer(smoothedX,smoothedY,now);
    const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
-   const rawGesture=twoFingerBack?"back":(!isPlayMode()&&openPalm)?"palm":pointing?"point":fist?"fist":"open";
+   const playingNow=!!gameplay?.isPlaying?.();
+   const rawGesture=twoFingerBack&&!playingNow?"back":(openPalm&&!playingNow)?"palm":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;
    else{pendingGesture=rawGesture;pendingGestureFrames=1}
    if(pendingGestureFrames>=GESTURE_CONFIRM_FRAMES)activeGesture=rawGesture;
@@ -132,7 +133,7 @@ function processHandFrames(){
     backSince=0;backGestureLatched=false;
     if(!palmSince)palmSince=now;
     if(!palmLatched&&now-palmSince>=110){triggerHandClick();palmLatched=true}
-    setTrackingHUD("detected",palmLatched?"OPEN PALM · CLICKED":"OPEN PALM · READY","Full open palm detected · relax your hand to click again");
+    setTrackingHUD("detected",palmLatched?"OPEN PALM · CLICKED":"OPEN PALM · READY",gameplay?.state==="paused"?"Open palm selects RESUME, RESTART or MAIN MENU.":"Open palm selects RESTART or MAIN MENU.");
     setSystem("PALM CLICK","1 / 1");
     setCameraMessage("OPEN PALM CLICK READY","Hold all five fingers open over a control. Relax your hand to reset.");
    }else{

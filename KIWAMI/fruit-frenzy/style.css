@@ -126,3 +126,22 @@ body.is-playing .hand-cursor{opacity:0!important}
 .game-dialog-actions button{background:linear-gradient(100deg,#ffd16b,#ff813e);border-color:#ffd16b}
 @media(max-width:600px){.game-hud{padding:10px}.game-hud-top{gap:6px}.hud-stat{min-width:0;flex:1;padding:8px 7px}.hud-stat small{font-size:6px;letter-spacing:.1em}.hud-stat strong{font-size:12px}.game-pause{width:36px;height:36px;flex:0 0 36px}.game-hud-bottom{font-size:6px;letter-spacing:.07em}.game-hud-bottom span{padding:7px 8px}}
 @media(orientation:portrait) and (max-width:700px){.game-hud-top{gap:5px}.hud-stat{padding:8px 5px}.hud-stat small{font-size:5.5px}.hud-stat strong{font-size:11px;letter-spacing:.02em}.game-pause{width:34px;height:34px;flex-basis:34px}.game-hud-bottom{align-items:flex-end}.game-hud-bottom span{max-width:72%;line-height:1.35}}
+
+
+/* CINEMATIC GAME FEEDBACK + GESTURE ACCESS TO PAUSE / RESULTS */
+/* Keep the tracked fingertip visible above the in-game overlays. */
+body.is-playing .hand-cursor.visible{opacity:1!important;z-index:60}
+body.is-playing .hand-cursor{pointer-events:none}
+body.is-playing .game-overlay{z-index:45}
+body.is-playing .game-dialog-actions button{position:relative;z-index:1;min-height:50px;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+body.is-playing .game-dialog-actions button.hand-hover{transform:translateY(-2px);filter:brightness(1.2)}
+.game-hud.slice-impact::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 52%,rgba(255,221,166,calc(var(--impact-power,1)*.18)),rgba(255,115,55,calc(var(--impact-power,1)*.08)) 32%,transparent 72%);animation:ffImpactFlash .24s ease-out both}
+.game-hud.slice-impact .game-center-message{filter:drop-shadow(0 0 18px rgba(255,174,91,.8))}
+.game-dialog{animation:ffDialogIn .28s cubic-bezier(.18,.82,.24,1) both}
+.game-dialog-kicker{ text-shadow:0 0 18px rgba(255,188,103,.28) }
+.game-dialog-actions button:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.hand-cursor.visible .cursor-core{animation:cursorCorePulse 1.25s ease-in-out infinite}
+@keyframes ffImpactFlash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+@keyframes ffDialogIn{from{opacity:0;transform:translateY(14px) scale(.97);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes cursorCorePulse{0%,100%{transform:scale(.9)}50%{transform:scale(1.18)}}
+@media(prefers-reduced-motion:reduce){.game-dialog,.hand-cursor.visible .cursor-core{animation:none!important}}

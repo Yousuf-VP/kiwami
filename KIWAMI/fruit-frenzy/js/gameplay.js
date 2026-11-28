@@ -12,7 +12,7 @@ export function createGameplay({THREE,scene,camera,renderer}){
   ["APPLE",0xe83c43,0x58b85a,.52,10],["ORANGE",0xff9b28,0x5bb34e,.48,10],["KIWI",0x8bc34a,0x3d8e48,.5,15],
   ["PLUM",0x9b63cf,0x5c9e54,.46,15],["WATERMELON",0x2eae68,0x23824f,.58,20],["STRAWBERRY",0xf05262,0x3d9b55,.4,15]
  ].map(([name,color,leaf,radius,points])=>({name,color,leaf,radius,points}));
- let state="menu",score=0,best=0,combo=0,bestCombo=0,sliced=0,elapsed=0,spawn=0,lastSlice=0,wave=0,lastPointer=null,lastPointerAt=0,audio=null,lastSound=0,hud,msgTimer=0;
+ let state="menu",score=0,best=0,combo=0,bestCombo=0,sliced=0,elapsed=0,spawn=0,lastSlice=0,wave=0,lastPointer=null,lastPointerAt=0,audio=null,lastSound=0,hud,msgTimer=0,impactTimer=0;
  try{best=Number(localStorage.getItem("ff-classic-best")||0)}catch(_){}
  function makeUI(){
   hud=document.createElement("section");hud.className="game-hud";hud.id="classicHud";
@@ -29,7 +29,8 @@ export function createGameplay({THREE,scene,camera,renderer}){
   hud.querySelector("#ffScore").textContent=String(score).padStart(6,"0");hud.querySelector("#ffBest").textContent=String(Math.max(best,score)).padStart(6,"0");hud.querySelector("#ffBestCombo").textContent=bestCombo;
   hud.querySelector("#ffTime").textContent=timeText();hud.querySelector("#ffCombo").textContent=combo>1?"COMBO ×"+mult()+" · "+combo+" SLICES":"SLICE FRUIT · AVOID BOMBS";
  }
- function message(text,duration=850){const n=hud.querySelector("#ffMessage");n.textContent=text;n.classList.add("visible");clearTimeout(msgTimer);msgTimer=setTimeout(()=>n.classList.remove("visible"),duration)}
+ function message(text,duration=850){const n=hud.querySelector("#ffMessage");n.textContent=text;n.classList.remove("visible");void n.offsetWidth;n.classList.add("visible");clearTimeout(msgTimer);msgTimer=setTimeout(()=>n.classList.remove("visible"),duration)}
+ function cinematicImpact(power=1){if(!hud)return;hud.style.setProperty("--impact-power",String(Math.max(.35,Math.min(1.4,power))));hud.classList.remove("slice-impact");void hud.offsetWidth;hud.classList.add("slice-impact");clearTimeout(impactTimer);impactTimer=setTimeout(()=>hud.classList.remove("slice-impact"),260)}
  function overlay(kicker,title,text,resume){hud.querySelector("#ffDialogKicker").textContent=kicker;hud.querySelector("#ffDialogTitle").textContent=title;hud.querySelector("#ffDialogText").textContent=text;hud.querySelector("#ffResume").hidden=!resume;hud.querySelector("#ffOverlay").hidden=false}
  function hideOverlay(){hud.querySelector("#ffOverlay").hidden=true}
  function clearTrail(){trail.length=0;lastPointer=null;lastPointerAt=0;blades.forEach(b=>{b.visible=false;b.geometry.dispose();b.geometry=new THREE.BufferGeometry()})}
@@ -38,7 +39,7 @@ export function createGameplay({THREE,scene,camera,renderer}){
  function pause(){if(state!=="playing")return;state="paused";document.body.dataset.playMode="false";clearTrail();overlay("CLASSIC MODE · DOJO","PAUSED","Your run is on hold. Resume when you're ready.",true)}
  function resume(){if(state!=="paused")return;state="playing";document.body.dataset.playMode="true";clearTrail();hideOverlay()}
  function returnToMenu(){state="menu";document.body.classList.remove("is-playing");document.body.dataset.playMode="false";hideOverlay();clearAll();updateHud(true)}
- function endGame(reason){if(state!=="playing")return;state="gameover";document.body.dataset.playMode="false";clearTrail();if(score>best){best=score;try{localStorage.setItem("ff-classic-best",String(best))}catch(_){}}
+ function endGame(reason){if(state!=="playing")return;cinematicImpact(1.35);state="gameover";document.body.dataset.playMode="false";clearTrail();if(score>best){best=score;try{localStorage.setItem("ff-classic-best",String(best))}catch(_){}}
   updateHud(true);overlay("RUN COMPLETE · "+timeText(),"GAME OVER",reason+" Final score: "+score+" · Fruits sliced: "+sliced+" · Best combo: "+bestCombo+".",false)}
  function spawnWave(){
   if(state!=="playing")return;const waveId=++wave,diff=Math.min(1,elapsed/100),count=2+Math.floor(Math.random()*2)+(diff>.58&&Math.random()>.58?1:0);
@@ -84,9 +85,9 @@ export function createGameplay({THREE,scene,camera,renderer}){
  function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l)):0;return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
  function cutAlong(a,b){if(state!=="playing")return;for(let i=fruits.length-1;i>=0;i--){const f=fruits[i],p=f.mesh.position;if(segDist(p.x,p.y,a.x,a.y,b.x,b.y)>f.radius*.92)continue;fruits.splice(i,1);scene.remove(f.mesh);
   if(f.type==="bomb"){burst(p,0xff7548,30);endGame("BOMB SLICED · THE RUN ENDS.");return}
-  const color=f.type==="golden"?0xffd34e:f.mesh.material.color.getHex();scoreFruit(f);splitFruit(f,p);burst(p,color,f.type==="golden"?28:14);juiceSplash(p,color);slurp()}}
+  const color=f.type==="golden"?0xffd34e:f.mesh.material.color.getHex();scoreFruit(f);splitFruit(f,p);burst(p,color,f.type==="golden"?34:20);juiceSplash(p,color);cinematicImpact(f.type==="golden"?1.25:.7);slurp()}}
  function scoreFruit(f){const t=now();combo=t-lastSlice<=1500?combo+1:1;lastSlice=t;bestCombo=Math.max(bestCombo,combo);score+=f.points*mult();const n=(waveHits.get(f.waveId)||0)+1;waveHits.set(f.waveId,n);
-  if(n>=2){const bonus=[0,0,10,20,40,60][Math.min(5,n)]||60;score+=bonus;message(n>=5?"PERFECT WAVE  +"+bonus:"WAVE COMBO  +"+bonus,760)}
+  if(n>=2){const bonus=[0,0,10,20,40,60][Math.min(5,n)]||60;score+=bonus;cinematicImpact(Math.min(1.35,.72+n*.12));message(n>=5?"PERFECT WAVE  +"+bonus:"WAVE COMBO  +"+bonus,760)}
   else if(f.type==="golden")message("GOLDEN FRUIT  +100",1000);else if(combo>=2)message("COMBO ×"+mult(),650);updateHud(true)}
  function splitFruit(f,p){const material=new THREE.MeshPhysicalMaterial({color:f.type==="golden"?0xffd34e:f.mesh.material.color.clone(),roughness:.3,clearcoat:.7,side:THREE.DoubleSide});
   for(let s=0;s<2;s++){const geo=new THREE.SphereGeometry(f.radius,24,18,s*Math.PI,Math.PI,0,Math.PI*2),mesh=new THREE.Mesh(geo,material);mesh.position.copy(p);mesh.position.x+=s===0?-.07:.07;mesh.rotation.set(Math.random()*.5,Math.random()*.5,Math.random()*.5);scene.add(mesh);parts.push({mesh,velocity:new THREE.Vector3((s===0?-1:1)*(1.2+Math.random()),1.4+Math.random(),(s===0?-1:1)*.5),spin:(s===0?-1:1)*(2+Math.random()*3),life:.76,max:.76})}}

@@ -8,7 +8,7 @@ let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandCli
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
 let fistSince = 0, fistLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
 let fpsFrames = 0, fpsStamp = performance.now();
-const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 33, GESTURE_CONFIRM_FRAMES = 2;
+const floatingObjects = [], CLICK_COOLDOWN_MS = 480, INFERENCE_INTERVAL_MS = 16, GESTURE_CONFIRM_FRAMES = 2;
 
 function showToast(message){toast.textContent=message;toast.classList.add("show");clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>toast.classList.remove("show"),3000)}
 function setSystem(message,count="0 / 1"){$("systemState").textContent=message;$("handCount").textContent=count}
@@ -53,16 +53,16 @@ async function enableCamera(){
  if(!navigator.mediaDevices?.getUserMedia){showToast("Camera access requires HTTPS or localhost in a supported browser.");setCameraMessage("CAMERA UNAVAILABLE","Open this page over HTTPS and use a supported browser.");return}
  button.disabled=true;button.textContent="CONNECTING…";setCameraMessage("REQUESTING PERMISSION","Approve camera access in your browser.");
  try{
-  cameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:640},height:{ideal:480},frameRate:{ideal:30,max:30}}});
+  cameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:640},height:{ideal:480},frameRate:{ideal:60,max:60}}});
   video.srcObject=cameraStream;await video.play();$("cameraPreview").hidden=false;
   setCameraMessage("LOADING HAND TRACKER","Preparing the local hand-detection model.");setTrackingHUD("searching","LOADING TRACKER","Starting hand detection…");
   const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
   const modelAssetPath="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
   try {
-   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.55});
+   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"GPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.42,minHandPresenceConfidence:.42,minTrackingConfidence:.35});
   } catch(gpuError) {
    console.warn("GPU hand tracking unavailable; retrying with CPU.",gpuError);
-   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"CPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.58,minHandPresenceConfidence:.55,minTrackingConfidence:.55});
+   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath,delegate:"CPU"},runningMode:"VIDEO",numHands:1,minHandDetectionConfidence:.42,minHandPresenceConfidence:.42,minTrackingConfidence:.35});
   }
   trackingActive=true;button.textContent="CAMERA ENABLED";setCameraMessage("WAITING FOR YOUR HAND","Show one hand to the camera, palm facing forward.");setTrackingHUD("searching","SEARCHING FOR HAND","Camera is live · show one hand");setSystem("SCANNING");processHandFrames();showToast("Camera connected. Show one hand to begin calibration.");
  }catch(error){
@@ -79,6 +79,9 @@ function processHandFrames(){
   lastVideoTime=video.currentTime;lastInferenceAt=now;
   const result=handLandmarker.detectForVideo(video,now);const points=result.landmarks?.[0];
   if(points){
+   // Landmark 8 is the index fingertip. Track it on every detected frame,
+   // independently of gesture classification, so quick movement never waits for a pose label.
+   updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
    const twoFingerBack=isTwoFingerBack(points);
    const rawGesture=twoFingerBack?"back":pointing?"point":fist?"fist":"open";
@@ -95,14 +98,6 @@ function processHandFrames(){
     setCameraMessage("BACK GESTURE READY","Hold index and middle fingers up to go back in menus.");
    }else if(activeGesture==="point"){
     backSince=0;backGestureLatched=false;
-    const tip=points[8],rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
-    const elapsed=Math.max(1,now-lastRawAt);
-    const speed=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY)/elapsed;
-    const alpha=Math.min(.98,Math.max(.72,.72+speed*.0025));
-    if(smoothedX===null){smoothedX=rawX;smoothedY=rawY}
-    else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
-    lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
-    moveHandCursor(smoothedX,smoothedY);
     fistSince=0;fistLatched=false;
     setTrackingHUD("detected","POINTING · CURSOR ACTIVE","Move index finger · make a fist to click");
     setSystem("CURSOR ACTIVE","1 / 1");
@@ -129,6 +124,17 @@ function processHandFrames(){
  }
  if(now-fpsStamp>=1000){$("cameraFps").textContent=Math.round(fpsFrames*1000/(now-fpsStamp))+" FPS";fpsFrames=0;fpsStamp=now}
  requestAnimationFrame(processHandFrames);
+}
+function updateIndexCursor(tip,now){
+ const rawX=(1-tip.x)*innerWidth,rawY=tip.y*innerHeight;
+ const elapsed=Math.max(1,now-lastRawAt);
+ const speed=lastRawX===null?0:Math.hypot(rawX-lastRawX,rawY-lastRawY)/elapsed;
+ // High alpha follows fast motion almost immediately; a small baseline filters idle jitter.
+ const alpha=Math.min(1,Math.max(.88,.88+speed*.0028));
+ if(smoothedX===null){smoothedX=rawX;smoothedY=rawY}
+ else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
+ lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
+ moveHandCursor(smoothedX,smoothedY);
 }
 function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return Math.hypot(dx,dy,dz)}
 function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}

@@ -445,7 +445,6 @@ export function createGameplay({ THREE, scene, camera, renderer }) {
       noise.start(startAt);
       noise.stop(startAt + 0.29);
       master.gain.setValueAtTime(0.0001, startAt + 0.36);
-      master.disconnect(ctx.destination);
     } catch (_) {
       // Audio is optional; slicing and visual effects must continue if audio is unavailable.
     }

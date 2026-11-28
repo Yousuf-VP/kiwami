@@ -145,3 +145,12 @@ body.is-playing .game-dialog-actions button.hand-hover{transform:translateY(-2px
 @keyframes ffDialogIn{from{opacity:0;transform:translateY(14px) scale(.97);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @keyframes cursorCorePulse{0%,100%{transform:scale(.9)}50%{transform:scale(1.18)}}
 @media(prefers-reduced-motion:reduce){.game-dialog,.hand-cursor.visible .cursor-core{animation:none!important}}
+
+
+/* FRUIT FRENZY — cursor is hidden only during active slicing */
+body.is-playing .hand-cursor{opacity:0!important;visibility:hidden}
+body.is-playing.game-overlay-active .hand-cursor.visible{opacity:1!important;visibility:visible;z-index:60}
+body.is-playing.game-overlay-active .hand-cursor{pointer-events:none}
+.tutorial-start{display:block;width:100%;margin-top:22px;min-height:50px;cursor:pointer;font:800 9px Orbitron,sans-serif;letter-spacing:.1em}
+.modal-content .guide-row p{line-height:1.55}
+@media(max-width:600px){.tutorial-start{min-height:48px}}

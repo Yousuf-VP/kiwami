@@ -9,7 +9,7 @@ Premium 3D fruit-slicing arcade game controlled with one hand through the player
 - Camera: Perspective 3D gameplay camera
 - Input: One hand, tracked locally in the browser
 - Menu cursor: Index fingertip
-- Menu selection: Point at a button and hold briefly (dwell selection)
+- Menu selection: Point at a button to select it (point-to-click with a short repeat cooldown)
 - Gameplay slicing: Quick index-finger movement creates the energy-blade trail
 - Art direction: Premium 3D, dark cinematic presentation, vivid fruit colors and warm orange energy accents
 - Platform: Desktop and mobile browsers with a camera
@@ -41,7 +41,7 @@ These modes are planned; they are not playable in Phase 1.
 - Single-hand MediaPipe tracking.
 - Mirrored index fingertip cursor mapping.
 - Index-point gesture recognition.
-- Point-and-hold menu selection (620 ms dwell).
+- Point-to-click menu selection with a short repeat cooldown.
 - Hand-detection, camera and tracking status.
 - Local camera preview with disconnect control.
 - Permission/model-load error messaging.

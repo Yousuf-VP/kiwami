@@ -1,9 +1,10 @@
 import * as THREE from "three";
+import { createGameplay } from "./gameplay.js";
 import { FilesetResolver, HandLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
 
 const $ = (id) => document.getElementById(id);
 const video = $("cameraVideo"), cursor = $("handCursor"), cursorProgress = $("cursorProgress"), toast = $("toast");
-let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null;
+let renderer, scene, camera, clock, handLandmarker = null, cameraStream = null, gameplay = null;
 let trackingActive = false, lastVideoTime = -1, lastInferenceAt = 0, lastHandClickAt = 0, toastTimeout = 0;
 let smoothedX = null, smoothedY = null, lastRawX = null, lastRawY = null, lastRawAt = 0;
 let palmSince = 0, palmLatched = false, backSince = 0, backGestureLatched = false, pendingGesture = "none", pendingGestureFrames = 0, activeGesture = "none", hoveredTarget = null;
@@ -43,10 +44,13 @@ function initScene(){
  });
  const count=240,positions=new Float32Array(count*3);for(let i=0;i<count;i++){positions[i*3]=(Math.random()-.5)*24;positions[i*3+1]=(Math.random()-.5)*13;positions[i*3+2]=-Math.random()*18-2}
  const geometry=new THREE.BufferGeometry();geometry.setAttribute("position",new THREE.BufferAttribute(positions,3));scene.add(new THREE.Points(geometry,new THREE.PointsMaterial({color:0xffb27b,size:.025,transparent:true,opacity:.62})));
- clock=new THREE.Clock();addEventListener("resize",resizeScene);animateScene();
+ clock=new THREE.Clock();
+ gameplay=createGameplay({THREE,scene,camera,renderer});
+ window.fruitFrenzyGame=gameplay;
+ addEventListener("resize",resizeScene);animateScene();
 }
 function resizeScene(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.4))}
-function animateScene(){requestAnimationFrame(animateScene);const t=clock.getElapsedTime();floatingObjects.forEach((o,i)=>{o.position.y=o.userData.baseY+Math.sin(t*.72+o.userData.phase)*.22;o.rotation.y+=.002+i*.00025;o.rotation.x=Math.sin(t*.35+o.userData.phase)*.08});camera.position.x=Math.sin(t*.12)*.16;camera.lookAt(0,.2,-.2);renderer.render(scene,camera)}
+function animateScene(){requestAnimationFrame(animateScene);const delta=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;floatingObjects.forEach((o,i)=>{if(!document.body.classList.contains("is-playing")){o.position.y=o.userData.baseY+Math.sin(t*.72+o.userData.phase)*.22;o.rotation.y+=.002+i*.00025;o.rotation.x=Math.sin(t*.35+o.userData.phase)*.08}});if(gameplay)gameplay.update(delta,t);camera.position.x=document.body.classList.contains("is-playing")?0:Math.sin(t*.12)*.16;camera.lookAt(0,.2,-.2);renderer.render(scene,camera)}
 
 async function enableCamera(){
  const button=$("cameraButton");
@@ -84,7 +88,7 @@ function processHandFrames(){
    updateIndexCursor(points[8],now);
    const pointing=isIndexPointing(points),fist=isFist(points);
    const twoFingerBack=isTwoFingerBack(points),openPalm=isOpenPalm(points);
-   const rawGesture=twoFingerBack?"back":openPalm?"palm":pointing?"point":fist?"fist":"open";
+   const rawGesture=twoFingerBack?"back":(!isPlayMode()&&openPalm)?"palm":pointing?"point":fist?"fist":"open";
    if(rawGesture===pendingGesture)pendingGestureFrames++;
    else{pendingGesture=rawGesture;pendingGestureFrames=1}
    if(pendingGestureFrames>=GESTURE_CONFIRM_FRAMES)activeGesture=rawGesture;
@@ -101,7 +105,7 @@ function processHandFrames(){
     palmSince=0;palmLatched=false;
     setTrackingHUD("detected","POINTING · CURSOR ACTIVE","Move your index fingertip · open your palm to click");
     setSystem("CURSOR ACTIVE","1 / 1");
-    setCameraMessage("INDEX FINGER READY","Point at a control, then show a full open palm to click. Raise index + middle fingers to go back.");
+    setCameraMessage("INDEX FINGER READY","Move your index fingertip quickly through fruit to slice. Avoid bombs and do not let fruit fall. Full open palm selects menu controls; two fingers go Back.");
    }else if(activeGesture==="palm"){
     backSince=0;backGestureLatched=false;
     if(!palmSince)palmSince=now;
@@ -135,6 +139,7 @@ function updateIndexCursor(tip,now){
  else{smoothedX+=(rawX-smoothedX)*alpha;smoothedY+=(rawY-smoothedY)*alpha}
  lastRawX=rawX;lastRawY=rawY;lastRawAt=now;
  moveHandCursor(smoothedX,smoothedY);
+ if(gameplay)gameplay.setPointer(smoothedX,smoothedY,now);
 }
 function distance3D(a,b){const dx=a.x-b.x,dy=a.y-b.y,dz=(a.z||0)-(b.z||0);return Math.hypot(dx,dy,dz)}
 function fingerExtended(points,tip,pip){return distance3D(points[0],points[tip])>distance3D(points[0],points[pip])*1.12}
@@ -212,8 +217,8 @@ function openModal(title,content){$("modalTitle").innerHTML=title;$("modalConten
 function closeModal(){$("modalBackdrop").hidden=true}
 function bindInterface(){
  $("cameraButton").addEventListener("click",enableCamera);$("cameraClose").addEventListener("click",()=>{stopCamera();showToast("Camera disconnected.")});
- $("playButton").addEventListener("click",()=>openModal("THE FRENZY IS <em>LOADING</em>",'<div class="guide-row"><b>01</b><div><strong>HAND INPUT FOUNDATION READY</strong><p>Your hand-controlled menu is online. The 3D slicing engine, fruit physics, scoring and game modes are scheduled for Phase 2.</p></div></div><div class="guide-row"><b>02</b><div><strong>COMING NEXT</strong><p>Index-finger blade trail, fruit launches, slice detection, combos, lives and the first playable Classic mode.</p></div></div>'));
- $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Move your index fingertip to point; show a full open palm to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. The slicing system arrives in Phase 2.</p></div></div>'));
+ $("playButton").addEventListener("click",()=>{if(gameplay)gameplay.start();else showToast("Game engine is still loading.");});
+ $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Move your index finger to move the glowing cursor. Move your index fingertip to point; show a full open palm to click.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Quick index-finger movements will draw the energy blade. Classic Mode is live: slice fruit, build combos, avoid bombs and protect your three lives.</p></div></div>'));
  $("settingsButton").addEventListener("click",()=>openModal("SYSTEM <em>SETTINGS</em>",'<div class="guide-row"><b>CAM</b><div><strong>CAMERA PRIVACY</strong><p>Camera access is optional and only starts after you press Enable Camera. Video is processed locally and is not uploaded by this prototype.</p></div></div><div class="guide-row"><b>TIP</b><div><strong>TRACKING ENVIRONMENT</strong><p>Use a well-lit space, keep your hand inside the frame and face your palm toward the camera.</p></div></div>'));
  $("modalClose").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});addEventListener("pagehide",stopCamera);
 }

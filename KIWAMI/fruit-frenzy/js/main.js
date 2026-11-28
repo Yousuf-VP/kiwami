@@ -249,7 +249,7 @@ function triggerHandClick(){
  if(x===null||y===null)return;
  const hit=document.elementFromPoint(x,y);
  const backdrop=$("modalBackdrop");
- if(!backdrop.hidden&&hit===backdrop){closeModal();return}
+ if(!backdrop.hidden&&hit===backdrop){if(tutorialActive)completeFirstRunTutorial();else closeModal();return}
  const target=hit?.closest("button,a,[role='button'],input,select,textarea,[data-hand-click]");
  if(!target||target.disabled||target.getAttribute("aria-disabled")==="true")return;
  cursor.classList.add("clicking");setTimeout(()=>cursor.classList.remove("clicking"),170);
@@ -261,14 +261,19 @@ function stopCamera(){
  $("cameraButton").disabled=false;$("cameraButton").innerHTML='ENABLE CAMERA <span>↗</span>';$("cameraFps").textContent="-- FPS";setSystem("STANDBY");setCameraMessage("CAMERA NOT CONNECTED","Allow camera access to control the menu.");setTrackingHUD("off","TRACKING OFF","Enable camera to begin");
 }
 function openModal(title,content){$("modalTitle").innerHTML=title;$("modalContent").innerHTML=content;$("modalBackdrop").hidden=false}
-function closeModal(){$("modalBackdrop").hidden=true}
+let tutorialActive=false;
+function closeModal(){$("modalBackdrop").hidden=true;$("modalBackdrop").classList.remove("is-tutorial");tutorialActive=false}
+function completeFirstRunTutorial(){
+ if(!tutorialActive)return;
+ try{localStorage.setItem("ff-tutorial-complete","1")}catch(_){}
+ closeModal();
+ if(gameplay)gameplay.start();else showToast("Game engine is still loading.");
+}
 function startFirstRunTutorial(){
- const content='<div class="guide-row"><b>01</b><div><strong>GET YOUR HAND READY</strong><p>Enable the camera first and keep your hand clearly visible in good light. Tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>SLICE WITH YOUR INDEX FINGER</strong><p>Move your index fingertip through fruit. Your blade follows the movement; the cursor stays hidden during active gameplay.</p></div></div><div class="guide-row"><b>03</b><div><strong>BUILD COMBOS</strong><p>Slice several fruits quickly and catch multiple fruits from one launch for score bonuses and multipliers. Golden fruit is rare and worth extra points.</p></div></div><div class="guide-row"><b>04</b><div><strong>WATCH FOR BOMBS</strong><p>Do not slice bombs — one hit ends the run. Missed fruit does not cost a life in this version.</p></div></div><div class="guide-row"><b>05</b><div><strong>PAUSE ANYTIME</strong><p>Use the pause button or Escape. In the menu, pause screen and game-over screen, point with your index finger and show an open palm to select.</p></div></div><button class="camera-button tutorial-start" id="firstRunStart" type="button">GOT IT — START GAME ↗</button>';
- openModal('FIRST RUN <em>BRIEFING</em>',content);
- $("firstRunStart").addEventListener("click",()=>{
-  try{localStorage.setItem("ff-tutorial-complete","1")}catch(_){}
-  closeModal();if(gameplay)gameplay.start();else showToast("Game engine is still loading.");
- });
+ tutorialActive=true;
+ const content='<div class="ff-tutorial-screen"><div class="ff-tutorial-top"><span>KIWAMI ORIGINAL</span><span>FIELD GUIDE / 001</span></div><div class="ff-tutorial-hero"><div class="ff-tutorial-eyebrow"><i></i> YOUR TRAINING STARTS NOW</div><h3>READY.<br><em>SET.</em><br>SLICE.</h3><p>One hand. One blade. Master the dojo.</p></div><div class="ff-tutorial-lessons"><article><b>01 / CONTROL</b><strong>POINT & SLICE</strong><p>Extend your index finger and sweep through fruit. Your blade follows your fingertip.</p></article><article><b>02 / SCORE</b><strong>CHAIN COMBOS</strong><p>Slice quickly and catch a whole wave for bigger bonuses. Golden fruit is rare.</p></article><article class="hazard"><b>03 / SURVIVE</b><strong>AVOID BOMBS</strong><p>Never slice a bomb. Missed fruit is safe — keep your focus on the hazards.</p></article></div><div class="ff-tutorial-bottom"><span class="ff-tap-pulse">✦</span><strong>TAP ANYWHERE TO SKIP</strong><span>OR SHOW OPEN PALM</span></div></div>';
+ openModal('TRAINING <em>BRIEFING</em>',content);
+ $("modalBackdrop").classList.add("is-tutorial");
 }
 function bindInterface(){
  $("cameraButton").addEventListener("click",enableCamera);$("cameraClose").addEventListener("click",()=>{stopCamera();showToast("Camera disconnected.")});
@@ -279,6 +284,6 @@ function bindInterface(){
  });
  $("howButton").addEventListener("click",()=>openModal("HOW TO <em>PLAY</em>",'<div class="guide-row"><b>01</b><div><strong>ENABLE YOUR CAMERA</strong><p>Allow webcam access. Hand tracking runs locally in your browser.</p></div></div><div class="guide-row"><b>02</b><div><strong>POINT TO NAVIGATE</strong><p>Your index fingertip controls the menu cursor. Show a full open palm to select; raise index and middle fingers to go Back. The cursor hides while you are actively slicing.</p></div></div><div class="guide-row"><b>03</b><div><strong>SLICE IN THE ARENA</strong><p>Move your index fingertip through fruit to slice. Build timed and same-wave combos, collect rare Golden Fruit and avoid bombs — slicing a bomb ends the run. Missed fruit has no life penalty.</p></div></div>'));
  $("settingsButton").addEventListener("click",()=>openModal("SYSTEM <em>SETTINGS</em>",'<div class="guide-row"><b>CAM</b><div><strong>CAMERA PRIVACY</strong><p>Camera access is optional and only starts after you press Enable Camera. Video is processed locally and is not uploaded by this prototype.</p></div></div><div class="guide-row"><b>TIP</b><div><strong>TRACKING ENVIRONMENT</strong><p>Use a well-lit space, keep your hand inside the frame and face your palm toward the camera.</p></div></div>'));
- $("modalClose").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("click",e=>{if(e.target===$("modalBackdrop"))closeModal()});addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});addEventListener("pagehide",stopCamera);
+ $("modalClose").addEventListener("click",closeModal);$("modalBackdrop").addEventListener("pointerdown",e=>{if(tutorialActive){e.preventDefault();completeFirstRunTutorial();return}if(e.target===$("modalBackdrop"))closeModal()});$("modalBackdrop").addEventListener("click",e=>{if(tutorialActive){completeFirstRunTutorial();return}if(e.target===$("modalBackdrop"))closeModal()});addEventListener("keydown",e=>{if(e.key==="Escape"){if(tutorialActive)completeFirstRunTutorial();else closeModal()}});addEventListener("pagehide",stopCamera);
 }
 initScene();bindInterface();
